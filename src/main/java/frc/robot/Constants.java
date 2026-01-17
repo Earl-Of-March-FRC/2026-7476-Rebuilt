@@ -118,6 +118,7 @@ public final class Constants {
     public static final double kPIDHeadingControllerD = 0.1;
     public static final double kPIDHeadingControllerTolerance = 2.0;
     public static final Angle kHeadingRestriction = Degrees.of(45);
+    public static final Angle kRecalibrateThreshold = Degrees.of(30);
     // public static final PathConstraints kPathfindingConstraints = new
     // PathConstraints(kMaxSpeed.in(MetersPerSecond),
     // kMaxAccelerationPathfinding.in(MetersPerSecondPerSecond),
