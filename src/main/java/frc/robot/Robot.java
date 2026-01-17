@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import org.ironmaple.simulation.SimulatedArena;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
@@ -44,6 +45,7 @@ public class Robot extends LoggedRobot {
 
     // Start logger
     Logger.recordMetadata("ProjectName", "2026-7576-Rebuilt");
+    Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
     if (isReal()) {
       Logger.addDataReceiver(new WPILOGWriter());
       Logger.addDataReceiver(new NT4Publisher());
@@ -126,10 +128,14 @@ public class Robot extends LoggedRobot {
   /** This function is called once when the robot is first started up. */
   @Override
   public void simulationInit() {
+    SimulatedArena.getInstance().resetFieldForAuto();
   }
 
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {
+    SimulatedArena.getInstance().simulationPeriodic();
+    Logger.recordOutput("FieldSimulation/Fuel",
+        SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
   }
 }
