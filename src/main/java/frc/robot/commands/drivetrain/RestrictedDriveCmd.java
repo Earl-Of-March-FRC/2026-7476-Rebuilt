@@ -130,9 +130,8 @@ public class RestrictedDriveCmd extends Command {
 
     // Set the target heading for the robot to maintain
     driveSub.setTargetHeading(targetHeading);
-
-    Logger.recordOutput("Drivetrain/RestrictedMode/CurrentAngle", currentAngleRadians);
-    Logger.recordOutput("Drivetrain/RestrictedMode/TargetAngle", nearestAngle);
+    Logger.recordOutput("Drivetrain/RestrictedMode/CurrentAngle", Math.toDegrees(currentAngleRadians));
+    Logger.recordOutput("Drivetrain/RestrictedMode/TargetAngle", Math.toDegrees(nearestAngle));
   }
 
   @Override
