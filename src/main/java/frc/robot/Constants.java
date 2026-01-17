@@ -18,6 +18,8 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -226,5 +228,15 @@ public final class Constants {
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
+  }
+
+  public static class FieldConstants {
+    public static final AprilTagFieldLayout kfieldLayout = AprilTagFieldLayout
+        .loadField(AprilTagFields.k2026RebuiltAndymark);
+    public static final double kFieldLengthX = kfieldLayout.getFieldLength(); // meters from drivestation wall to
+                                                                              // drivestation wall
+    public static final double kFieldWidthY = kfieldLayout.getFieldWidth(); // meters of parallel distance from
+                                                                            // processor to processor
+    public static final double kBargeX = kFieldLengthX / 2; // meters from drivestation wall to middle of barge
   }
 }
