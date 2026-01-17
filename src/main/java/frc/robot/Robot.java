@@ -4,14 +4,20 @@
 
 package frc.robot;
 
+import org.ejml.dense.row.mult.SubmatrixOps_FDRM;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
+
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -26,7 +32,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class Robot extends LoggedRobot {
 
   private final RobotContainer m_robotContainer;
-  // private final int[] hubActiveTimes;
+
+  private final NetworkTable matchTable = NetworkTableInstance.getDefault().getTable("Match");
+  private final NetworkTableEntry matchTimerEntry;
+  private double matchTimer;
+  private String allianceFirstInactive;
+  private final int[] hubActiveTimes = { 130, 105, 80, 55, 30 };
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -49,7 +60,8 @@ public class Robot extends LoggedRobot {
 
     m_robotContainer = new RobotContainer();
 
-    // if (DriverStation.getAlliance().isPresent() && )
+    // matchTable = NetworkTableInstance.getDefault().getTable("Match");
+    matchTimerEntry = SmartDashboard.getEntry("Match Timer");
   }
 
   /**
@@ -74,6 +86,10 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
     SmartDashboard.putBoolean("Auto?", isAutonomous());
 
+    matchTimer = DriverStation.getMatchTime();
+    int minutes = (int) matchTimer / 60;
+    int seconds = (int) matchTimer % 60;
+    matchTimerEntry.setString(minutes + ":" + seconds);
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -105,6 +121,11 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    allianceFirstInactive = DriverStation.getGameSpecificMessage();
+    
+    for (int i = hubActiveTimes.length; i > 0; i--) {
+      if 
+    }
   }
 
   @Override
