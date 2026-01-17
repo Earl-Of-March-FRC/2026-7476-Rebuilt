@@ -103,9 +103,6 @@ public final class Constants {
                                                                             // speed
     public static final LinearVelocity kMaxWheelSpeed = MetersPerSecond.of(4.8); // Max possible speed for wheel
     public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(2 * Math.PI); // radians per second
-    public static final LinearVelocity kBalleyPopSpeed = MetersPerSecond.of(0.8); // Max net robot translational speed
-                                                                                  // when intaking algae
-    // stacked on coral
     public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(3);
     public static final LinearAcceleration kMaxAccelerationPathfinding = MetersPerSecondPerSecond.of(1);
     public static final AngularVelocity kMaxAngularSpeedPathfinding = RadiansPerSecond.of(Math.PI);
