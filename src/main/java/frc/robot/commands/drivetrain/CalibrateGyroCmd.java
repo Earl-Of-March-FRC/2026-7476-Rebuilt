@@ -7,21 +7,22 @@ package frc.robot.commands.drivetrain;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 
 /**
- * The CalibrateCmd class is a command that calibrates the drivetrain's gyro
- * and resets the odometry.
+ * The CalibrateGyroCmd class is a command that zeros the drivetrain's gyro
+ * to the current heading while preserving the robot's position on the field.
  * 
  * Note: You should consider using the more terse Command factories API instead
  * https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands
  */
-public class CalibrateGyroCmd extends Command {
+public class CalibrateGyroCmd extends InstantCommand {
   // Reference to the drivetrain subsystem
   private final DrivetrainSubsystem driveSub;
 
   /**
-   * Creates a new CalibrateCmd.
+   * Creates a new CalibrateGyroCmd.
    * 
    * @param driveSub The drivetrain subsystem used by this command.
    */
@@ -33,39 +34,18 @@ public class CalibrateGyroCmd extends Command {
 
   /**
    * Called when the command is initially scheduled.
-   * This method calibrates the gyro and resets the odometry.
+   * This method zeros the gyro and updates the pose with the current position
+   * but zero rotation.
    */
   @Override
   public void initialize() {
+    // Get current position (x, y)
     Pose2d currentPose = driveSub.getPose();
-    Rotation2d newAngle = new Rotation2d(180 * Math.PI / 180);
-    driveSub.getGyro().setAngle(newAngle);
-    driveSub.resetPose(new Pose2d(currentPose.getTranslation(), newAngle));
-  }
 
-  // Called every time the scheduler runs while the command is scheduled.
-  @Override
-  public void execute() {
-    // No repeated action needed for this command
-  }
+    // Zero the gyro
+    driveSub.getGyro().calibrate();
 
-  /**
-   * Called once the command ends or is interrupted.
-   * This method is empty because no cleanup is necessary.
-   */
-  @Override
-  public void end(boolean interrupted) {
-    // No cleanup necessary
-  }
-
-  /**
-   * Returns true when the command should end.
-   * This command ends immediately after initialization.
-   * 
-   * @return true to indicate the command is complete.
-   */
-  @Override
-  public boolean isFinished() {
-    return true;
+    // Reset pose with same translation but zero rotation
+    driveSub.resetPose(new Pose2d(currentPose.getTranslation(), new Rotation2d()));
   }
 }
