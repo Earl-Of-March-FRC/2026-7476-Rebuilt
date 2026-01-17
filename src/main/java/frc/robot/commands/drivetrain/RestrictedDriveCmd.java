@@ -4,6 +4,8 @@
 
 package frc.robot.commands.drivetrain;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import java.util.function.Supplier;
 
 import org.dyn4j.geometry.Rotation;
@@ -14,6 +16,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 
@@ -73,13 +76,23 @@ public class RestrictedDriveCmd extends Command {
 
   @Override
   public void execute() {
-    // Recalculate target heading each cycle to snap to nearest increment
-    // This allows the robot to re-snap if it drifts or is pushed
-    updateTargetHeading();
+    // Check if robot has been pushed significantly off target
+    double currentAngle = driveSub.getGyro().getRotation2d().getRadians();
+    double targetAngle = targetHeading.getRadians();
+
+    // Calculate shortest angular distance (accounting for wraparound)
+    double error = currentAngle - targetAngle;
+    error = Math.atan2(Math.sin(error), Math.cos(error)); // Normalize to [-π, π]
+
+    // If pushed more than threshold away, recalculate to nearest snap point
+    if (Math.abs(error) > Constants.DriveConstants.kRecalibrateThreshold.in(Degrees)) {
+      updateTargetHeading();
+    }
 
     // Log that the command is active
     Logger.recordOutput("Drivetrain/RestrictedMode", true);
     Logger.recordOutput("Drivetrain/LockedAngle", targetHeading.getDegrees());
+    Logger.recordOutput("Drivetrain/RestrictedMode/Error", Math.toDegrees(error));
 
     // Get X and Y joystick inputs (full 2D control)
     LinearVelocity xVel = maxSpeed.times(xSupplier.get());
@@ -100,7 +113,6 @@ public class RestrictedDriveCmd extends Command {
     double currentAngleRadians = driveSub.getGyro().getRotation2d().getRadians();
 
     // Calculate nearest ODD multiple of the locked angle
-    // This ensures we only snap to 45°, 135°, -135°, -45° (not 0°, 90°, etc.)
     double angleIncrement = lockedAngle.getRadians();
 
     // Divide by increment, round to nearest integer, then make it odd
