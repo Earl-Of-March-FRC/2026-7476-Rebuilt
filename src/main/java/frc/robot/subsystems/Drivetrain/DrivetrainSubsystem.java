@@ -25,6 +25,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
@@ -36,8 +38,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private boolean gyroDisconnected = false;
   private boolean isFieldRelative = true;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
+  private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
 
   // Pose estimation with vision fusion capability
+  // public final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator poseEstimator;
 
   // Simulation
@@ -277,6 +281,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     if (this.simulatedSwerveDrive != null) {
       Logger.recordOutput("FieldSimulation/PhysicalRobotPose",
           this.simulatedSwerveDrive.getSimulatedDriveTrainPose());
+      field.setRobotPose(getPose());
+      SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
     }
   }
 }

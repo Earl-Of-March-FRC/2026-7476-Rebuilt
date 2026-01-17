@@ -10,12 +10,17 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
+
+import edu.wpi.first.math.estimator.PoseEstimator;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
@@ -28,7 +33,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class Robot extends LoggedRobot {
 
   private final RobotContainer m_robotContainer;
-  private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
   // private final int[] hubActiveTimes;
 
   /*
@@ -40,8 +44,6 @@ public class Robot extends LoggedRobot {
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our
     // autonomous chooser on the dashboard.
-
-    SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
 
     // Start logger
     Logger.recordMetadata("ProjectName", "2026-7576-Rebuilt");
@@ -79,8 +81,6 @@ public class Robot extends LoggedRobot {
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
     SmartDashboard.putBoolean("Auto?", isAutonomous());
-    // field.setRobotPose(m_odometry.getPoseMeters()); we dont have odometry
-
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
