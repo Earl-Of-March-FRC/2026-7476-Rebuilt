@@ -264,8 +264,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/IsFieldRelative", isFieldRelative);
     Logger.recordOutput("Drivetrain/Pose", currentPose);
     Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
-    Logger.recordOutput("Swerve/Module/State", states);
-    Logger.recordOutput("Swerve/Module/Position", positions);
+    Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
+    Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
     if (this.targetHeading != null) {
       Logger.recordOutput("Drivetrain/TargetHeading", this.targetHeading.getDegrees());
