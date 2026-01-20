@@ -33,11 +33,14 @@ public class Robot extends LoggedRobot {
 
   private final RobotContainer m_robotContainer;
 
-  private final NetworkTable matchTable = NetworkTableInstance.getDefault().getTable("Match");
-  private final NetworkTableEntry matchTimerEntry;
+  // private final NetworkTable matchTable;
+  // private final NetworkTableEntry matchTimerEntry;
+  // private final NetworkTableEntry activeThreshold;
+  // private final NetworkTableEntry inactiveThreshold;
+
   private double matchTimer;
-  private String allianceFirstInactive;
-  private final int[] hubActiveTimes = { 130, 105, 80, 55, 30 };
+  private boolean isHubActiveFirst;
+  private final int[] hubPeriods = { 130, 105, 80, 55, 30 };
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -61,7 +64,8 @@ public class Robot extends LoggedRobot {
     m_robotContainer = new RobotContainer();
 
     // matchTable = NetworkTableInstance.getDefault().getTable("Match");
-    matchTimerEntry = SmartDashboard.getEntry("Match Timer");
+    // activeThreshold = matchTable.getEntry("red_start_time");
+    // inactiveThreshold = matchTable.getEntry("yellow_start_time");
   }
 
   /**
@@ -89,7 +93,8 @@ public class Robot extends LoggedRobot {
     matchTimer = DriverStation.getMatchTime();
     int minutes = (int) matchTimer / 60;
     int seconds = (int) matchTimer % 60;
-    matchTimerEntry.setString(minutes + ":" + seconds);
+    SmartDashboard.putString("Match Timer: ", minutes + ":" + seconds);
+
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -107,6 +112,7 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void autonomousInit() {
+    // activeThreshold.setDouble(20);
   }
 
   /** This function is called periodically during autonomous. */
@@ -116,16 +122,35 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void teleopInit() {
+    // activeThreshold.setDouble(140);
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    allianceFirstInactive = DriverStation.getGameSpecificMessage();
-    
-    for (int i = hubActiveTimes.length; i > 0; i--) {
-      if 
+    String allianceColour = String.valueOf(DriverStation.getAlliance().toString().charAt(0));
+    String allianceFirstInactive = DriverStation.getGameSpecificMessage();
+    if (allianceFirstInactive.length() > 0) {
+      if (allianceFirstInactive.equals(allianceColour)) {
+        isHubActiveFirst = false;
+      } else {
+        isHubActiveFirst = true;
+      }
     }
+
+    // if (matchTimer <= 30) {
+    // activeThreshold.setDouble(30);
+    // inactiveThreshold.setDouble(0);
+    // } else if ((int) matchTimer == 130 || (int) matchTimer == 80) {
+    // if (isHubActiveFirst == false) {
+    // inactiveThreshold.setDouble(hubPeriods[(int) matchTimer]);
+    // activeThreshold.setDouble(hubPeriods[1 + 1]);
+    // } else {
+    // activeThreshold.setDouble(hubPeriods[(int) matchTimer]);
+    // inactiveThreshold.setDouble(hubPeriods[(int) matchTimer]);
+    // }
+    // }
+
   }
 
   @Override
