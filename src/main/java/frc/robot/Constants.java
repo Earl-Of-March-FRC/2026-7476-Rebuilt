@@ -18,6 +18,8 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
@@ -171,6 +173,42 @@ public final class Constants {
     public static final int kBackRightTurningCanId = 8;
 
     public static final boolean kGyroReversed = false;
+  }
+
+  public static final class IntakeConstants {
+    public static final int kMotorCanId = -1;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    public static final double kMotorReduction = 1 / 10.0;
+
+    public static final double kPositionConversionFactor = (2 * Math.PI); // Rotations to radians
+    public static final double kVelocityConversionFactor = (2 * Math.PI / 60); // RPM to radians/sec
+
+    public static final double kMaxVelocity = 60; // Max velocity of intake in RPM, used as a reference velocity
+
+    // Percent output for intake rollers
+    public static final double kDefaultPercent = 0.5;
+
+    // Percent output for algae intake rollers
+    public static final double kDefaultAlgaeIntake = 0.7;
+  }
+
+  public static final class IndexerConstants {
+    public static final int kMotorCanId = 11;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    /**
+     * Multiplier at which decides whether + or - inputs move the algae towards the
+     * launcher.
+     */
+    public static final double kDirectionConstant = -1.0;
+
+    public static final double kMotorReduction = 1.0;
+    public static final double kWheelDiameterMeters = 0.17;
+
+    // // Ports for sensors. TBD
+    // public static final int kIntakeSensorChannel = 0;
+    // public static final int kLauncherSensorChannel = 1;
   }
 
   public static final class SimulationConstants {

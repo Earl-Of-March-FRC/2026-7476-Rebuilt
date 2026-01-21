@@ -22,9 +22,9 @@ import edu.wpi.first.units.measure.Distance;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.IntakeConstants;
 // import frc.robot.Constants.ArmConstants;
-// import frc.robot.Constants.IndexerConstants;
-// import frc.robot.Constants.IntakeConstants;
+import frc.robot.Constants.IndexerConstants;
 // import frc.robot.Constants.LauncherConstants;
 import frc.robot.Constants.ModuleConstants;
 import frc.robot.Constants.SimulationConstants;
@@ -118,34 +118,34 @@ public final class Configs {
   // }
   // }
 
-  // public static final class IntakeConfigs {
-  // public static final SparkMaxConfig intakeConfig = new SparkMaxConfig();
+  public static final class IntakeConfigs {
+    public static final SparkMaxConfig intakeConfig = new SparkMaxConfig();
 
-  // static {
-  // intakeConfig
-  // .idleMode(IdleMode.kCoast) // Set to kBrake to hold position when not moving
-  // .smartCurrentLimit(30); // Adjust current limit as needed
+    static {
+      intakeConfig
+          .idleMode(IdleMode.kCoast) // Set to kBrake to hold position when not moving
+          .smartCurrentLimit(30); // Adjust current limit as needed
 
-  // intakeConfig.encoder
-  // .positionConversionFactor(IntakeConstants.kPositionConversionFactor *
-  // IntakeConstants.kMotorReduction)
-  // .velocityConversionFactor(IntakeConstants.kVelocityConversionFactor *
-  // IntakeConstants.kMotorReduction);
-  // }
-  // }
+      intakeConfig.encoder
+          .positionConversionFactor(IntakeConstants.kPositionConversionFactor *
+              IntakeConstants.kMotorReduction)
+          .velocityConversionFactor(IntakeConstants.kVelocityConversionFactor *
+              IntakeConstants.kMotorReduction);
+    }
+  }
 
-  // public static final class IndexerConfigs {
+  public static final class IndexerConfigs {
 
-  // public static final SparkMaxConfig indexerConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig indexerConfig = new SparkMaxConfig();
 
-  // static {
-  // indexerConfig.idleMode(IdleMode.kBrake);
-  // indexerConfig.smartCurrentLimit(40);
-  // indexerConfig.encoder
-  // .velocityConversionFactor(IndexerConstants.kWheelDiameterMeters * Math.PI
-  // / IndexerConstants.kMotorReduction / 60);
-  // }
-  // }
+    static {
+      indexerConfig.idleMode(IdleMode.kBrake);
+      indexerConfig.smartCurrentLimit(40);
+      indexerConfig.encoder
+          .velocityConversionFactor(IndexerConstants.kWheelDiameterMeters * Math.PI
+              / IndexerConstants.kMotorReduction / 60);
+    }
+  }
 
   // public static final class LauncherConfigs {
   // public static final SparkMaxConfig frontLauncherConfig = new
