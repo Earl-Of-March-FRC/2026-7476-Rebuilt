@@ -5,20 +5,16 @@
 package frc.robot;
 
 import org.ironmaple.simulation.SimulatedArena;
-import org.ejml.dense.row.mult.SubmatrixOps_FDRM;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
+
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
-import edu.wpi.first.wpilibj.DriverStation;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -84,6 +80,8 @@ public class Robot extends LoggedRobot {
     matchTime = DriverStationSim.getMatchTime();
 
     SmartDashboard.putNumber("Match Time: ", matchTime);
+
+    SmartDashboard.putData("Commands coming soon: ", CommandScheduler.getInstance());
 
   }
 
