@@ -4,22 +4,20 @@
 
 package frc.robot;
 
+import org.ironmaple.simulation.SimulatedArena;
 import org.ejml.dense.row.mult.SubmatrixOps_FDRM;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
-
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
@@ -33,12 +31,7 @@ public class Robot extends LoggedRobot {
 
   private final RobotContainer m_robotContainer;
 
-  // private final NetworkTable matchTable;
-  // private final NetworkTableEntry matchTimerEntry;
-  // private final NetworkTableEntry activeThreshold;
-  // private final NetworkTableEntry inactiveThreshold;
-
-  private double matchTimer;
+  private double matchTime;
   private boolean isHubActiveFirst;
   private final int[] hubPeriods = { 130, 105, 80, 55, 30 };
 
@@ -54,6 +47,7 @@ public class Robot extends LoggedRobot {
 
     // Start logger
     Logger.recordMetadata("ProjectName", "2026-7576-Rebuilt");
+    Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
     if (isReal()) {
       Logger.addDataReceiver(new WPILOGWriter());
       Logger.addDataReceiver(new NT4Publisher());
@@ -63,9 +57,6 @@ public class Robot extends LoggedRobot {
 
     m_robotContainer = new RobotContainer();
 
-    // matchTable = NetworkTableInstance.getDefault().getTable("Match");
-    // activeThreshold = matchTable.getEntry("red_start_time");
-    // inactiveThreshold = matchTable.getEntry("yellow_start_time");
   }
 
   /**
@@ -90,10 +81,9 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
     SmartDashboard.putBoolean("Auto?", isAutonomous());
 
-    matchTimer = DriverStation.getMatchTime();
-    int minutes = (int) matchTimer / 60;
-    int seconds = (int) matchTimer % 60;
-    SmartDashboard.putString("Match Timer: ", minutes + ":" + seconds);
+    matchTime = DriverStationSim.getMatchTime();
+
+    SmartDashboard.putNumber("Match Time: ", matchTime);
 
   }
 
@@ -112,7 +102,6 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void autonomousInit() {
-    // activeThreshold.setDouble(20);
   }
 
   /** This function is called periodically during autonomous. */
@@ -122,7 +111,10 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void teleopInit() {
-    // activeThreshold.setDouble(140);
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.setAutonomous(false);
+
+    DriverStationSim.setMatchTime(140);
   }
 
   /** This function is called periodically during operator control. */
@@ -137,20 +129,6 @@ public class Robot extends LoggedRobot {
         isHubActiveFirst = true;
       }
     }
-
-    // if (matchTimer <= 30) {
-    // activeThreshold.setDouble(30);
-    // inactiveThreshold.setDouble(0);
-    // } else if ((int) matchTimer == 130 || (int) matchTimer == 80) {
-    // if (isHubActiveFirst == false) {
-    // inactiveThreshold.setDouble(hubPeriods[(int) matchTimer]);
-    // activeThreshold.setDouble(hubPeriods[1 + 1]);
-    // } else {
-    // activeThreshold.setDouble(hubPeriods[(int) matchTimer]);
-    // inactiveThreshold.setDouble(hubPeriods[(int) matchTimer]);
-    // }
-    // }
-
   }
 
   @Override
@@ -167,10 +145,17 @@ public class Robot extends LoggedRobot {
   /** This function is called once when the robot is first started up. */
   @Override
   public void simulationInit() {
+    SimulatedArena.getInstance().resetFieldForAuto();
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.setAutonomous(false);
+    DriverStationSim.setMatchTime(140);
   }
 
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {
+    SimulatedArena.getInstance().simulationPeriodic();
+    Logger.recordOutput("FieldSimulation/Fuel",
+        SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
   }
 }

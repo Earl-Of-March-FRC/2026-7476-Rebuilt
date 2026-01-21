@@ -2,11 +2,13 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.commands;
+package frc.robot.commands.drivetrain;
 
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -39,9 +41,9 @@ public class DriveCmd extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    double xVel = xSupplier.get() * DriveConstants.kMaxSpeedMetersPerSecond;
-    double yVel = ySupplier.get() * DriveConstants.kMaxSpeedMetersPerSecond;
-    double omega = omegaSupplier.get() * DriveConstants.kMaxAngularSpeed;
+    LinearVelocity xVel = DriveConstants.kMaxSpeed.times(xSupplier.get());
+    LinearVelocity yVel = DriveConstants.kMaxSpeed.times(ySupplier.get());
+    AngularVelocity omega = DriveConstants.kMaxAngularSpeed.times(omegaSupplier.get());
     driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega));
   }
 
