@@ -274,6 +274,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
     if (this.targetHeading != null) {
       Logger.recordOutput("Drivetrain/TargetHeading", this.targetHeading.getDegrees());
     }
+
+    field.setRobotPose(currentPose);
+    SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
   }
 
   @Override
@@ -281,8 +284,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
     if (this.simulatedSwerveDrive != null) {
       Logger.recordOutput("FieldSimulation/PhysicalRobotPose",
           this.simulatedSwerveDrive.getSimulatedDriveTrainPose());
-      field.setRobotPose(getPose());
-      SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
     }
   }
 }
