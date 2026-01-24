@@ -9,8 +9,8 @@ import org.littletonrobotics.junction.Logger;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.ResetMode; // New location
-import com.revrobotics.PersistMode; // New location
+import com.revrobotics.ResetMode;
+import com.revrobotics.PersistMode;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IndexerConfigs;

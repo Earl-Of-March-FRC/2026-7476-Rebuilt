@@ -7,8 +7,8 @@ package frc.robot.subsystems.intake;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.ResetMode;
+import com.revrobotics.PersistMode;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -24,7 +24,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public IntakeSubsystem(SparkMax intakeSpark) {
     this.intakeSpark = intakeSpark;
     intakeEncoder = intakeSpark.getEncoder();
-    intakeSpark.configure(IntakeConfigs.intakeConfig, ResetMode.kResetSafeParameters,
+    intakeSpark.configure(IntakeConfigs.intakeConfig, ResetMode.kNoResetSafeParameters,
         PersistMode.kPersistParameters);
   }
 

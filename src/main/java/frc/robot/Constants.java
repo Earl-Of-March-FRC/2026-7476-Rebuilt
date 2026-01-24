@@ -176,7 +176,7 @@ public final class Constants {
   }
 
   public static final class IntakeConstants {
-    public static final int kMotorCanId = -1;
+    public static final int kIntakeMotorCanId = 10;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final double kMotorReduction = 1 / 10.0;
