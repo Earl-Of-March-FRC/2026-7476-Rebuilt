@@ -227,4 +227,9 @@ public final class Constants {
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
   }
+
+  public static final class GameConstants {
+    public static final int hubActivePeriod = 25;
+    public static final int[] timeWhenHubSwitchesColour = { 130, 105, 80, 55, 30 };
+  }
 }

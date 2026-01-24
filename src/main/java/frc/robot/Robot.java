@@ -5,6 +5,7 @@
 package frc.robot;
 
 import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.motorsims.MapleMotorSim;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
@@ -28,8 +29,9 @@ public class Robot extends LoggedRobot {
   private final RobotContainer m_robotContainer;
 
   private double matchTime;
-  private boolean isHubActiveFirst, isHubActive;
-  private final int[] hubSwitchTime = { 130, 105, 80, 55, 30 };
+  private boolean isHubActiveFirst = true;
+  private boolean isOurHubActive;
+  private final int[] hubSwitchTimestamps = { 130, 105, 80, 55 };
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -75,13 +77,15 @@ public class Robot extends LoggedRobot {
     // robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+
     SmartDashboard.putBoolean("Auto?", isAutonomous());
 
-    double matchTime = DriverStationSim.getMatchTime();
-
+    matchTime = DriverStationSim.getMatchTime();
     SmartDashboard.putNumber("Match Time: ", matchTime);
 
     SmartDashboard.putData("Commands coming soon: ", CommandScheduler.getInstance());
+
+    SmartDashboard.putBoolean("Is hub active first? ", isHubActiveFirst);
 
   }
 
@@ -100,7 +104,6 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void autonomousInit() {
-    isHubActive = true;
   }
 
   /** This function is called periodically during autonomous. */
@@ -118,43 +121,53 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    boolean isOurHubActive = true;
+    isOurHubActive = true;
+
+    if (matchTime >= 135) {
+      char allianceColour = 'R';
+      // String.valueOf(DriverStation.getAlliance().toString().charAt(0));
+      String gameData = DriverStation.getGameSpecificMessage();
+
+      if (gameData.length() > 0) {
+        if (gameData.charAt(0) == allianceColour) {
+          isHubActiveFirst = false;
+        } else {
+          isHubActiveFirst = true;
+        }
+      }
+    }
+
+    SmartDashboard.putBoolean("Is hub active first? ", isHubActiveFirst);
+
+    for (int i = 0; i < hubSwitchTimestamps.length; i++) {
+      if ((int) matchTime == hubSwitchTimestamps[i]) {
+        if (i % 2 == 0) {
+          isOurHubActive = isHubActiveFirst;
+        } else {
+          isOurHubActive = !isHubActiveFirst;
+        }
+      }
+    }
+
     SmartDashboard.putBoolean("Is our hub active?", isOurHubActive);
-    String allianceColour = String.valueOf(DriverStation.getAlliance().toString().charAt(0));
-    String allianceFirstInactive = DriverStation.getGameSpecificMessage();
-    if (allianceFirstInactive.length() > 0) {
-      if (allianceFirstInactive.equals(allianceColour)) {
-        isHubActiveFirst = false;
-      } else {
-        isHubActiveFirst = true;
-      }
-    }
 
-    if (isHubActiveFirst) {
-      isOurHubActive = true; // next: get data from the built in TimeLeftInCurrentPhase thing (idk how to do
-                             // that tbh)
-
-    } else {
-      isOurHubActive = false;
-    }
-
-    String gameData;
-    gameData = DriverStation.getGameSpecificMessage();
-    if (gameData.length() > 0) {
-      switch (gameData.charAt(0)) {
-        case 'B':
-          // Blue case code
-          break;
-        case 'R':
-          // Red case code
-          break;
-        default:
-          // This is corrupt data
-          break;
-      }
-    } else {
-      // Code for no data received yet
-    }
+    // String gameData;
+    // gameData = DriverStation.getGameSpecificMessage();
+    // if (gameData.length() > 0) {
+    // switch (gameData.charAt(0)) {
+    // case 'B':
+    // // Blue case code
+    // break;
+    // case 'R':
+    // // Red case code
+    // break;
+    // default:
+    // // This is corrupt data
+    // break;
+    // }
+    // } else {
+    // // Code for no data received yet
+    // }
   }
 
   @Override
