@@ -110,4 +110,8 @@ public class RobotContainer {
 
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
   }
+
+  public Gyro getGyro() {
+    return gyro;
+  }
 }

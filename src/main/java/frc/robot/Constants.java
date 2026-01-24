@@ -137,19 +137,6 @@ public final class Constants {
     public static final Angle kBackLeftChassisAngularOffset = Radians.of(Math.PI);
     public static final Angle kBackRightChassisAngularOffset = Radians.of(Math.PI / 2);
 
-    // SPARK MAX CAN IDs
-    // Off Season Swerve
-    // public static final int kFrontLeftDrivingCanId = 5;
-    // public static final int kFrontRightDrivingCanId = 8;
-    // public static final int kBackLeftDrivingCanId = 6;
-    // public static final int kBackRightDrivingCanId = 7;
-
-    // public static final int kFrontLeftTurningCanId = 1;
-    // public static final int kFrontRightTurningCanId = 4;
-    // public static final int kBackLeftTurningCanId = 2;
-    // public static final int kBackRightTurningCanId = 3;
-
-    // Spongebot
     public static int kFrontLeftDrivingCanId;
     public static int kFrontRightDrivingCanId;
     public static int kBackLeftDrivingCanId;
