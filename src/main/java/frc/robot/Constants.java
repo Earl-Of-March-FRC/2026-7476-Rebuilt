@@ -51,6 +51,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
     public static final double kDriveDeadband = 0.05;
@@ -67,23 +68,18 @@ public final class Constants {
 
     // Calculations required for driving motor conversion factors and feed forward
     public static final AngularVelocity kDrivingMotorFreeSpeed = NeoMotorConstants.kFreeSpeed;
-    public static final Distance kWheelDiameter = Inches.of(3);
-    public static final Distance kWheelCircumference = kWheelDiameter.times(Math.PI);
+    public static Distance kWheelDiameter;
+    public static Distance kWheelCircumference;
     // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15
     // teeth on the bevel pinion
-    public static final double kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15);
-    public static final AngularVelocity kDriveWheelFreeSpeed = RotationsPerSecond
-        .of(
-            kDrivingMotorFreeSpeed
-                .times(kWheelCircumference)
-                .div(kDrivingMotorReduction)
-                .in(MultUnit.combine(RotationsPerSecond, Meters)));
+    public static double kDrivingMotorReduction;
+    public static AngularVelocity kDriveWheelFreeSpeed;
 
     public static final double kDrivingPSim = 0.08;
     public static final double kDrivingISim = 0;
+
     public static final double kDrivingDSim = 0;
-    public static final double kDrivingFFSim = 1
-        / Constants.ModuleConstants.kDriveWheelFreeSpeed.in(RotationsPerSecond);
+    public static double kDrivingFFSim = 1;
 
     public static final double kTurningMinOutputSim = -1;
     public static final double kTurningMaxOutputSIm = 1;
@@ -101,20 +97,18 @@ public final class Constants {
   public static final class DriveConstants {
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds
-    public static final LinearVelocity kMaxSpeed = MetersPerSecond.of(4.8); // Default 4.8 - Max net robot translational
-                                                                            // speed
-    public static final LinearVelocity kMaxWheelSpeed = MetersPerSecond.of(4.8); // Max possible speed for wheel
+    public static int profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
+    public static LinearVelocity kMaxSpeed; // Default 4.8 - Max net robot translational
+                                            // speed
+    public static LinearVelocity kMaxWheelSpeed; // Max possible speed for wheel
     public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(2 * Math.PI); // radians per second
     public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(3);
     public static final LinearAcceleration kMaxAccelerationPathfinding = MetersPerSecondPerSecond.of(1);
     public static final AngularVelocity kMaxAngularSpeedPathfinding = RadiansPerSecond.of(Math.PI);
     public static final AngularVelocity kMaxAngularAccelerationPathfinding = RadiansPerSecond.of(Math.PI);
-
     public static final LinearVelocity kBangBangTranslationalVelocity = MetersPerSecond.of(2.5);
     public static final AngularVelocity kBangBangRotationalVelocity = RadiansPerSecond
         .of((2 * Math.PI) / 10);
-    public static final int kGyroDebounceThreshold = 10;
-
     public static final double kPIDHeadingControllerP = 3.0;
     public static final double kPIDHeadingControllerI = 0.0;
     public static final double kPIDHeadingControllerD = 0.1;
@@ -128,18 +122,14 @@ public final class Constants {
     // kMaxAngularAccelerationPathfinding.in(RadiansPerSecond));
 
     // Chassis configuration
-    public static final Distance kTrackWidth = Inches.of(26.5);
+    public static Distance kTrackWidth;
     // Distance between centers of right and left wheels on robot
-    public static final Distance kWheelBase = Inches.of(26.5);
+    public static Distance kWheelBase;;
     // Distance between front and back wheels on robot
-    public static final SwerveDriveKinematics kDriveKinematics = new SwerveDriveKinematics(
-        new Translation2d(kWheelBase.div(2).in(Meters), kTrackWidth.div(2).in(Meters)),
-        new Translation2d(kWheelBase.div(2).in(Meters), -kTrackWidth.div(2).in(Meters)),
-        new Translation2d(-kWheelBase.div(2).in(Meters), kTrackWidth.div(2).in(Meters)),
-        new Translation2d(-kWheelBase.div(2).in(Meters), -kTrackWidth.div(2).in(Meters)));
+    public static SwerveDriveKinematics kDriveKinematics;
 
-    public static final Distance kBumperLength = Meters.of(0.75); // Front to back
-    public static final Distance kBumperWidth = Meters.of(0.75); // Left to right
+    public static Distance kBumperLength; // Front to back
+    public static Distance kBumperWidth; // Left to right
 
     // Angular offsets of the modules relative to the chassis in radians
     public static final Angle kFrontLeftChassisAngularOffset = Radians.of(-Math.PI / 2);
@@ -147,28 +137,15 @@ public final class Constants {
     public static final Angle kBackLeftChassisAngularOffset = Radians.of(Math.PI);
     public static final Angle kBackRightChassisAngularOffset = Radians.of(Math.PI / 2);
 
-    // SPARK MAX CAN IDs
-    // Off Season Swerve
-    // public static final int kFrontLeftDrivingCanId = 5;
-    // public static final int kFrontRightDrivingCanId = 8;
-    // public static final int kBackLeftDrivingCanId = 6;
-    // public static final int kBackRightDrivingCanId = 7;
+    public static int kFrontLeftDrivingCanId;
+    public static int kFrontRightDrivingCanId;
+    public static int kBackLeftDrivingCanId;
+    public static int kBackRightDrivingCanId;
 
-    // public static final int kFrontLeftTurningCanId = 1;
-    // public static final int kFrontRightTurningCanId = 4;
-    // public static final int kBackLeftTurningCanId = 2;
-    // public static final int kBackRightTurningCanId = 3;
-
-    // Spongebot
-    public static final int kFrontLeftDrivingCanId = 1;
-    public static final int kFrontRightDrivingCanId = 3;
-    public static final int kBackLeftDrivingCanId = 5;
-    public static final int kBackRightDrivingCanId = 7;
-
-    public static final int kFrontLeftTurningCanId = 2;
-    public static final int kFrontRightTurningCanId = 4;
-    public static final int kBackLeftTurningCanId = 6;
-    public static final int kBackRightTurningCanId = 8;
+    public static int kFrontLeftTurningCanId;
+    public static int kFrontRightTurningCanId;
+    public static int kBackLeftTurningCanId;
+    public static int kBackRightTurningCanId;
 
     public static final boolean kGyroReversed = false;
   }
