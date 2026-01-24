@@ -6,16 +6,26 @@ package frc.robot.subsystems.Drivetrain;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.SwerveDriveProfile;
+import frc.robot.RobotContainer;
 
 public class GyroNavX implements Gyro {
   // Off Season Swerve
+  private final AHRS gyro;
+
   // private final AHRS gyro = new AHRS(NavXComType.kMXP_SPI);
 
   // SpongeBot
-  private final AHRS gyro = new AHRS(NavXComType.kUSB1);
 
   public GyroNavX() {
-
+    AHRS tempGyro;
+    if (DriveConstants.profileId == 2) {
+      tempGyro = new AHRS(NavXComType.kUSB1);
+    } else {
+      tempGyro = new AHRS(NavXComType.kMXP_SPI);
+    }
+    gyro = tempGyro;
   }
 
   /**

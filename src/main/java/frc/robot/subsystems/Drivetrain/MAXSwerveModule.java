@@ -8,9 +8,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -22,6 +26,10 @@ import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.RelativeEncoder;
 
 import frc.robot.Configs;
+import frc.robot.Constants.ModuleConstants;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 public class MAXSwerveModule implements SwerveModule {
   private final SparkMax driveSpark;
@@ -32,6 +40,9 @@ public class MAXSwerveModule implements SwerveModule {
 
   private final SparkClosedLoopController driveClosedLoopController;
   private final SparkClosedLoopController turnClosedLoopController;
+
+  private final SparkMaxConfig drivingConfig;
+  private final SparkMaxConfig turningConfig;
 
   private Angle m_chassisAngularOffset = Radians.of(0);
   private SwerveModuleState m_desiredState = new SwerveModuleState(0.0, new Rotation2d());
@@ -50,6 +61,11 @@ public class MAXSwerveModule implements SwerveModule {
     driveSpark = new SparkMax(drivingCANId, MotorType.kBrushless);
     turnSpark = new SparkMax(turningCANId, MotorType.kBrushless);
 
+    drivingConfig = new SparkMaxConfig();
+    turningConfig = new SparkMaxConfig();
+
+    configureConfigs();
+
     driveEncoder = driveSpark.getEncoder();
     turnEncoder = turnSpark.getAbsoluteEncoder();
 
@@ -59,10 +75,8 @@ public class MAXSwerveModule implements SwerveModule {
     // Apply the respective configurations to the SPARKS. Reset parameters before
     // applying the configuration to bring the SPARK to a known good state. Persist
     // the settings to the SPARK to avoid losing them on a power cycle.
-    driveSpark.configure(Configs.MAXSwerveModule.drivingConfig, ResetMode.kResetSafeParameters,
-        PersistMode.kPersistParameters);
-    turnSpark.configure(Configs.MAXSwerveModule.turningConfig, ResetMode.kResetSafeParameters,
-        PersistMode.kPersistParameters);
+    driveSpark.configure(drivingConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    turnSpark.configure(turningConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     m_chassisAngularOffset = chassisAngularOffset;
     m_desiredState.angle = new Rotation2d(turnEncoder.getPosition());
@@ -102,5 +116,41 @@ public class MAXSwerveModule implements SwerveModule {
 
   public void resetEncoders() {
     driveEncoder.setPosition(0);
+  }
+
+  private void configureConfigs() {
+
+    // Driving config
+    Distance drivingFactor = ModuleConstants.kWheelDiameter.times(Math.PI)
+        .div(ModuleConstants.kDrivingMotorReduction);
+
+    double drivingVelocityFeedForward = 1.0 / ModuleConstants.kDriveWheelFreeSpeed.in(RotationsPerSecond);
+
+    drivingConfig
+        .idleMode(IdleMode.kBrake)
+        .smartCurrentLimit(50);
+    drivingConfig.encoder
+        .positionConversionFactor(drivingFactor.in(Meters))
+        .velocityConversionFactor(drivingFactor.div(60.0).in(Meters));
+    drivingConfig.closedLoop
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+        .pid(0.04, 0, 0)
+        .outputRange(-1, 1).feedForward.kV(drivingVelocityFeedForward);
+
+    Angle turningFactor = Radians.of(2 * Math.PI);
+
+    turningConfig
+        .idleMode(IdleMode.kBrake)
+        .smartCurrentLimit(20);
+    turningConfig.absoluteEncoder
+        .inverted(true)
+        .positionConversionFactor(turningFactor.in(Radians))
+        .velocityConversionFactor(turningFactor.div(60.0).in(Radians));
+    turningConfig.closedLoop
+        .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+        .pid(1, 0, 0)
+        .outputRange(-1, 1)
+        .positionWrappingEnabled(true)
+        .positionWrappingInputRange(0, turningFactor.in(Radians));
   }
 }

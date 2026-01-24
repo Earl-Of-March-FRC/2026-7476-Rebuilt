@@ -30,11 +30,13 @@ import frc.robot.Constants.ModuleConstants;
 import frc.robot.Constants.SimulationConstants;
 
 public final class Configs {
-  public static final class MAXSwerveModule {
-    public static final SparkMaxConfig drivingConfig = new SparkMaxConfig();
-    public static final SparkMaxConfig turningConfig = new SparkMaxConfig();
+  public final class MAXSwerveModule {
+    public final SparkMaxConfig drivingConfig;
+    public final SparkMaxConfig turningConfig;
 
-    static {
+    public MAXSwerveModule() {
+      drivingConfig = new SparkMaxConfig();
+      turningConfig = new SparkMaxConfig();
       // Use module constants to calculate conversion factors and feed forward gain.
       Distance drivingFactor = ModuleConstants.kWheelDiameter.times(Math.PI)
           .div(ModuleConstants.kDrivingMotorReduction);
