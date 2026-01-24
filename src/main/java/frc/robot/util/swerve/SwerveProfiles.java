@@ -15,8 +15,8 @@ public final class SwerveProfiles {
    */
 
   public static final SwerveDriveProfile COMP_BOT = new SwerveDriveProfile(
-      new int[] { 1, 3, 5, 7 },
-      new int[] { 2, 4, 6, 8 },
+      new int[] { 6, 4, 8, 2 },
+      new int[] { 5, 3, 7, 1 },
       Inches.of(3),
       // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear,
       // 12 teeth on the motor pinion 15 teeth on the bevel pinion
