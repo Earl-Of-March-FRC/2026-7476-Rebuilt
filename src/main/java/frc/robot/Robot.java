@@ -98,7 +98,6 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putBoolean("Hub State", currentHubState);
 
     SmartDashboard.putBoolean("Next Hub State", nextHubState);
-
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

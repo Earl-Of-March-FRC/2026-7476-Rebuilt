@@ -288,6 +288,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     field.setRobotPose(currentPose);
     SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
+    SmartDashboard.putBoolean("Gyro Connected", !gyroDisconnected);
+    SmartDashboard.putBoolean("Is Field Relative Desired", isFieldRelativeDesired);
+    SmartDashboard.putBoolean("Is Field Relative Real", isFieldRelativeReal);
   }
 
   @Override
