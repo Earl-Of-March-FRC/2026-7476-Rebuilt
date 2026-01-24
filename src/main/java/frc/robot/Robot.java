@@ -32,8 +32,8 @@ public class Robot extends LoggedRobot {
   private final RobotContainer m_robotContainer;
 
   private double matchTime;
-  private boolean isHubActiveFirst;
-  private final int[] hubPeriods = { 130, 105, 80, 55, 30 };
+  private boolean isHubActiveFirst, isHubActive;
+  private final int[] hubSwitchTime = { 130, 105, 80, 55, 30 };
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -81,8 +81,7 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
     SmartDashboard.putBoolean("Auto?", isAutonomous());
 
-    matchTime = DriverStationSim.getMatchTime();
-
+    matchTime = DriverStation.getMatchTime();
     SmartDashboard.putNumber("Match Time: ", matchTime);
 
   }
@@ -102,6 +101,7 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void autonomousInit() {
+    isHubActive = true;
   }
 
   /** This function is called periodically during autonomous. */
@@ -111,24 +111,33 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void teleopInit() {
-    DriverStationSim.setEnabled(true);
-    DriverStationSim.setAutonomous(false);
-
-    DriverStationSim.setMatchTime(140);
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    String allianceColour = String.valueOf(DriverStation.getAlliance().toString().charAt(0));
-    String allianceFirstInactive = DriverStation.getGameSpecificMessage();
-    if (allianceFirstInactive.length() > 0) {
-      if (allianceFirstInactive.equals(allianceColour)) {
-        isHubActiveFirst = false;
-      } else {
-        isHubActiveFirst = true;
+    if (DriverStation.getMatchNumber() >= 140) {
+      String allianceColour = String.valueOf(DriverStation.getAlliance().toString().charAt(0));
+      String allianceFirstInactive = DriverStation.getGameSpecificMessage();
+
+      if (allianceFirstInactive.length() > 0) {
+        if (allianceFirstInactive.equalsIgnoreCase(allianceColour)) {
+          isHubActiveFirst = false;
+        } else {
+          isHubActiveFirst = true;
+        }
       }
     }
+
+    // loop?
+    if (matchTime == hubSwitchTime[0] || matchTime == hubSwitchTime[2]) {
+      isHubActive = isHubActiveFirst;
+    } else if (matchTime == hubSwitchTime[1] || matchTime == hubSwitchTime[3]) {
+      isHubActive = !isHubActiveFirst;
+    } else if (matchTime <= hubSwitchTime[4]) {
+      isHubActive = true;
+    }
+
   }
 
   @Override
@@ -145,10 +154,6 @@ public class Robot extends LoggedRobot {
   /** This function is called once when the robot is first started up. */
   @Override
   public void simulationInit() {
-    SimulatedArena.getInstance().resetFieldForAuto();
-    DriverStationSim.setEnabled(true);
-    DriverStationSim.setAutonomous(false);
-    DriverStationSim.setMatchTime(140);
   }
 
   /** This function is called periodically whilst in simulation. */
