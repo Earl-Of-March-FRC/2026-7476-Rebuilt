@@ -5,20 +5,16 @@
 package frc.robot;
 
 import org.ironmaple.simulation.SimulatedArena;
-import org.ejml.dense.row.mult.SubmatrixOps_FDRM;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
+
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
-import edu.wpi.first.wpilibj.DriverStation;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -81,8 +77,11 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
     SmartDashboard.putBoolean("Auto?", isAutonomous());
 
-    matchTime = DriverStation.getMatchTime();
+    double matchTime = DriverStationSim.getMatchTime();
+
     SmartDashboard.putNumber("Match Time: ", matchTime);
+
+    SmartDashboard.putData("Commands coming soon: ", CommandScheduler.getInstance());
 
   }
 
@@ -111,33 +110,51 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void teleopInit() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.setAutonomous(false);
+    DriverStationSim.setMatchTime(140);
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    if (DriverStation.getMatchNumber() >= 140) {
-      String allianceColour = String.valueOf(DriverStation.getAlliance().toString().charAt(0));
-      String allianceFirstInactive = DriverStation.getGameSpecificMessage();
-
-      if (allianceFirstInactive.length() > 0) {
-        if (allianceFirstInactive.equalsIgnoreCase(allianceColour)) {
-          isHubActiveFirst = false;
-        } else {
-          isHubActiveFirst = true;
-        }
+    boolean isOurHubActive = true;
+    SmartDashboard.putBoolean("Is our hub active?", isOurHubActive);
+    String allianceColour = String.valueOf(DriverStation.getAlliance().toString().charAt(0));
+    String allianceFirstInactive = DriverStation.getGameSpecificMessage();
+    if (allianceFirstInactive.length() > 0) {
+      if (allianceFirstInactive.equals(allianceColour)) {
+        isHubActiveFirst = false;
+      } else {
+        isHubActiveFirst = true;
       }
     }
 
-    // loop?
-    if (matchTime == hubSwitchTime[0] || matchTime == hubSwitchTime[2]) {
-      isHubActive = isHubActiveFirst;
-    } else if (matchTime == hubSwitchTime[1] || matchTime == hubSwitchTime[3]) {
-      isHubActive = !isHubActiveFirst;
-    } else if (matchTime <= hubSwitchTime[4]) {
-      isHubActive = true;
+    if (isHubActiveFirst) {
+      isOurHubActive = true; // next: get data from the built in TimeLeftInCurrentPhase thing (idk how to do
+                             // that tbh)
+
+    } else {
+      isOurHubActive = false;
     }
 
+    String gameData;
+    gameData = DriverStation.getGameSpecificMessage();
+    if (gameData.length() > 0) {
+      switch (gameData.charAt(0)) {
+        case 'B':
+          // Blue case code
+          break;
+        case 'R':
+          // Red case code
+          break;
+        default:
+          // This is corrupt data
+          break;
+      }
+    } else {
+      // Code for no data received yet
+    }
   }
 
   @Override
