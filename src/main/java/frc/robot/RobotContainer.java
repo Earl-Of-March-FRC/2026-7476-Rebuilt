@@ -24,23 +24,27 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
-import frc.robot.Constants.SwerveDriveProfile;
-import frc.robot.Constants.SwerveProfiles;
+import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.util.swerve.SwerveProfiles;
+import frc.robot.util.swerve.SwerveProfileApplicator;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.util.swerve.ProfileSelector;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
-  private final SwerveDriveProfile activeProfile = SwerveProfiles.SpongeBot;
-  // public static final SwerveDriveProfile activeProfile =//
-  // SwerveProfiles.OffSeasonSwerve;
+
+  private final ProfileSelector profileSelector = new ProfileSelector();
 
   public RobotContainer() {
-    Constants.applyProfile(activeProfile);
+    // Get profile from Elastic dashboard selector
+    SwerveDriveProfile activeProfile = profileSelector.getSelectedOrDefault(SwerveProfiles.SPONGE_BOT);
+    SwerveProfileApplicator.applyProfile(activeProfile);
+
     if (Robot.isReal()) {
       gyro = new GyroNavX();
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
