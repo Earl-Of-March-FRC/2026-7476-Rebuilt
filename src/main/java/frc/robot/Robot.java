@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.motorsims.MapleMotorSim;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -13,6 +15,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -28,10 +31,14 @@ public class Robot extends LoggedRobot {
 
   private final RobotContainer m_robotContainer;
 
-  private double matchTime;
+  private double matchTime, phaseTime;
   private boolean isHubActiveFirst = true;
-  private boolean isOurHubActive;
+  private boolean currentHubState = true;
+  private boolean nextHubState = true;
   private final int[] hubSwitchTimestamps = { 130, 105, 80, 55 };
+  private int currentPeriod;
+
+  private char allianceColour;
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -80,12 +87,17 @@ public class Robot extends LoggedRobot {
 
     SmartDashboard.putBoolean("Auto?", isAutonomous());
 
-    matchTime = DriverStationSim.getMatchTime();
-    SmartDashboard.putNumber("Match Time: ", matchTime);
+    SmartDashboard.putNumber("Match Time", matchTime);
+
+    SmartDashboard.putNumber("Phase Time", phaseTime);
 
     SmartDashboard.putData("Commands coming soon: ", CommandScheduler.getInstance());
 
-    SmartDashboard.putBoolean("Is hub active first? ", isHubActiveFirst);
+    SmartDashboard.putBoolean("Starting Hub State", isHubActiveFirst);
+
+    SmartDashboard.putBoolean("Hub State", currentHubState);
+
+    SmartDashboard.putBoolean("Next Hub State", nextHubState);
 
   }
 
@@ -104,28 +116,38 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void autonomousInit() {
+    currentHubState = true;
+    SmartDashboard.putString("Current Phase", "Auto");
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    matchTime = DriverStation.getMatchTime() + 140;
+
+    phaseTime = DriverStation.getMatchTime();
   }
 
   @Override
   public void teleopInit() {
-    DriverStationSim.setEnabled(true);
-    DriverStationSim.setAutonomous(false);
-    DriverStationSim.setMatchTime(140);
+    SmartDashboard.putString("Current Phase", "Transition");
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    isOurHubActive = true;
+    matchTime = DriverStation.getMatchTime();
 
     if (matchTime >= 135) {
-      char allianceColour = 'R';
-      // String.valueOf(DriverStation.getAlliance().toString().charAt(0));
+      Optional<Alliance> alliance = DriverStation.getAlliance();
+      if (alliance.isPresent()) {
+        if (alliance.get() == Alliance.Red) {
+          allianceColour = 'R';
+        } else {
+          allianceColour = 'B';
+        }
+      }
+
       String gameData = DriverStation.getGameSpecificMessage();
 
       if (gameData.length() > 0) {
@@ -134,40 +156,49 @@ public class Robot extends LoggedRobot {
         } else {
           isHubActiveFirst = true;
         }
+
+        nextHubState = isHubActiveFirst;
       }
     }
-
-    SmartDashboard.putBoolean("Is hub active first? ", isHubActiveFirst);
 
     for (int i = 0; i < hubSwitchTimestamps.length; i++) {
       if ((int) matchTime == hubSwitchTimestamps[i]) {
+        currentPeriod = i + 1;
+        SmartDashboard.putString("Current Phase", "Phase " + currentPeriod + "/4");
         if (i % 2 == 0) {
-          isOurHubActive = isHubActiveFirst;
+          currentHubState = isHubActiveFirst;
         } else {
-          isOurHubActive = !isHubActiveFirst;
+          currentHubState = !isHubActiveFirst;
         }
+
+        nextHubState = switch (i) {
+          case 0, 1, 2 -> !currentHubState;
+          default -> true;
+        };
+
+        break;
       }
     }
 
-    SmartDashboard.putBoolean("Is our hub active?", isOurHubActive);
+    if ((int) matchTime == 30) {
+      currentHubState = true;
+      SmartDashboard.putString("Current Phase", "End Game");
 
-    // String gameData;
-    // gameData = DriverStation.getGameSpecificMessage();
-    // if (gameData.length() > 0) {
-    // switch (gameData.charAt(0)) {
-    // case 'B':
-    // // Blue case code
-    // break;
-    // case 'R':
-    // // Red case code
-    // break;
-    // default:
-    // // This is corrupt data
-    // break;
-    // }
-    // } else {
-    // // Code for no data received yet
-    // }
+    }
+
+    if (DriverStation.getMatchTime() >= 130) {
+      phaseTime = DriverStation.getMatchTime() - 130;
+    } else if (DriverStation.getMatchTime() >= 105) {
+      phaseTime = DriverStation.getMatchTime() - 105;
+    } else if (DriverStation.getMatchTime() >= 80) {
+      phaseTime = DriverStation.getMatchTime() - 80;
+    } else if (DriverStation.getMatchTime() >= 55) {
+      phaseTime = DriverStation.getMatchTime() - 55;
+    } else if (DriverStation.getMatchTime() >= 30) {
+      phaseTime = DriverStation.getMatchTime() - 30;
+    } else {
+      phaseTime = DriverStation.getMatchTime();
+    }
   }
 
   @Override
