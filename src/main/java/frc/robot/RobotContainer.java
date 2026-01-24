@@ -11,7 +11,6 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
-
 import static edu.wpi.first.units.Units.Degrees;
 
 import org.ironmaple.simulation.SimulatedArena;
@@ -27,6 +26,7 @@ import frc.robot.Constants.SimulationConstants;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.commands.intake.IntakeCmd;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;

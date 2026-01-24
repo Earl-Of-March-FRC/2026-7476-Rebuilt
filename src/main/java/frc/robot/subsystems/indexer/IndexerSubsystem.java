@@ -7,12 +7,14 @@ package frc.robot.subsystems.indexer;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.ResetMode; // New location
+import com.revrobotics.PersistMode; // New location
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IndexerConfigs;
+import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.IndexerConstants;
 
 public class IndexerSubsystem extends SubsystemBase {
@@ -25,6 +27,8 @@ public class IndexerSubsystem extends SubsystemBase {
 
     indexerSpark.configure(IndexerConfigs.indexerConfig, ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
+
+    // SparkBase.configure(SparkBaseConfig, ResetMode, PersistMode)
     encoder = indexerSpark.getEncoder();
   }
 

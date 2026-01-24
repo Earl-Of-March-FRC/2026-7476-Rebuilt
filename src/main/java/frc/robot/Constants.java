@@ -187,10 +187,10 @@ public final class Constants {
     public static final double kMaxVelocity = 60; // Max velocity of intake in RPM, used as a reference velocity
 
     // Percent output for intake rollers
-    public static final double kDefaultPercent = 0.5;
+    public static final double kIntakeSpeed = 0.5;
 
     // Percent output for algae intake rollers
-    public static final double kDefaultAlgaeIntake = 0.7;
+    public static final double kPlowSpeed = 0.7;
   }
 
   public static final class IndexerConstants {
