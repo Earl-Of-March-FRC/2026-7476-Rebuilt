@@ -18,6 +18,8 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -146,15 +148,27 @@ public final class Constants {
     public static final Angle kBackRightChassisAngularOffset = Radians.of(Math.PI / 2);
 
     // SPARK MAX CAN IDs
-    public static final int kFrontLeftDrivingCanId = 5;
-    public static final int kFrontRightDrivingCanId = 8;
-    public static final int kBackLeftDrivingCanId = 6;
+    // Off Season Swerve
+    // public static final int kFrontLeftDrivingCanId = 5;
+    // public static final int kFrontRightDrivingCanId = 8;
+    // public static final int kBackLeftDrivingCanId = 6;
+    // public static final int kBackRightDrivingCanId = 7;
+
+    // public static final int kFrontLeftTurningCanId = 1;
+    // public static final int kFrontRightTurningCanId = 4;
+    // public static final int kBackLeftTurningCanId = 2;
+    // public static final int kBackRightTurningCanId = 3;
+
+    // Spongebot
+    public static final int kFrontLeftDrivingCanId = 1;
+    public static final int kFrontRightDrivingCanId = 3;
+    public static final int kBackLeftDrivingCanId = 5;
     public static final int kBackRightDrivingCanId = 7;
 
-    public static final int kFrontLeftTurningCanId = 1;
+    public static final int kFrontLeftTurningCanId = 2;
     public static final int kFrontRightTurningCanId = 4;
-    public static final int kBackLeftTurningCanId = 2;
-    public static final int kBackRightTurningCanId = 3;
+    public static final int kBackLeftTurningCanId = 6;
+    public static final int kBackRightTurningCanId = 8;
 
     public static final boolean kGyroReversed = false;
   }
@@ -226,6 +240,16 @@ public final class Constants {
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
+  }
+
+  public static class FieldConstants {
+    public static final AprilTagFieldLayout kfieldLayout = AprilTagFieldLayout
+        .loadField(AprilTagFields.k2026RebuiltAndymark);
+    public static final double kFieldLengthX = kfieldLayout.getFieldLength(); // meters from drivestation wall to
+                                                                              // drivestation wall
+    public static final double kFieldWidthY = kfieldLayout.getFieldWidth(); // meters of parallel distance from
+                                                                            // processor to processor
+    public static final double kBargeX = kFieldLengthX / 2; // meters from drivestation wall to middle of barge
   }
 
   public static final class GameConstants {

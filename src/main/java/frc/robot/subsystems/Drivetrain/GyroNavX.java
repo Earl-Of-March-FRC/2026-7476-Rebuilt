@@ -8,7 +8,11 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class GyroNavX implements Gyro {
-  private final AHRS gyro = new AHRS(NavXComType.kMXP_SPI);
+  // Off Season Swerve
+  // private final AHRS gyro = new AHRS(NavXComType.kMXP_SPI);
+
+  // SpongeBot
+  private final AHRS gyro = new AHRS(NavXComType.kUSB1);
 
   public GyroNavX() {
 

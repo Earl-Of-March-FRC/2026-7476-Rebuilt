@@ -6,6 +6,7 @@ package frc.robot.subsystems.Drivetrain;
 
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -36,7 +37,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private static final SwerveDriveKinematics kinematics = Constants.DriveConstants.kDriveKinematics;
   private final Gyro gyro;
   private boolean gyroDisconnected = false;
-  private boolean isFieldRelative = true;
+  private boolean isFieldRelativeDesired = true;
+  private boolean isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
   private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
 
@@ -114,7 +116,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @param speeds          Desired chassis speeds
    * @param isFieldRelative Whether speeds are field-relative
    */
-  public void runVelocity(ChassisSpeeds speeds, Boolean isFieldRelative) {
+  public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative) {
     if (isFieldRelative) {
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
           speeds.vxMetersPerSecond,
@@ -140,7 +142,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @param speeds Desired chassis speeds
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    runVelocity(speeds, this.isFieldRelative);
+    runVelocity(speeds, this.isFieldRelativeReal);
   }
 
   /**
@@ -242,16 +244,24 @@ public class DrivetrainSubsystem extends SubsystemBase {
     return gyro;
   }
 
+  /**
+   * Toggles between field-relative and robot-relative control.
+   */
+  public void toggleFieldRelative() {
+    isFieldRelativeDesired = !isFieldRelativeDesired;
+  }
+
   @Override
   public void periodic() {
     // Check gyro connection with debouncing
     if (!gyroDebouncer.calculate(gyro.isConnected())) {
       gyroDisconnected = true;
-      isFieldRelative = false;
     } else {
       gyroDisconnected = false;
-      isFieldRelative = true;
     }
+
+    // Update drive mode based on desired setting and gyro status
+    isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
 
     // Update pose estimator with odometry
     if (!gyroDisconnected) {
@@ -265,11 +275,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     // Log everything
     Logger.recordOutput("Drivetrain/GyroDisconnected", gyroDisconnected);
-    Logger.recordOutput("Drivetrain/IsFieldRelative", isFieldRelative);
+    Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
+    Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
     Logger.recordOutput("Drivetrain/Pose", currentPose);
     Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
-    Logger.recordOutput("Swerve/Module/State", states);
-    Logger.recordOutput("Swerve/Module/Position", positions);
+    Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
+    Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
     if (this.targetHeading != null) {
       Logger.recordOutput("Drivetrain/TargetHeading", this.targetHeading.getDegrees());
