@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import java.util.List;
@@ -31,12 +32,15 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Velocity;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -171,6 +175,26 @@ public final class Constants {
     public static final int kBackRightTurningCanId = 8;
 
     public static final boolean kGyroReversed = false;
+  }
+
+  public static final class AutoConstants {
+    // Auto Parameters - Note that these are not the maximum capable speeds of
+    // the robot, rather the allowed maximum speeds
+    public static final LinearVelocity kMaxSpeed = MetersPerSecond.of(4.8); // Default 4.8
+    public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(3);
+    public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kMaxAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
+
+    public static final double kPTranslationController = 1.5;
+    public static final double kPThetaController = 1;
+    public static final double kITranslationController = 0.75;
+    public static final double kIThetaController = 0;
+    public static final double kDTranslationController = 0.25;
+    public static final double kDThetaController = 0;
+
+    // Constraint for the motion profiled robot angle controller
+    public static final TrapezoidProfile.Constraints kThetaControllerConstraints = new TrapezoidProfile.Constraints(
+        kMaxAngularSpeed.in(RadiansPerSecond), kMaxAngularAcceleration.in(RadiansPerSecondPerSecond));
   }
 
   public static final class SimulationConstants {
