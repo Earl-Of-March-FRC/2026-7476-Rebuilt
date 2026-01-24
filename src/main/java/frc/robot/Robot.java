@@ -14,6 +14,7 @@ import org.littletonrobotics.urcl.URCL;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.swerve.ProfileSelector;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -69,6 +70,7 @@ public class Robot extends LoggedRobot {
     // and running subsystem periodic() methods. This must be called from the
     // robot's periodic
     // block in order for anything in the Command-based framework to work.
+    ProfileSelector.updatePreferences();
     CommandScheduler.getInstance().run();
   }
 
@@ -76,6 +78,7 @@ public class Robot extends LoggedRobot {
   public void robotInit() {
     // calibrate while disabled and stationary -- this call blocks (~5s)
     m_robotContainer.getGyro().calibrate();
+    ProfileSelector.init();
     gyroCalibrated = true;
   }
 

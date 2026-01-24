@@ -40,18 +40,14 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
 
-  private final ProfileSelector profileSelector = new ProfileSelector();
-
   public RobotContainer() {
     // Get profile from Elastic dashboard selector
-    // SwerveDriveProfile activeProfile =
-    // profileSelector.getSelectedOrDefault(SwerveProfiles.SPONGE_BOT);
-    // SwerveProfileApplicator.applyProfile(activeProfile);
+    SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveProfiles.COMP_BOT);
+    SwerveProfileApplicator.applyProfile(activeProfile);
     // SwerveDriveProfile activeProfile = SwerveProfiles.COMP_BOT;
     // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
-    SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
+    // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
 
-    SwerveProfileApplicator.applyProfile(activeProfile);
     if (Robot.isReal()) {
       if (activeProfile.profileId() == SwerveProfiles.COMP_BOT.profileId()) {
         gyro = new GyroADXRS450();
