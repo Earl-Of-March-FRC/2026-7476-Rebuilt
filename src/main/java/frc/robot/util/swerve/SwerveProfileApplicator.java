@@ -47,8 +47,16 @@ public final class SwerveProfileApplicator {
             .div(profile.driveReduction())
             .in(MultUnit.combine(RotationsPerSecond, Meters)));
 
-    // Apply max wheel speed
+    // Apply robot limits for teleop and auto
     DriveConstants.kMaxWheelSpeed = profile.maxSpeedMps();
+    DriveConstants.kMaxAngularSpeed = profile.maxAngularSpeedRps();
+    DriveConstants.kMaxAcceleration = profile.maxLinearAccelerationRps2();
+
+    DriveConstants.kMaxSpeedPathfinding = DriveConstants.kMaxSpeed.times(DriveConstants.kSpeedPathfindingRatio);
+    DriveConstants.kMaxAngularSpeedPathfinding = DriveConstants.kMaxAngularSpeed
+        .times(DriveConstants.kAngularSpeedPathfindingRatio);
+    DriveConstants.kMaxAccelerationPathfinding = DriveConstants.kMaxAcceleration
+        .times(DriveConstants.kAccelerationPathfindingRatio);
 
     // Configure kinematics
     double halfWheelBase = profile.wheelBaseMeters().div(2).in(Meters);

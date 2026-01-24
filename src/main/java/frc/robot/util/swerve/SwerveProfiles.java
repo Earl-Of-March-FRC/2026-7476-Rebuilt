@@ -3,6 +3,8 @@ package frc.robot.util.swerve;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 /**
  * Container class for predefined swerve drive profiles.
@@ -13,7 +15,6 @@ public final class SwerveProfiles {
   /**
    * SpongeBot swerve drive configuration.
    */
-
   public static final SwerveDriveProfile COMP_BOT = new SwerveDriveProfile(
       new int[] { 6, 4, 8, 2 },
       new int[] { 5, 3, 7, 1 },
@@ -22,6 +23,8 @@ public final class SwerveProfiles {
       // 12 teeth on the motor pinion 15 teeth on the bevel pinion
       (45.0 * 22) / (12 * 15),
       MetersPerSecond.of(4.8),
+      RadiansPerSecond.of(2 * Math.PI),
+      MetersPerSecondPerSecond.of(3),
       Inches.of(23.5),
       Inches.of(23.5),
       Meters.of(0.75),
@@ -36,6 +39,8 @@ public final class SwerveProfiles {
       // 13 teeth on the motor pinion, 15 teeth on the bevel pinion
       (45.0 * 22) / (13 * 15),
       MetersPerSecond.of(4.8),
+      RadiansPerSecond.of(2 * Math.PI),
+      MetersPerSecondPerSecond.of(3),
       Inches.of(24),
       Inches.of(24),
       Meters.of(0.75),
@@ -51,6 +56,8 @@ public final class SwerveProfiles {
       Inches.of(3),
       (45.0 * 22) / (13 * 15),
       MetersPerSecond.of(4.8),
+      RadiansPerSecond.of(2 * Math.PI),
+      MetersPerSecondPerSecond.of(3),
       Inches.of(24),
       Inches.of(24),
       Meters.of(0.75),

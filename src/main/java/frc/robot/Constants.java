@@ -19,6 +19,8 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
+import com.pathplanner.lib.path.PathConstraints;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
@@ -102,28 +104,48 @@ public final class Constants {
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds
     public static int profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
-    public static LinearVelocity kMaxSpeed; // Default 4.8 - Max net robot translational
-                                            // speed
+
     public static LinearVelocity kMaxWheelSpeed; // Max possible speed for wheel
-    public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(2 * Math.PI); // radians per second
-    public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(3);
-    public static final LinearAcceleration kMaxAccelerationPathfinding = MetersPerSecondPerSecond.of(1);
-    public static final AngularVelocity kMaxAngularSpeedPathfinding = RadiansPerSecond.of(Math.PI);
-    public static final AngularVelocity kMaxAngularAccelerationPathfinding = RadiansPerSecond.of(Math.PI);
+    public static LinearVelocity kMaxSpeed; // Default 4.8 - Max net robot translational speed
+    public static AngularVelocity kMaxAngularSpeed; // radians per second
+    public static LinearAcceleration kMaxAcceleration;
+
+    // Ratios between robot limits in teleop vs auto
+    public static final double kSpeedPathfindingRatio = 0.625;
+    public static final double kAngularSpeedPathfindingRatio = 0.5;
+    public static final double kAccelerationPathfindingRatio = 1.0 / 3.0;
+
+    public static LinearVelocity kMaxSpeedPathfinding;
+    public static AngularVelocity kMaxAngularSpeedPathfinding;
+    public static LinearAcceleration kMaxAccelerationPathfinding;
+    // Angular acceleration is only limited in pathfinding mode
+    public static AngularAcceleration kMaxAngularAccelerationPathfinding = RadiansPerSecondPerSecond.of(Math.PI);
+
     public static final LinearVelocity kBangBangTranslationalVelocity = MetersPerSecond.of(2.5);
-    public static final AngularVelocity kBangBangRotationalVelocity = RadiansPerSecond
-        .of((2 * Math.PI) / 10);
+    public static final AngularVelocity kBangBangRotationalVelocity = RadiansPerSecond.of((2 * Math.PI) / 10);
+
+    // Parameteres for restricted mode controller
     public static final double kPIDHeadingControllerP = 3.0;
     public static final double kPIDHeadingControllerI = 0.0;
     public static final double kPIDHeadingControllerD = 0.1;
     public static final double kPIDHeadingControllerTolerance = 2.0;
     public static final Angle kHeadingRestriction = Degrees.of(45);
     public static final Angle kRecalibrateThreshold = Degrees.of(30);
-    // public static final PathConstraints kPathfindingConstraints = new
-    // PathConstraints(kMaxSpeed.in(MetersPerSecond),
-    // kMaxAccelerationPathfinding.in(MetersPerSecondPerSecond),
-    // kMaxAngularSpeedPathfinding.in(RadiansPerSecond),
-    // kMaxAngularAccelerationPathfinding.in(RadiansPerSecond));
+
+    public static final PathConstraints kPathfindingConstraints = new PathConstraints(
+        kMaxSpeedPathfinding.in(MetersPerSecond),
+        kMaxAccelerationPathfinding.in(MetersPerSecondPerSecond),
+        kMaxAngularSpeedPathfinding.in(RadiansPerSecond),
+        kMaxAngularAccelerationPathfinding.in(RadiansPerSecondPerSecond));
+
+    // To be used by PathPlanner
+    public static final double kPTranslationController = 1.5;
+    public static final double kITranslationController = 0.75;
+    public static final double kDTranslationController = 0.25;
+
+    public static final double kPThetaController = 1;
+    public static final double kIThetaController = 0;
+    public static final double kDThetaController = 0;
 
     // Chassis configuration
     public static Distance kTrackWidth;
@@ -152,26 +174,6 @@ public final class Constants {
     public static int kBackRightTurningCanId;
 
     public static final boolean kGyroReversed = false;
-  }
-
-  public static final class AutoConstants {
-    // Auto Parameters - Note that these are not the maximum capable speeds of
-    // the robot, rather the allowed maximum speeds
-    public static final LinearVelocity kMaxSpeed = MetersPerSecond.of(4.8); // Default 4.8
-    public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(3);
-    public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(Math.PI);
-    public static final AngularAcceleration kMaxAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
-
-    public static final double kPTranslationController = 1.5;
-    public static final double kPThetaController = 1;
-    public static final double kITranslationController = 0.75;
-    public static final double kIThetaController = 0;
-    public static final double kDTranslationController = 0.25;
-    public static final double kDThetaController = 0;
-
-    // Constraint for the motion profiled robot angle controller
-    public static final TrapezoidProfile.Constraints kThetaControllerConstraints = new TrapezoidProfile.Constraints(
-        kMaxAngularSpeed.in(RadiansPerSecond), kMaxAngularAcceleration.in(RadiansPerSecondPerSecond));
   }
 
   public static final class SimulationConstants {

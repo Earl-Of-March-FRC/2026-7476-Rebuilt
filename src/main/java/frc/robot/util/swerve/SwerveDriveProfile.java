@@ -1,6 +1,9 @@
 package frc.robot.util.swerve;
 
+import edu.wpi.first.units.measure.AngularAcceleration;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 
 /**
@@ -13,6 +16,8 @@ public record SwerveDriveProfile(
     Distance wheelDiameterMeters,
     double driveReduction,
     LinearVelocity maxSpeedMps,
+    AngularVelocity maxAngularSpeedRps,
+    LinearAcceleration maxLinearAccelerationRps2,
     Distance trackWidthMeters,
     Distance wheelBaseMeters,
     Distance bumperLength,

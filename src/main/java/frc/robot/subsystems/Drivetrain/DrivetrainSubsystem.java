@@ -36,7 +36,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 
 public class DrivetrainSubsystem extends SubsystemBase {
@@ -105,10 +104,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
         this::getChassisSpeedsRobotRelative,
         (speeds, feedforwards) -> runVelocity(speeds, false),
         new PPHolonomicDriveController(
-            new PIDConstants(AutoConstants.kPTranslationController, AutoConstants.kITranslationController,
-                AutoConstants.kDTranslationController),
-            new PIDConstants(AutoConstants.kPThetaController, AutoConstants.kIThetaController,
-                AutoConstants.kDThetaController)),
+            new PIDConstants(DriveConstants.kPTranslationController, DriveConstants.kITranslationController,
+                DriveConstants.kDTranslationController),
+            new PIDConstants(DriveConstants.kPThetaController, DriveConstants.kIThetaController,
+                DriveConstants.kDThetaController)),
         config,
         () -> {
           Optional<Alliance> alliance = DriverStation.getAlliance();
