@@ -20,6 +20,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
@@ -99,5 +100,7 @@ public class RobotContainer {
             new Rotation2d(DriveConstants.kHeadingRestriction)));
 
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
+
+    driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
   }
 }
