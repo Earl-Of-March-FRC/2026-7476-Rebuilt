@@ -23,7 +23,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  * this project, you must also update the Main.java file in the project.
  */
 public class Robot extends LoggedRobot {
-
+  private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
 
   /*
@@ -32,6 +32,7 @@ public class Robot extends LoggedRobot {
    * initialization code.
    */
   public Robot() {
+
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our
     // autonomous chooser on the dashboard.
@@ -71,9 +72,20 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
   }
 
+  @Override
+  public void robotInit() {
+    // calibrate while disabled and stationary -- this call blocks (~5s)
+    m_robotContainer.getGyro().calibrate();
+    gyroCalibrated = true;
+  }
+
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
+    if (!gyroCalibrated) {
+      m_robotContainer.getGyro().calibrate();
+      gyroCalibrated = true;
+    }
   }
 
   @Override

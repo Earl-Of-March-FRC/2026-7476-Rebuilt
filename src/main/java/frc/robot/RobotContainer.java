@@ -6,6 +6,7 @@ package frc.robot;
 
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
+import frc.robot.subsystems.Drivetrain.GyroADXRS450;
 import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
@@ -25,9 +26,13 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.util.swerve.SwerveProfiles;
+import frc.robot.util.swerve.SwerveProfileApplicator;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.util.swerve.ProfileSelector;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
@@ -35,9 +40,24 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
 
+  private final ProfileSelector profileSelector = new ProfileSelector();
+
   public RobotContainer() {
+    // Get profile from Elastic dashboard selector
+    // SwerveDriveProfile activeProfile =
+    // profileSelector.getSelectedOrDefault(SwerveProfiles.SPONGE_BOT);
+    // SwerveProfileApplicator.applyProfile(activeProfile);
+    // SwerveDriveProfile activeProfile = SwerveProfiles.COMP_BOT;
+    // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
+    SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
+
+    SwerveProfileApplicator.applyProfile(activeProfile);
     if (Robot.isReal()) {
-      gyro = new GyroNavX();
+      if (activeProfile.profileId() == SwerveProfiles.COMP_BOT.profileId()) {
+        gyro = new GyroADXRS450();
+      } else {
+        gyro = new GyroNavX();
+      }
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               Constants.DriveConstants.kFrontLeftDrivingCanId,
@@ -102,5 +122,9 @@ public class RobotContainer {
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
+  }
+
+  public Gyro getGyro() {
+    return gyro;
   }
 }
