@@ -13,6 +13,21 @@ public final class SwerveProfiles {
   /**
    * SpongeBot swerve drive configuration.
    */
+
+  public static final SwerveDriveProfile COMP_BOT = new SwerveDriveProfile(
+      new int[] { 1, 3, 5, 7 },
+      new int[] { 2, 4, 6, 8 },
+      Inches.of(3),
+      // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear,
+      // 12 teeth on the motor pinion 15 teeth on the bevel pinion
+      (45.0 * 22) / (12 * 15),
+      MetersPerSecond.of(4.8),
+      Inches.of(23.5),
+      Inches.of(23.5),
+      Meters.of(0.75),
+      Meters.of(0.75),
+      1);
+
   public static final SwerveDriveProfile SPONGE_BOT = new SwerveDriveProfile(
       new int[] { 1, 3, 5, 7 },
       new int[] { 2, 4, 6, 8 },

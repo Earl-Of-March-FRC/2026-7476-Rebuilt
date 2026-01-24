@@ -18,8 +18,9 @@ public class ProfileSelector {
     profileChooser = new SendableChooser<>();
 
     // Add all available profiles
-    profileChooser.setDefaultOption("Off Season Swerve", SwerveProfiles.OFF_SEASON_SWERVE);
+    profileChooser.setDefaultOption("CompBot", SwerveProfiles.COMP_BOT);
     profileChooser.addOption("SpongeBot", SwerveProfiles.SPONGE_BOT);
+    profileChooser.addOption("OffSeasonSwerve", SwerveProfiles.OFF_SEASON_SWERVE);
 
     // Publish to dashboard
     SmartDashboard.putData("Swerve Profile", profileChooser);
