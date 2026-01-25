@@ -2,6 +2,7 @@ package frc.robot.util.swerve;
 
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -17,6 +18,8 @@ public record SwerveDriveProfile(
     int[] turnCanIds,
     Distance wheelDiameterMeters,
     double driveReduction,
+    double wheelCof,
+    Current driveCurrentLimitAmps,
     LinearVelocity maxSpeedMps,
     AngularVelocity maxAngularSpeedRps,
     LinearAcceleration maxLinearAccelerationRps2,

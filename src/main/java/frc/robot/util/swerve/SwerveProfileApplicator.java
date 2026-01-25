@@ -106,10 +106,10 @@ public final class SwerveProfileApplicator {
     ModuleConfig moduleConfig = new ModuleConfig(
         profile.wheelDiameterMeters(),
         profile.maxSpeedMps(),
-        1, // Assumed wheel COF
+        profile.wheelCof(),
         gearbox,
-        Amps.of(60), // Safe limit for NEOs
-        1);
+        profile.driveCurrentLimitAmps(), // Safe limit for NEOs
+        1); // 1 drive motor per module (universal for swerve)
 
     DriveConstants.kRobotConfig = new RobotConfig(profile.robotMass(), profile.robotMOI(), moduleConfig,
         moduleTranslations);

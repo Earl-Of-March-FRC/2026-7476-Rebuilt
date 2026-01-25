@@ -1,5 +1,6 @@
 package frc.robot.util.swerve;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Kilograms;
@@ -24,6 +25,8 @@ public final class SwerveProfiles {
       // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear,
       // 12 teeth on the motor pinion 15 teeth on the bevel pinion
       (45.0 * 22) / (12 * 15),
+      1, // placeholder wheel COF
+      Amps.of(60), // Safe current limit for NEOs
       MetersPerSecond.of(4.8),
       RadiansPerSecond.of(2 * Math.PI),
       MetersPerSecondPerSecond.of(3),
@@ -42,6 +45,8 @@ public final class SwerveProfiles {
       // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear,
       // 13 teeth on the motor pinion, 15 teeth on the bevel pinion
       (45.0 * 22) / (13 * 15),
+      1, // placeholder wheel COF
+      Amps.of(60), // Safe current limit for NEOs
       MetersPerSecond.of(4.8),
       RadiansPerSecond.of(2 * Math.PI),
       MetersPerSecondPerSecond.of(3),
@@ -61,6 +66,8 @@ public final class SwerveProfiles {
       new int[] { 1, 4, 2, 3 },
       Inches.of(3),
       (45.0 * 22) / (13 * 15),
+      1, // placeholder wheel COF
+      Amps.of(60), // Safe current limit for NEOs
       MetersPerSecond.of(4.8),
       RadiansPerSecond.of(2 * Math.PI),
       MetersPerSecondPerSecond.of(3),
