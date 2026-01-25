@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -43,6 +44,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Velocity;
 
 /**
@@ -127,13 +129,19 @@ public final class Constants {
     public static final LinearVelocity kBangBangTranslationalVelocity = MetersPerSecond.of(2.5);
     public static final AngularVelocity kBangBangRotationalVelocity = RadiansPerSecond.of((2 * Math.PI) / 10);
 
-    // Parameteres for restricted mode controller
+    // Parameteres for restricted mode heading controller
     public static final double kPIDHeadingControllerP = 3.0;
     public static final double kPIDHeadingControllerI = 0.0;
     public static final double kPIDHeadingControllerD = 0.1;
     public static final double kPIDHeadingControllerTolerance = 2.0;
     public static final Angle kHeadingRestriction = Degrees.of(45);
     public static final Angle kRecalibrateThreshold = Degrees.of(30);
+
+    // Parameteres for restricted mode radial controller
+    public static final double kPIDRadialControllerP = 0.5;
+    public static final double kPIDRadialControllerI = 0.01;
+    public static final double kPIDRadialControllerD = 0.0;
+    public static final Distance kPIDRadialControllerTolerance = Meters.of(0.05);
 
     public static PathConstraints kPathfindingConstraints;
 
@@ -173,6 +181,14 @@ public final class Constants {
     public static int kBackRightTurningCanId;
 
     public static final boolean kGyroReversed = false;
+  }
+
+  public static final class LauncherConstants {
+
+    public static final Distance kLaunchRadius = Meters.of(2.0); // TEST VALUE
+
+    public static final Time kBallAirTime = Seconds.of(0.5); // Estimated time for ball to reach target, used to
+                                                             // leadshots
   }
 
   public static final class SimulationConstants {
@@ -247,6 +263,15 @@ public final class Constants {
   public static class FieldConstants {
     public static final AprilTagFieldLayout kfieldLayout = AprilTagFieldLayout
         .loadField(AprilTagFields.k2026RebuiltAndymark);
+
+    // Mesured in blue alliance field coordinate system in units of meters, as
+    // described here:
+    // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
+    // Mesurements source:
+    // https://firstfrc.blob.core.windows.net/frc2026/FieldAssets/2026-field-dimension-dwgs.pdf
+    public static final Translation2d kBlueHubPose = new Translation2d(4.625594, 4.034663);
+    public static final Translation2d kRedHubPose = new Translation2d(11.915394, 4.034663);
+
     public static final double kFieldLengthX = kfieldLayout.getFieldLength(); // meters from drivestation wall to
                                                                               // drivestation wall
     public static final double kFieldWidthY = kfieldLayout.getFieldWidth(); // meters of parallel distance from

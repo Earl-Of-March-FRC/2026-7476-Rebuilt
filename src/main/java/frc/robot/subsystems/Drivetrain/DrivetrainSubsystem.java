@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.Drivetrain;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.GregorianCalendar;
@@ -20,6 +22,7 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -32,6 +35,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -56,6 +61,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
   // Heading control for restricted driving
   private Rotation2d targetHeading = null;
   private final PIDController headingController;
+
+  // Controller for radial distance from hub
+  private final PIDController radialController;
 
   /**
    * Creates a new DrivetrainSubsystem.
@@ -87,6 +95,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
         Constants.DriveConstants.kPIDHeadingControllerD);
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     headingController.setTolerance(Math.toRadians(Constants.DriveConstants.kPIDHeadingControllerTolerance));
+
+    radialController = new PIDController(
+        DriveConstants.kPIDRadialControllerP,
+        DriveConstants.kPIDRadialControllerI,
+        DriveConstants.kPIDRadialControllerD);
+    radialController.setTolerance(DriveConstants.kPIDRadialControllerTolerance.in(Meters));
 
     // Do not use the auto generated robot config to allow for muiltiple profiles
     RobotConfig config = DriveConstants.kRobotConfig;
@@ -249,6 +263,14 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
+   * Resets the heading and radial controllers.
+   */
+  public void resetControllers() {
+    headingController.reset();
+    radialController.reset();
+  }
+
+  /**
    * Gets the omega correction to maintain the target heading.
    * 
    * @param desiredHeading The desired heading to maintain
@@ -258,6 +280,59 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Rotation2d currentHeading = gyro.getRotation2d();
     return RadiansPerSecond.of(
         headingController.calculate(currentHeading.getRadians(), desiredHeading.getRadians()));
+  }
+
+  /**
+   * Gets the translation vector from the robot to the current alliance hub.
+   * 
+   * @return Translation2d vector pointing from robot to hub
+   */
+  public Translation2d getHubTranslation2dBotRelative() {
+    Pose2d currentPose = getPose();
+    Translation2d hubTranslation;
+
+    // Determine hub position based on alliance
+    if (DriverStation.getAlliance().get() == Alliance.Red) {
+      hubTranslation = Constants.FieldConstants.kRedHubPose;
+    } else {
+      hubTranslation = Constants.FieldConstants.kBlueHubPose;
+    }
+
+    Translation2d directionToHub = hubTranslation.minus(currentPose.getTranslation());
+    return directionToHub;
+  }
+
+  /**
+   * Gets the linear velocity correction to maintain a desired radial distance
+   * from the hub.
+   * 
+   * @param desiredDistance The desired distance from the hub
+   * @return The linear velocity correction
+   */
+  public LinearVelocity getRadialDistanceCorrectionVelocity(Distance desiredDistance) {
+    Translation2d hubTranslation = getHubTranslation2dBotRelative();
+
+    double currentDistance = hubTranslation.getNorm();
+    return MetersPerSecond.of(MathUtil.clamp(
+        -radialController.calculate(currentDistance, desiredDistance.in(Meters)),
+        -DriveConstants.kMaxSpeed.in(MetersPerSecond),
+        DriveConstants.kMaxSpeed.in(MetersPerSecond)));
+  }
+
+  /**
+   * Gets the velocity vector correction to maintain a desired radial distance
+   * from the hub.
+   * 
+   * @param desiredDistance The desired distance from the hub
+   * @return The a Translation2d representing the correction vector
+   */
+  public Translation2d getRadialDistanceCorrectionVector(Distance desiredDistance) {
+    Translation2d hubTranslation = getHubTranslation2dBotRelative();
+
+    hubTranslation = hubTranslation.div(hubTranslation.getNorm()); // Normalize to unit vector
+    double correctionMagnitude = getRadialDistanceCorrectionVelocity(desiredDistance).in(MetersPerSecond);
+
+    return hubTranslation.times(correctionMagnitude);
   }
 
   /**
