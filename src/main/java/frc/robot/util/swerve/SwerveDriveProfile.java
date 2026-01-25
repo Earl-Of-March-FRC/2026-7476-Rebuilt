@@ -5,6 +5,8 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Mass;
+import edu.wpi.first.units.measure.MomentOfInertia;
 
 /**
  * Record class representing a swerve drive configuration profile.
@@ -22,5 +24,7 @@ public record SwerveDriveProfile(
     Distance wheelBaseMeters,
     Distance bumperLength,
     Distance bumperWidth,
+    Mass robotMass,
+    MomentOfInertia robotMOI,
     int profileId) {
 }

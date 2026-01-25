@@ -1,6 +1,8 @@
 package frc.robot.util.swerve;
 
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Kilograms;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
@@ -29,6 +31,8 @@ public final class SwerveProfiles {
       Inches.of(23.5),
       Meters.of(0.75),
       Meters.of(0.75),
+      Kilograms.of(74.088), // PathPlanner default, not accurate
+      KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       1);
 
   public static final SwerveDriveProfile SPONGE_BOT = new SwerveDriveProfile(
@@ -45,6 +49,8 @@ public final class SwerveProfiles {
       Inches.of(24),
       Meters.of(0.75),
       Meters.of(0.75),
+      Kilograms.of(74.088), // PathPlanner default, not accurate
+      KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       2);
 
   /**
@@ -62,6 +68,8 @@ public final class SwerveProfiles {
       Inches.of(24),
       Meters.of(0.75),
       Meters.of(0.75),
+      Kilograms.of(74.088), // PathPlanner default, not accurate
+      KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       3);
 
   // Private constructor to prevent instantiation

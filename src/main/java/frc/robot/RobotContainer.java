@@ -18,10 +18,16 @@ import static edu.wpi.first.units.Units.Degrees;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
@@ -41,6 +47,8 @@ public class RobotContainer {
       OIConstants.kDriverControllerPort);
 
   private final ProfileSelector profileSelector = new ProfileSelector();
+
+  private LoggedDashboardChooser<Command> autoChooser;
 
   public RobotContainer() {
     // Get profile from Elastic dashboard selector
@@ -92,7 +100,7 @@ public class RobotContainer {
     }
 
     configureBindings();
-
+    configureAutos();
   }
 
   private void configureBindings() {
@@ -126,5 +134,26 @@ public class RobotContainer {
 
   public Gyro getGyro() {
     return gyro;
+  }
+
+  /**
+   * Use this method to define the autonomous command.
+   */
+  private void configureAutos() {
+    autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
+    autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
+    autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
+    SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
+  }
+
+  /**
+   * Use this to pass the autonomous command to the main {@link Robot} class.
+   *
+   * @return the command to run in autonomous
+   */
+  public Command getAutonomousCommand() {
+    Command selectedAuto = autoChooser.get();
+    Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto.getName());
+    return selectedAuto;
   }
 }

@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
+import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -105,6 +106,8 @@ public final class Constants {
     // the robot, rather the allowed maximum speeds
     public static int profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
 
+    public static RobotConfig kRobotConfig;
+
     public static LinearVelocity kMaxWheelSpeed; // Max possible speed for wheel
     public static LinearVelocity kMaxSpeed; // Default 4.8 - Max net robot translational speed
     public static AngularVelocity kMaxAngularSpeed; // radians per second
@@ -132,11 +135,7 @@ public final class Constants {
     public static final Angle kHeadingRestriction = Degrees.of(45);
     public static final Angle kRecalibrateThreshold = Degrees.of(30);
 
-    public static final PathConstraints kPathfindingConstraints = new PathConstraints(
-        kMaxSpeedPathfinding.in(MetersPerSecond),
-        kMaxAccelerationPathfinding.in(MetersPerSecondPerSecond),
-        kMaxAngularSpeedPathfinding.in(RadiansPerSecond),
-        kMaxAngularAccelerationPathfinding.in(RadiansPerSecondPerSecond));
+    public static PathConstraints kPathfindingConstraints;
 
     // To be used by PathPlanner
     public static final double kPTranslationController = 1.5;
