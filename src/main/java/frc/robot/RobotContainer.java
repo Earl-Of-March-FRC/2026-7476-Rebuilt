@@ -128,7 +128,8 @@ public class RobotContainer {
                 OIConstants.kDriveDeadband),
             new Rotation2d(DriveConstants.kHeadingRestriction)));
 
-    driverController.x().toggleOnTrue(
+    // Only schedule when in shooting zone
+    driverController.x().and(driveSub::isBotInShootingZone).toggleOnTrue(
         new DriveAtShootingRangeCmd(
             driveSub,
             () -> MathUtil.applyDeadband(

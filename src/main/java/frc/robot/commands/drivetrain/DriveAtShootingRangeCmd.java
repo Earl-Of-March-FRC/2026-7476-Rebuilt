@@ -13,6 +13,7 @@ import static edu.wpi.first.units.Units.Seconds;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -21,6 +22,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 
@@ -29,6 +31,9 @@ import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
  * The robot can move tangentially around the hub while automatically correcting
  * its radial distance to stay at the desired shooting range.
  * The robot will also face the hub, optionally leading shots based on current velocity.
+ * 
+ * Note on coordinate system: "bot-relative" in this command means that the vectors (like toHub)
+ * are still in blue field coordinate system, just with the origin at the robot's position.
 */
 public class DriveAtShootingRangeCmd extends Command {
 
@@ -39,7 +44,7 @@ public class DriveAtShootingRangeCmd extends Command {
   private final boolean leadShots;
 
   /**
-   * Creates a new RestrictedDriveCmd.
+   * Creates a new DriveAtShootingRangeCmd.
    * 
    * @param driveSub      The drivetrain subsystem
    * @param xSupplier     Supplier for X-axis input (-1 to 1, field-relative)
@@ -102,15 +107,29 @@ public class DriveAtShootingRangeCmd extends Command {
     Translation2d targetBotRelative = toHub;
     if (leadShots) {
       ChassisSpeeds currentChassisSpeeds = driveSub.getChassisSpeedsRobotRelative();
+      // Convert to field-relative speeds
+      currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
+          driveSub.getGyro().getRotation2d());
       Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
           currentChassisSpeeds.vyMetersPerSecond);
-      targetBotRelative = targetBotRelative.plus(velocity.times(LauncherConstants.kBallAirTime.in(Seconds)));
+      targetBotRelative = targetBotRelative.minus(velocity.times(LauncherConstants.kBallAirTime.in(Seconds)));
     }
 
     Rotation2d desiredHeading = targetBotRelative.getAngle();
     double omega = driveSub.getHeadingCorrectionOmega(desiredHeading).in(RadiansPerSecond);
 
-    driveSub.runVelocity(new ChassisSpeeds(finalVelocity.getX(), finalVelocity.getY(), omega), true);
+    // Predict future pose 5 cycles ahead (20ms timestep)
+    Pose2d botPose = driveSub.getPose();
+    Pose2d futurePose = new Pose2d(
+        botPose.getTranslation().plus(finalVelocity.times(0.02 * 5)),
+        botPose.getRotation());
+
+    // Only drive if still in shooting zone
+    if (driveSub.isInShootingZone(futurePose)) {
+      driveSub.runVelocity(new ChassisSpeeds(finalVelocity.getX(), finalVelocity.getY(), omega), true);
+    } else {
+      driveSub.runVelocity(new ChassisSpeeds(0, 0, omega), true);
+    }
 
     // Perform logging
     Logger.recordOutput("Drivetrain/LockedAtShootingRange", true);
@@ -118,6 +137,8 @@ public class DriveAtShootingRangeCmd extends Command {
         Math.abs(toHub.getNorm() - shootingRange.in(Meters)));
     Logger.recordOutput("Drivetrain/DriveAtShootingRange/DesiredHeading", desiredHeading);
     Logger.recordOutput("Drivetrain/DriveAtShootingRange/HubPoseBotRelative", toHub);
+    Logger.recordOutput("Drivetrain/DriveAtShootingRange/LeadCorrection", targetBotRelative.minus(toHub));
+    Logger.recordOutput("Drivetrain/DriveAtShootingRange/TargetBotRelative", targetBotRelative);
     Logger.recordOutput("Drivetrain/DriveAtShootingRange/RadialCorrection",
         new ChassisSpeeds(radialCorrectionVelocity.getX(), radialCorrectionVelocity.getY(), 0));
     Logger.recordOutput("Drivetrain/DriveAtShootingRange/ProjectedInput",
@@ -140,6 +161,7 @@ public class DriveAtShootingRangeCmd extends Command {
 
   @Override
   public boolean isFinished() {
-    return false;
+    // Only track hub when in accepted shooting zone
+    return !driveSub.isBotInShootingZone();
   }
 }

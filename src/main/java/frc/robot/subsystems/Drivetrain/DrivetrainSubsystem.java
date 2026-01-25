@@ -42,6 +42,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.FieldConstants;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
@@ -333,6 +334,30 @@ public class DrivetrainSubsystem extends SubsystemBase {
     double correctionMagnitude = getRadialDistanceCorrectionVelocity(desiredDistance).in(MetersPerSecond);
 
     return hubTranslation.times(correctionMagnitude);
+  }
+
+  /**
+   * Checks if the robot is within the accepted shooting zone.
+   * 
+   * @return True if in shooting zone, false otherwise
+   */
+  public boolean isBotInShootingZone() {
+    Pose2d pose = getPose();
+    return isInShootingZone(pose);
+  }
+
+  /**
+   * Checks if the given pose is within the accepted shooting zone.
+   * 
+   * @param pose The pose to check
+   * @return True if in shooting zone, false otherwise
+   */
+  public boolean isInShootingZone(Pose2d pose) {
+    if (DriverStation.getAlliance().get() == Alliance.Blue) {
+      return pose.getX() < FieldConstants.kAcceptedShootingZone.in(Meters);
+    } else {
+      return pose.getX() > (FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedShootingZone).in(Meters));
+    }
   }
 
   /**

@@ -5,6 +5,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
@@ -185,10 +186,11 @@ public final class Constants {
 
   public static final class LauncherConstants {
 
-    public static final Distance kLaunchRadius = Meters.of(2.0); // TEST VALUE
-
+    public static final Distance kLaunchRadius = Meters.of(2.0); // TEST VALUE Distance from
+                                                                 // center of robot to
+                                                                 // launch point
     public static final Time kBallAirTime = Seconds.of(0.5); // Estimated time for ball to reach target, used to
-                                                             // leadshots
+    // leadshots
   }
 
   public static final class SimulationConstants {
@@ -269,13 +271,27 @@ public final class Constants {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
     // Mesurements source:
     // https://firstfrc.blob.core.windows.net/frc2026/FieldAssets/2026-field-dimension-dwgs.pdf
-    public static final Translation2d kBlueHubPose = new Translation2d(4.625594, 4.034663);
-    public static final Translation2d kRedHubPose = new Translation2d(11.915394, 4.034663);
 
-    public static final double kFieldLengthX = kfieldLayout.getFieldLength(); // meters from drivestation wall to
-                                                                              // drivestation wall
-    public static final double kFieldWidthY = kfieldLayout.getFieldWidth(); // meters of parallel distance from
-                                                                            // processor to processor
-    public static final double kBargeX = kFieldLengthX / 2; // meters from drivestation wall to middle of barge
+    // From driverstation wall to center of hub
+    public static final Distance kAllianceZoneLength = Inches.of(182.11);
+    // Defines a zone starting from our driverstation where shooting commands are
+    // accepted (needs testing)
+    public static final Distance kAcceptedShootingZone = kAllianceZoneLength.minus(Meters.of(1.0));
+    // From drivestation wall to drivestation wall
+    public static final Distance kFieldLengthX = Meter.of(kfieldLayout.getFieldLength());
+    // Parallel distance from edge to edge
+    public static final Distance kFieldWidthY = Meter.of(kfieldLayout.getFieldWidth());
+    // Distance from field edge to middle of hub
+    public static final Distance kHubY = kFieldWidthY.div(2.0);
+    // Distance from blue driverstation wall to middle of hub
+    public static final Distance kHubXBlue = kAllianceZoneLength;
+    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceZoneLength);
+
+    public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
+    public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
+    // public static final Translation2d kBlueHubPose = new Translation2d(4.625594,
+    // kHubY.in(Meters));
+    // public static final Translation2d kRedHubPose = new Translation2d(11.915394,
+    // 4.034663);
   }
 }
