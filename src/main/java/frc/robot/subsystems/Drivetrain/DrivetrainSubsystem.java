@@ -116,7 +116,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
         this::getPose,
         this::resetPose,
         this::getChassisSpeedsRobotRelative,
-        (speeds, feedforwards) -> runVelocity(speeds, false),
+        (speeds, feedforwards) -> runVelocity(speeds, false, false),
         new PPHolonomicDriveController(
             new PIDConstants(DriveConstants.kPTranslationController, DriveConstants.kITranslationController,
                 DriveConstants.kDTranslationController),
@@ -169,14 +169,18 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * 
    * @param speeds          Desired chassis speeds
    * @param isFieldRelative Whether speeds are field-relative
+   * @param isManualControl Whether the control is manual (should an offset be
+   *                        applied for red alliance)
    */
-  public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative) {
+  public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualControl) {
     if (isFieldRelative) {
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
           speeds.omegaRadiansPerSecond,
-          getPose().getRotation());
+          DriverStation.getAlliance().get() == DriverStation.Alliance.Red && isManualControl
+              ? getPose().getRotation().plus(Rotation2d.fromDegrees(180))
+              : getPose().getRotation());
     }
     SwerveModuleState[] states = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
 
@@ -191,12 +195,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Runs the drivetrain using the current field-relative setting.
+   * Runs the drivetrain using the current field-relative setting. With manual
+   * control.
    * 
    * @param speeds Desired chassis speeds
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    runVelocity(speeds, this.isFieldRelativeReal);
+    runVelocity(speeds, this.isFieldRelativeReal, true);
   }
 
   /**

@@ -126,9 +126,9 @@ public class DriveAtShootingRangeCmd extends Command {
 
     // Only drive if still in shooting zone
     if (driveSub.isInShootingZone(futurePose)) {
-      driveSub.runVelocity(new ChassisSpeeds(finalVelocity.getX(), finalVelocity.getY(), omega), true);
+      driveSub.runVelocity(new ChassisSpeeds(finalVelocity.getX(), finalVelocity.getY(), omega), true, false);
     } else {
-      driveSub.runVelocity(new ChassisSpeeds(0, 0, omega), true);
+      driveSub.runVelocity(new ChassisSpeeds(0, 0, omega), true, false);
     }
 
     // Perform logging
