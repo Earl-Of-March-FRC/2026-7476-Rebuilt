@@ -43,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.SimulationConstants;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
@@ -135,6 +136,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public DrivetrainSubsystem(SwerveModule[] modules, Gyro gyro, SwerveDriveSimulation simulatedSwerveDrive) {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
+    resetPose(SimulationConstants.kStartingPose);
   }
 
   /**
@@ -162,7 +164,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
           speeds.omegaRadiansPerSecond,
-          gyro.getRotation2d());
+          getPose().getRotation());
     }
     SwerveModuleState[] states = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
 
@@ -278,7 +280,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return The angular velocity correction
    */
   public AngularVelocity getHeadingCorrectionOmega(Rotation2d desiredHeading) {
-    Rotation2d currentHeading = gyro.getRotation2d();
+    Rotation2d currentHeading = getPose().getRotation();
     return RadiansPerSecond.of(
         headingController.calculate(currentHeading.getRadians(), desiredHeading.getRadians()));
   }
@@ -371,6 +373,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
   /**
    * Get the current used gyro
+   * 
+   * Do not use this to get the robot heading, as the gyro offset is applied later
+   * in the pose estimator,
+   * use getPose().getRotation() instead
    * 
    * @return Gyro object
    */

@@ -109,7 +109,7 @@ public class DriveAtShootingRangeCmd extends Command {
       ChassisSpeeds currentChassisSpeeds = driveSub.getChassisSpeedsRobotRelative();
       // Convert to field-relative speeds
       currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
-          driveSub.getGyro().getRotation2d());
+          driveSub.getPose().getRotation());
       Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
           currentChassisSpeeds.vyMetersPerSecond);
       targetBotRelative = targetBotRelative.minus(velocity.times(LauncherConstants.kBallAirTime.in(Seconds)));
