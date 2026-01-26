@@ -1,5 +1,8 @@
 package frc.robot.util.swerve;
 
+import org.littletonrobotics.junction.Logger;
+
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -8,41 +11,99 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * Use this to select profiles via Elastic or Shuffleboard instead of
  * hardcoding.
  */
-public class ProfileSelector {
-  private final SendableChooser<SwerveDriveProfile> profileChooser;
+public final class ProfileSelector {
+
+  private static final String PREF_KEY = "SelectedProfile";
+
+  private static SendableChooser<String> profileChooser;
+  private static String lastSavedSelection = "";
+
+  private ProfileSelector() {
+    // Prevent instantiation
+  }
 
   /**
-   * Creates a new ProfileSelector with all available profiles.
+   * Must be called ONCE (robotInit).
    */
-  public ProfileSelector() {
+  public static void init() {
+    if (profileChooser != null) {
+      return;
+    }
+
     profileChooser = new SendableChooser<>();
 
-    // Add all available profiles
-    profileChooser.setDefaultOption("CompBot", SwerveProfiles.COMP_BOT);
-    profileChooser.addOption("SpongeBot", SwerveProfiles.SPONGE_BOT);
-    profileChooser.addOption("OffSeasonSwerve", SwerveProfiles.OFF_SEASON_SWERVE);
+    profileChooser.setDefaultOption("CompBot", "CompBot");
+    profileChooser.addOption("SpongeBot", "SpongeBot");
+    profileChooser.addOption("Off Season Swerve", "OffSeasonSwerve");
 
-    // Publish to dashboard
     SmartDashboard.putData("Swerve Profile", profileChooser);
+
+    lastSavedSelection = Preferences.getString(PREF_KEY, "CompBot");
+
+    Logger.recordOutput("ProfileSelector/Initialized", true);
   }
 
   /**
-   * Gets the currently selected profile from the dashboard.
-   * 
-   * @return The selected SwerveDriveProfile
+   * Call from robotPeriodic().
+   * Required for Elastic.
    */
-  public SwerveDriveProfile getSelected() {
-    return profileChooser.getSelected();
+  public static void updatePreferences() {
+    if (profileChooser == null) {
+      return;
+    }
+
+    String selected = profileChooser.getSelected();
+    if (selected == null) {
+      return;
+    }
+
+    if (!selected.equals(lastSavedSelection)) {
+      Preferences.setString(PREF_KEY, selected);
+      lastSavedSelection = selected;
+
+      Logger.recordOutput("ProfileSelector/SavedNewSelection", selected);
+    }
   }
 
   /**
-   * Gets the selected profile, or returns a default if none is selected.
-   * 
-   * @param defaultProfile The profile to return if none is selected
-   * @return The selected profile or the default
+   * Returns the selected profile, falling back to defaultProfile.
    */
-  public SwerveDriveProfile getSelectedOrDefault(SwerveDriveProfile defaultProfile) {
-    SwerveDriveProfile selected = profileChooser.getSelected();
-    return selected != null ? selected : defaultProfile;
+  public static SwerveDriveProfile getSelectedOrDefault(
+      SwerveDriveProfile defaultProfile) {
+
+    String selection = Preferences.getString(
+        PREF_KEY,
+        defaultProfile.getName());
+
+    Logger.recordOutput("ProfileSelector/FinalProfileName", selection);
+
+    SwerveDriveProfile profile = getProfileByName(selection);
+
+    Logger.recordOutput(
+        "ProfileSelector/FinalProfileId",
+        profile.profileId());
+
+    return profile;
+  }
+
+  /**
+   * Converts a profile name into its corresponding SwerveDriveProfile.
+   */
+  private static SwerveDriveProfile getProfileByName(String name) {
+    if (name == null) {
+      return SwerveProfiles.COMP_BOT;
+    }
+
+    switch (name) {
+      case "SpongeBot":
+        return SwerveProfiles.SPONGE_BOT;
+
+      case "OffSeasonSwerve":
+        return SwerveProfiles.OFF_SEASON_SWERVE;
+
+      case "CompBot":
+      default:
+        return SwerveProfiles.COMP_BOT;
+    }
   }
 }

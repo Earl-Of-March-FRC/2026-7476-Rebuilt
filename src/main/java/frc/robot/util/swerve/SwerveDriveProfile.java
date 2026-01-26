@@ -30,4 +30,12 @@ public record SwerveDriveProfile(
     Mass robotMass,
     MomentOfInertia robotMOI,
     int profileId) {
+  public String getName() {
+    return switch (profileId) {
+      case 1 -> "CompBot";
+      case 2 -> "SpongeBot";
+      case 3 -> "OffSeasonSwerve";
+      default -> "CompBot";
+    };
+  }
 }
