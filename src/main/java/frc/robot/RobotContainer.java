@@ -163,7 +163,7 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
-    Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto.getName());
+    Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
   }
 }
