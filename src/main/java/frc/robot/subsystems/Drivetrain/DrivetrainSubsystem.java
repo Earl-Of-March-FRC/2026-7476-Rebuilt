@@ -39,6 +39,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
@@ -59,6 +60,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
   // Simulation
   private SwerveDriveSimulation simulatedSwerveDrive = null;
+  // Indicates whether getPose() should use real odometry or report actual
+  // simulated pose, for testing purposes
+  private boolean accurateSimOdometry = true;
 
   // Heading control for restricted driving
   private Rotation2d targetHeading = null;
@@ -136,6 +140,14 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public DrivetrainSubsystem(SwerveModule[] modules, Gyro gyro, SwerveDriveSimulation simulatedSwerveDrive) {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
+
+    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
+    SmartDashboard.putNumber("New Sim Pose X", SimulationConstants.kStartingPose.getX());
+    SmartDashboard.putNumber("New Sim Pose Y", SimulationConstants.kStartingPose.getY());
+    SmartDashboard.putNumber("New Sim Pose θ (Deg)", SimulationConstants.kStartingPose.getRotation().getDegrees());
+    // Display this value as a toggle button or toggle switch in Elastic to use it
+    // as a button
+    SmartDashboard.putBoolean("Apply Sim Pose", true);
     resetPose(SimulationConstants.kStartingPose);
   }
 
@@ -193,7 +205,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return Current estimated pose
    */
   public Pose2d getPose() {
-    return poseEstimator.getEstimatedPosition();
+    if (!accurateSimOdometry && simulatedSwerveDrive != null) {
+      return simulatedSwerveDrive.getSimulatedDriveTrainPose();
+    } else {
+      return poseEstimator.getEstimatedPosition();
+    }
   }
 
   /**
@@ -203,6 +219,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void resetPose(Pose2d pose) {
     poseEstimator.resetPosition(gyro.getRotation2d(), getModulePositions(), pose);
+
+    if (simulatedSwerveDrive != null && !accurateSimOdometry) {
+      simulatedSwerveDrive.setSimulationWorldPose(pose);
+    }
+
     Logger.recordOutput("Drivetrain/PoseReset", pose);
   }
 
@@ -421,6 +442,24 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
+
+    // Retrieve SmartDashboard settings
+    if (simulatedSwerveDrive != null) {
+      accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
+      boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Sim Pose", true);
+
+      // Apply new sim pose if requested, then reset the trigger
+      if (applyNewSimPose) {
+        SmartDashboard.putBoolean("Apply Sim Pose", true);
+        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
+        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
+        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
+            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
+        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
+        simulatedSwerveDrive.setSimulationWorldPose(newPose);
+        resetPose(newPose);
+      }
+    }
 
     if (this.targetHeading != null) {
       Logger.recordOutput("Drivetrain/TargetHeading", this.targetHeading.getDegrees());
