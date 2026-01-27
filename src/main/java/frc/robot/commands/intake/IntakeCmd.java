@@ -19,6 +19,7 @@ public class IntakeCmd extends Command {
   // Initialize the stuff
   @Override
   public void initialize() {
+    System.out.println("Intake CMD started.");
     m_intake.setVelocity(m_speed);
   }
 
@@ -26,11 +27,11 @@ public class IntakeCmd extends Command {
 
   @Override
   public void execute() {
-    // Don't do anything here...
   }
 
   @Override
   public void end(boolean interrupted) {
+    System.out.println("Intake CMD ended.");
     // Safety: Always stop the motor when the command ends!
     m_intake.stopIntake();
   }

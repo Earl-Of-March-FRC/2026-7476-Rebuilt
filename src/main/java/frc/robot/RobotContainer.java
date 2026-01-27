@@ -29,6 +29,7 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
 import frc.robot.commands.intake.IntakeCmd;
+import frc.robot.commands.intake.PlowCmd;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -111,11 +112,11 @@ public class RobotContainer {
 
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
+    // Binding for Plow (Button 5 is usually Left Bumper)
     driverController.button(5).whileTrue(new IntakeCmd(intakeSub, IntakeConstants.kPlowSpeed));
 
-    driverController.button(6).whileTrue(new IntakeCmd(intakeSub, IntakeConstants.kIntakeSpeed));
-
-    // Binding for Plow (Button 5 is usually Left Bumper)
+    // Binding for Intake (Button 6 is usually Right Bumper)
+    driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
 
   }
 }
