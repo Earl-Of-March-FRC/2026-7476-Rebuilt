@@ -18,10 +18,16 @@ import static edu.wpi.first.units.Units.Degrees;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
@@ -30,6 +36,7 @@ import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.util.swerve.SwerveProfiles;
 import frc.robot.util.swerve.SwerveProfileApplicator;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
+import frc.robot.commands.drivetrain.DriveAtShootingRangeCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
 import frc.robot.util.swerve.ProfileSelector;
@@ -39,6 +46,8 @@ public class RobotContainer {
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
+
+  private LoggedDashboardChooser<Command> autoChooser;
 
   public RobotContainer() {
     // Get profile from Elastic dashboard selector
@@ -88,7 +97,7 @@ public class RobotContainer {
     }
 
     configureBindings();
-
+    configureAutos();
   }
 
   private void configureBindings() {
@@ -115,6 +124,19 @@ public class RobotContainer {
                 OIConstants.kDriveDeadband),
             new Rotation2d(DriveConstants.kHeadingRestriction)));
 
+    // Only schedule when in shooting zone
+    driverController.x().and(driveSub::isBotInShootingZone).toggleOnTrue(
+        new DriveAtShootingRangeCmd(
+            driveSub,
+            () -> MathUtil.applyDeadband(
+                -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+                OIConstants.kDriveDeadband),
+            () -> MathUtil.applyDeadband(
+                -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
+                OIConstants.kDriveDeadband),
+            Constants.LauncherConstants.kLaunchRadius,
+            true));
+
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
@@ -122,5 +144,26 @@ public class RobotContainer {
 
   public Gyro getGyro() {
     return gyro;
+  }
+
+  /**
+   * Use this method to define the autonomous command.
+   */
+  private void configureAutos() {
+    autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
+    autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
+    autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
+    SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
+  }
+
+  /**
+   * Use this to pass the autonomous command to the main {@link Robot} class.
+   *
+   * @return the command to run in autonomous
+   */
+  public Command getAutonomousCommand() {
+    Command selectedAuto = autoChooser.get();
+    Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
+    return selectedAuto;
   }
 }

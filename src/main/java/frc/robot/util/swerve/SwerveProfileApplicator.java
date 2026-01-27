@@ -1,10 +1,20 @@
 package frc.robot.util.swerve;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import com.pathplanner.lib.config.ModuleConfig;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.MultUnit;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
@@ -47,18 +57,35 @@ public final class SwerveProfileApplicator {
             .div(profile.driveReduction())
             .in(MultUnit.combine(RotationsPerSecond, Meters)));
 
-    // Apply max wheel speed
+    // Apply robot limits for teleop and auto
     DriveConstants.kMaxWheelSpeed = profile.maxSpeedMps();
+    DriveConstants.kMaxAngularSpeed = profile.maxAngularSpeedRps();
+    DriveConstants.kMaxAcceleration = profile.maxLinearAccelerationRps2();
+
+    DriveConstants.kMaxSpeedPathfinding = DriveConstants.kMaxSpeed.times(DriveConstants.kSpeedPathfindingRatio);
+    DriveConstants.kMaxAngularSpeedPathfinding = DriveConstants.kMaxAngularSpeed
+        .times(DriveConstants.kAngularSpeedPathfindingRatio);
+    DriveConstants.kMaxAccelerationPathfinding = DriveConstants.kMaxAcceleration
+        .times(DriveConstants.kAccelerationPathfindingRatio);
+
+    DriveConstants.kPathfindingConstraints = new PathConstraints(
+        DriveConstants.kMaxSpeedPathfinding.in(MetersPerSecond),
+        DriveConstants.kMaxAccelerationPathfinding.in(MetersPerSecondPerSecond),
+        DriveConstants.kMaxAngularSpeedPathfinding.in(RadiansPerSecond),
+        DriveConstants.kMaxAngularAccelerationPathfinding.in(RadiansPerSecondPerSecond));
 
     // Configure kinematics
     double halfWheelBase = profile.wheelBaseMeters().div(2).in(Meters);
     double halfTrackWidth = profile.trackWidthMeters().div(2).in(Meters);
 
-    DriveConstants.kDriveKinematics = new SwerveDriveKinematics(
+    Translation2d[] moduleTranslations = new Translation2d[] {
         new Translation2d(halfWheelBase, halfTrackWidth), // Front Left
         new Translation2d(halfWheelBase, -halfTrackWidth), // Front Right
         new Translation2d(-halfWheelBase, halfTrackWidth), // Back Left
-        new Translation2d(-halfWheelBase, -halfTrackWidth)); // Back Right
+        new Translation2d(-halfWheelBase, -halfTrackWidth) // Back Right
+    };
+
+    DriveConstants.kDriveKinematics = new SwerveDriveKinematics(moduleTranslations);
 
     // Apply CAN IDs
     DriveConstants.kFrontLeftDrivingCanId = profile.driveCanIds()[0];
@@ -73,6 +100,19 @@ public final class SwerveProfileApplicator {
 
     // Calculate driving feed-forward for simulation
     ModuleConstants.kDrivingFFSim = 1.0 / ModuleConstants.kDriveWheelFreeSpeed.in(RotationsPerSecond);
+
+    // Create path planner robot config
+    DCMotor gearbox = DCMotor.getNEO(1).withReduction(profile.driveReduction());
+    ModuleConfig moduleConfig = new ModuleConfig(
+        profile.wheelDiameterMeters(),
+        profile.maxSpeedMps(),
+        profile.wheelCof(),
+        gearbox,
+        profile.driveCurrentLimitAmps(), // Safe limit for NEOs
+        1); // 1 drive motor per module (universal for swerve)
+
+    DriveConstants.kRobotConfig = new RobotConfig(profile.robotMass(), profile.robotMOI(), moduleConfig,
+        moduleTranslations);
   }
 
   // Private constructor to prevent instantiation
