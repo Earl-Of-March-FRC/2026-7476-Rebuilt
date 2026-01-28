@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -79,13 +80,21 @@ public class DriveAtShootingRangeCmd extends Command {
 
     Translation2d toHub = driveSub.getHubTranslation2dBotRelative();
 
-    // calculate the vector prependicular to the vector from the robot to the hub,
+    // Handle edge case where robot is exactly at the hub
+    double toHubNorm = toHub.getNorm();
+    if (toHubNorm < 1e-6) {
+      driveSub.runVelocity(new ChassisSpeeds(0, 0, 0));
+      return;
+    }
+
+    // Calculate the vector perpendicular to the vector from the robot to the hub,
     // and project the joystick input onto that vector
     Translation2d perpendicularUnitVelocity = toHub.rotateBy(new Rotation2d(Math.PI / 2.0));
-    perpendicularUnitVelocity = perpendicularUnitVelocity.div(perpendicularUnitVelocity.getNorm());
+    perpendicularUnitVelocity = perpendicularUnitVelocity.div(toHubNorm);
 
     // Invert for red alliance to maintain consistent controls
-    if (DriverStation.getAlliance().get() == Alliance.Red) {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    if (alliance.isPresent() && alliance.get() == Alliance.Red) {
       perpendicularUnitVelocity = perpendicularUnitVelocity.times(-1);
     }
 
@@ -99,9 +108,11 @@ public class DriveAtShootingRangeCmd extends Command {
     // Combine projected joystick input with radial correction
     Translation2d finalVelocity = projectedInput.plus(radialCorrectionVelocity);
 
-    // Limit max speed
-    finalVelocity = finalVelocity.div(finalVelocity.getNorm()).times(
-        Math.min(finalVelocity.getNorm(), DriveConstants.kMaxSpeed.in(MetersPerSecond)));
+    // Limit max speed (avoid division by zero when stationary)
+    double velocityNorm = finalVelocity.getNorm();
+    if (velocityNorm > DriveConstants.kMaxSpeed.in(MetersPerSecond)) {
+      finalVelocity = finalVelocity.div(velocityNorm).times(DriveConstants.kMaxSpeed.in(MetersPerSecond));
+    }
 
     // Get heading correction to face the hub
     Translation2d targetBotRelative = toHub;
