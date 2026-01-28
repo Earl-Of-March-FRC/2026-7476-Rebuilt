@@ -102,7 +102,7 @@ public class RestrictedDriveCmd extends Command {
     AngularVelocity omega = driveSub.getHeadingCorrectionOmega(targetHeading);
 
     // Apply chassis speeds (field-relative with locked heading)
-    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, false);
+    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, true);
   }
 
   /**
