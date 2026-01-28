@@ -36,7 +36,7 @@ import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.util.swerve.SwerveProfiles;
 import frc.robot.util.swerve.SwerveProfileApplicator;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
-import frc.robot.commands.drivetrain.DriveAtShootingRangeCmd;
+import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
 import frc.robot.util.swerve.ProfileSelector;
@@ -124,9 +124,9 @@ public class RobotContainer {
                 OIConstants.kDriveDeadband),
             new Rotation2d(DriveConstants.kHeadingRestriction)));
 
-    // Only schedule when in shooting zone
-    driverController.x().and(driveSub::isBotInShootingZone).toggleOnTrue(
-        new DriveAtShootingRangeCmd(
+    // Only schedule when in Launching zone
+    driverController.x().and(driveSub::isBotInLaunchingZone).toggleOnTrue(
+        new DriveAtLaunchingRangeCmd(
             driveSub,
             () -> MathUtil.applyDeadband(
                 -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),

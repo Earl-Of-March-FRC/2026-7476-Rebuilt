@@ -373,29 +373,37 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Checks if the robot is within the accepted shooting zone.
+   * Checks if the robot is within the accepted launching zone.
    * 
-   * @return True if in shooting zone, false otherwise
+   * @return True if in launching zone, false otherwise
    */
-  public boolean isBotInShootingZone() {
+  public boolean isBotInLaunchingZone() {
     Pose2d pose = getPose();
-    return isInShootingZone(pose);
+    return isInLaunchingZone(pose);
   }
 
   /**
-   * Checks if the given pose is within the accepted shooting zone.
+   * Checks if the given pose is within the accepted launching zone.
    * 
    * @param pose The pose to check
-   * @return True if in shooting zone, false otherwise
+   * @return True if in launching zone, false otherwise
    */
-  public boolean isInShootingZone(Pose2d pose) {
+  public boolean isInLaunchingZone(Pose2d pose) {
     Optional<Alliance> alliance = DriverStation.getAlliance();
     boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
-    if (isBlueAlliance) {
-      return pose.getX() < FieldConstants.kAcceptedShootingZone.in(Meters);
+    if (alliance.isPresent()) {
+      SmartDashboard.putString("Drivetrain/Alliance",
+          isBlueAlliance ? "Blue" : "Red");
     } else {
-      return pose.getX() > (FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedShootingZone).in(Meters));
+      SmartDashboard.putString("Drivetrain/Alliance",
+          "Unknown");
+    }
+
+    if (isBlueAlliance) {
+      return pose.getX() < FieldConstants.kAcceptedLaunchingZone.in(Meters);
+    } else {
+      return pose.getX() > (FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedLaunchingZone).in(Meters));
     }
   }
 
