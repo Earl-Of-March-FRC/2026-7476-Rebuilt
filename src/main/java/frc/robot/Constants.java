@@ -274,9 +274,9 @@ public final class Constants {
 
     // From driverstation wall to center of hub
     public static final Distance kAllianceZoneLength = Inches.of(182.11);
-    // Defines a zone starting from our driverstation where shooting commands are
+    // Defines a zone starting from our driverstation where launching commands are
     // accepted (needs testing)
-    public static final Distance kAcceptedShootingZone = kAllianceZoneLength.minus(Meters.of(1.0));
+    public static final Distance kAcceptedLaunchingZone = kAllianceZoneLength.minus(Meters.of(1.0));
     // From drivestation wall to drivestation wall
     public static final Distance kFieldLengthX = Meter.of(kfieldLayout.getFieldLength());
     // Parallel distance from edge to edge
