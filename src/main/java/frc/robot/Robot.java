@@ -18,7 +18,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.swerve.ProfileSelector;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -28,8 +30,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  * this project, you must also update the Main.java file in the project.
  */
 public class Robot extends LoggedRobot {
-
+  private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
+  private Command autonomousCommand;
 
   private double matchTime, phaseTime;
   private boolean isHubActiveFirst = true;
@@ -46,6 +49,7 @@ public class Robot extends LoggedRobot {
    * initialization code.
    */
   public Robot() {
+
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our
     // autonomous chooser on the dashboard.
@@ -55,7 +59,6 @@ public class Robot extends LoggedRobot {
     Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
     if (isReal()) {
       Logger.addDataReceiver(new WPILOGWriter());
-      Logger.addDataReceiver(new NT4Publisher());
       Logger.registerURCL(URCL.startExternal());
     }
     Logger.start();
@@ -83,6 +86,7 @@ public class Robot extends LoggedRobot {
     // and running subsystem periodic() methods. This must be called from the
     // robot's periodic
     // block in order for anything in the Command-based framework to work.
+    ProfileSelector.updatePreferences();
     CommandScheduler.getInstance().run();
 
     SmartDashboard.putBoolean("Auto?", isAutonomous());
@@ -100,9 +104,21 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putBoolean("Next Hub State", nextHubState);
   }
 
+  @Override
+  public void robotInit() {
+    // calibrate while disabled and stationary -- this call blocks (~5s)
+    m_robotContainer.getGyro().calibrate();
+    ProfileSelector.init();
+    gyroCalibrated = true;
+  }
+
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
+    if (!gyroCalibrated) {
+      m_robotContainer.getGyro().calibrate();
+      gyroCalibrated = true;
+    }
   }
 
   @Override
@@ -117,6 +133,12 @@ public class Robot extends LoggedRobot {
   public void autonomousInit() {
     currentHubState = true;
     SmartDashboard.putString("Current Phase", "Auto");
+    autonomousCommand = m_robotContainer.getAutonomousCommand();
+
+    // schedule the autonomous command (example)
+    if (autonomousCommand != null) {
+      autonomousCommand.schedule();
+    }
   }
 
   /** This function is called periodically during autonomous. */
