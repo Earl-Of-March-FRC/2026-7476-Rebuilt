@@ -251,9 +251,4 @@ public final class Constants {
                                                                             // processor to processor
     public static final double kBargeX = kFieldLengthX / 2; // meters from drivestation wall to middle of barge
   }
-
-  public static final class GameConstants {
-    public static final int hubActivePeriod = 25;
-    public static final int[] timeWhenHubSwitchesColour = { 130, 105, 80, 55, 30 };
-  }
 }
