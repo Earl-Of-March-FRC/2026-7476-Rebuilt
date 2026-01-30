@@ -14,6 +14,8 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
@@ -32,7 +34,6 @@ import frc.robot.util.swerve.ProfileSelector;
 public class Robot extends LoggedRobot {
   private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
-  private Command autonomousCommand;
 
   private double matchTime, phaseTime;
   private boolean isHubActiveFirst = true;
@@ -42,6 +43,7 @@ public class Robot extends LoggedRobot {
   private int currentPeriod;
 
   private char allianceColour;
+  private Command autonomousCommand;
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -110,6 +112,18 @@ public class Robot extends LoggedRobot {
     m_robotContainer.getGyro().calibrate();
     ProfileSelector.init();
     gyroCalibrated = true;
+
+    CameraServer.startAutomaticCapture();
+
+    // // Port forward Photonvision
+    // PortForwarder.add(5800, "photonvision.local", 5800);
+    // // Photonvision cameras
+    // PortForwarder.add(1181, "photonvision.local", 1181);
+    // PortForwarder.add(1182, "photonvision.local", 1182);
+    // PortForwarder.add(1183, "photonvision.local", 1183);
+    // PortForwarder.add(1184, "photonvision.local", 1184);
+    // PortForwarder.add(1185, "photonvision.local", 1185);
+    // PortForwarder.add(1186, "photonvision.local", 1186);
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
