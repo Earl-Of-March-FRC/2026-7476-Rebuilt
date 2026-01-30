@@ -11,6 +11,8 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
 
+import com.pathplanner.lib.pathfinding.Pathfinding;
+
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -77,6 +79,9 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
+    // Use AdvantageKit compatible pathfinder
+    Pathfinding.setPathfinder(new LocalADStarAK());
+
     // calibrate while disabled and stationary -- this call blocks (~5s)
     m_robotContainer.getGyro().calibrate();
     ProfileSelector.init();
