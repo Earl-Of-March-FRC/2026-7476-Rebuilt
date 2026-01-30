@@ -3,28 +3,22 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
-import org.ironmaple.simulation.drivesims.GyroSimulation;
-import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
-import org.ironmaple.simulation.drivesims.SwerveModuleSimulation;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Distance;
-
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.IntakeConstants;
 // import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.IntakeConstants;
+import frc.robot.Constants.ClimberConstants;
 // import frc.robot.Constants.LauncherConstants;
 import frc.robot.Constants.ModuleConstants;
 import frc.robot.Constants.SimulationConstants;
@@ -144,6 +138,19 @@ public final class Configs {
       indexerConfig.encoder
           .velocityConversionFactor(IndexerConstants.kWheelDiameterMeters * Math.PI
               / IndexerConstants.kMotorReduction / 60);
+    }
+  }
+
+  public static final class ClimberConfigs {
+
+    public static final SparkMaxConfig climberConfig = new SparkMaxConfig();
+
+    static {
+      climberConfig.idleMode(IdleMode.kBrake);
+      climberConfig.smartCurrentLimit(40);
+      climberConfig.encoder
+          .velocityConversionFactor(ClimberConstants.kWheelDiameterMeters * Math.PI
+              / ClimberConstants.kMotorReduction / 60);
     }
   }
 

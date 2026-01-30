@@ -211,6 +211,22 @@ public final class Constants {
     // public static final int kLauncherSensorChannel = 1;
   }
 
+  public static final class ClimberConstants {
+
+    // TODO this was just copypased from IndexerConstants so I mean
+    public static final int kMotorCanId = 11;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    /**
+     * Multiplier at which decides whether + or - inputs move the algae towards the
+     * launcher.
+     */
+    public static final double kDirectionConstant = -1.0;
+
+    public static final double kMotorReduction = 1.0;
+    public static final double kWheelDiameterMeters = 0.17;
+  }
+
   public static final class SimulationConstants {
     public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro(); // Simulated instance of our
     // gyro
