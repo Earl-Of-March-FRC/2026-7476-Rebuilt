@@ -50,6 +50,9 @@ public final class SwerveProfileApplicator {
     ModuleConstants.kWheelCircumference = profile.wheelDiameterMeters().times(Math.PI);
     ModuleConstants.kDrivingMotorReduction = profile.driveReduction();
 
+    // Apply gyro configuration
+    DriveConstants.gyroComType = profile.gyroComType();
+
     // Calculate drive wheel free speed
     ModuleConstants.kDriveWheelFreeSpeed = RotationsPerSecond.of(
         ModuleConstants.kDrivingMotorFreeSpeed

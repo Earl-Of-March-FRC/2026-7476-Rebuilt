@@ -1,5 +1,7 @@
 package frc.robot.util.swerve;
 
+import com.studica.frc.AHRS.NavXComType;
+
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -29,6 +31,7 @@ public record SwerveDriveProfile(
     Distance bumperWidth,
     Mass robotMass,
     MomentOfInertia robotMOI,
+    NavXComType gyroComType,
     int profileId) {
   public String getName() {
     return switch (profileId) {
