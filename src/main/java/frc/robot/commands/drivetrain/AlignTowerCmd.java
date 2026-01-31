@@ -25,8 +25,6 @@ public class AlignTowerCmd extends Command {
   private final PIDController rotationController = new PIDController(AutoConstants.kPThetaController,
       AutoConstants.kIThetaController, AutoConstants.kDThetaController);
 
-  double xVel = 1;
-  double yVel = 1;
   // add actual values laterth
 
   public AlignTowerCmd(DrivetrainSubsystem driveSub, int xTarget, int yTarget) {
@@ -45,16 +43,21 @@ public class AlignTowerCmd extends Command {
 
     Pose2d currentPose = driveSub.getPose();
     Pose2d targetPose = driveSub.getHubTargetPose(0);
+    
+    // PID Controller class thing does the math for us
+    double xFeedback = translationController.calculate(currentPose.getX(), targetPose.getX());
+    double yFeedback = translationController.calculate(currentPose.getY(), targetPose.getY());
 
-    double currentAngle = driveSub.getPose().getRotation().getDegrees();
-    double targetAngle = 180.0;
+    double currentAngle = currentPose.getRotation().getDegrees();
+    double targetAngle = targetPose.getRotation().getDegrees();
+    
+
 
     AngularVelocity omega = DriveConstants.kMaxAngularSpeed;
 
     driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega));
 
     /*
-     * Pose2d currentPose = driveSub.getPose();
      * 
      * 
      * 
