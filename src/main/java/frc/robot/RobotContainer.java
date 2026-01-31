@@ -54,7 +54,7 @@ public class RobotContainer {
     // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
 
     if (Robot.isReal()) {
-      gyro = new GyroNavX();
+      gyro = SwerveConfig.gyro;
 
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(

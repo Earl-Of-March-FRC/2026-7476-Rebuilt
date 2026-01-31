@@ -4,6 +4,8 @@
 package frc.robot.subsystems.Drivetrain;
 
 import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -15,8 +17,8 @@ public class GyroNavX implements Gyro {
 
   // SpongeBot
 
-  public GyroNavX() {
-    gyro = new AHRS(SwerveConfig.kGyroComType);
+  public GyroNavX(NavXComType comType) {
+    gyro = new AHRS(comType);
   }
 
   /**
