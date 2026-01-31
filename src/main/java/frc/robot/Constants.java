@@ -21,6 +21,8 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
+import com.pathplanner.lib.path.PathConstraints;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
@@ -37,8 +39,10 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
 
 /**
@@ -57,7 +61,7 @@ public final class Constants {
 
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
-    public static final double kDriveDeadband = 0.05;
+    public static final double kDriveDeadband = 0.2;
     public static final int kDriverControllerXAxis = 0;
     public static final int kDriverControllerYAxis = 1;
     public static final int kDriverControllerRotAxis = 4;
@@ -100,9 +104,9 @@ public final class Constants {
   public static final class DriveConstants {
 
     // Ratios between robot limits in teleop vs auto
-    public static final double kSpeedPathfindingRatio = 0.625;
-    public static final double kAngularSpeedPathfindingRatio = 0.5;
-    public static final double kAccelerationPathfindingRatio = 1.0 / 3.0;
+    public static final double kSpeedPathfindingRatio = 0.8;
+    public static final double kAngularSpeedPathfindingRatio = 0.8;
+    public static final double kAccelerationPathfindingRatio = 0.8;
 
     // Angular acceleration is only limited in pathfinding mode
     public static AngularAcceleration kMaxAngularAccelerationPathfinding = RadiansPerSecondPerSecond.of(Math.PI);
@@ -115,7 +119,8 @@ public final class Constants {
     public static final double kPIDHeadingControllerI = 0.0;
     public static final double kPIDHeadingControllerD = 0.1;
     public static final double kPIDHeadingControllerTolerance = 2.0;
-    public static final Angle kHeadingRestriction = Degrees.of(45);
+    public static final Angle kBumpHeadingRestriction = Degrees.of(45);
+    public static final Angle kTrenchHeadingRestriction = Degrees.of(180);
     public static final Angle kRecalibrateThreshold = Degrees.of(30);
 
     // Parameteres for restricted mode radial controller
@@ -123,6 +128,30 @@ public final class Constants {
     public static final double kPIDRadialControllerI = 0.01;
     public static final double kPIDRadialControllerD = 0.0;
     public static final Distance kPIDRadialControllerTolerance = Meters.of(0.05);
+
+    // Define seperate constraints for the bump and trench, Independant of the
+    // swerve profile
+    public static final LinearVelocity kBumpLinearVelocity = MetersPerSecond.of(3);
+    public static final LinearAcceleration kBumpLinearAcceleration = MetersPerSecondPerSecond.of(1.5);
+    public static final AngularVelocity kBumpAngularVelocity = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kBumpAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
+
+    public static final PathConstraints kBumpConstraints = new PathConstraints(
+        kBumpLinearVelocity,
+        kBumpLinearAcceleration,
+        kBumpAngularVelocity,
+        kBumpAngularAcceleration);
+
+    public static final LinearVelocity kTrenchLinearVelocity = MetersPerSecond.of(3);
+    public static final LinearAcceleration kTrenchLinearAcceleration = MetersPerSecondPerSecond.of(1.5);
+    public static final AngularVelocity kTrenchAngularVelocity = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kTrenchAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
+
+    public static final PathConstraints kTrenchConstraints = new PathConstraints(
+        kBumpLinearVelocity,
+        kBumpLinearAcceleration,
+        kBumpAngularVelocity,
+        kBumpAngularAcceleration);
 
     // To be used by PathPlanner
     public static final double kPTranslationController = 1.5;
@@ -159,6 +188,11 @@ public final class Constants {
     public static final int kGearRatioLevel = 2;
 
     public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromDegrees(180));
+
+    // Whether the bump should have defined collision
+    // Maple sim provides 2d simulation, and cannot simulate the bump accurately,
+    // it can be either a wall or non-existant
+    public static final boolean kSimBumpCollision = false;
   }
 
   public static final class PhotonConstants {
@@ -234,11 +268,12 @@ public final class Constants {
     // Mesurements source:
     // https://firstfrc.blob.core.windows.net/frc2026/FieldAssets/2026-field-dimension-dwgs.pdf
 
-    // From driverstation wall to center of hub
-    public static final Distance kAllianceZoneLength = Inches.of(182.11);
+    public static final Distance kAllianceWallToHubCenter = Inches.of(182.11);
+    // From driverstation to coloured line
+    public static final Distance kAllianceZoneXLength = Inches.of(156.61);
     // Defines a zone starting from our driverstation where launching commands are
     // accepted (needs testing)
-    public static final Distance kAcceptedLaunchingZone = kAllianceZoneLength.minus(Meters.of(1.0));
+    public static final Distance kAcceptedLaunchingZone = kAllianceZoneXLength.minus(Meters.of(1.0));
     // From drivestation wall to drivestation wall
     public static final Distance kFieldLengthX = Meter.of(kfieldLayout.getFieldLength());
     // Parallel distance from edge to edge
@@ -246,8 +281,60 @@ public final class Constants {
     // Distance from field edge to middle of hub
     public static final Distance kHubY = kFieldWidthY.div(2.0);
     // Distance from blue driverstation wall to middle of hub
-    public static final Distance kHubXBlue = kAllianceZoneLength;
-    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceZoneLength);
+    public static final Distance kHubXBlue = kAllianceWallToHubCenter;
+    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceWallToHubCenter);
+
+    public static final Distance kEdgeToTrenchCenter = Inches.of(26.22);
+    public static final Distance kEdgeToBumpCenter = Inches.of(104.34);
+
+    public static final Distance kBumpWidth = Inches.of(47.00);
+
+    public static final Distance kCrossAllianceWaypointX = kAllianceZoneXLength
+        .minus(SwerveConfig.kBumperWidth.div(2.0));
+    public static final Distance kCrossNeutralWaypointX = kAllianceZoneXLength
+        .plus(SwerveConfig.kBumperWidth.div(2.0)).plus(kBumpWidth);
+
+    // Desired positions on either side of the 4 trenches, used for path finding
+    // kTrenchPathWaypoints[i] and kTrenchPathWaypoints[i + 4] are always opposite
+    public static final Translation2d[] kTrenchPathWaypoints = new Translation2d[] {
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Blue Depot
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Red Outpost
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Neutral Blue Depot
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Neutral Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Neutral Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Neutral Red Outpost
+    };
+
+    // Desired positions on either side of the 4 bumps, used for path finding
+    // kBumpPathWaypoints[i] and kBumpPathWaypoints[i + 4] are always opposite
+    public static final Translation2d[] kBumpPathWaypoints = new Translation2d[] {
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Blue Depot
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Red Outpost
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Blue Depot
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Neutral Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Neutral Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Red Outpost
+    };
 
     public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
     public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
