@@ -27,7 +27,7 @@ public class GyroADXRS450 implements Gyro {
 
   @Override
   public double getRate() {
-    return gyro.getRate(); // degrees per second
+    return -gyro.getRate(); // degrees per second
   }
 
   @Override
@@ -41,7 +41,7 @@ public class GyroADXRS450 implements Gyro {
   public void setAngle(Rotation2d angle) {
     // Make getRotation2d() return the requested angle by adjusting offset
     double desiredDeg = angle.getDegrees();
-    double rawDeg = gyro.getAngle();
+    double rawDeg = -gyro.getAngle();
     offsetDeg = desiredDeg - rawDeg;
   }
 
@@ -52,7 +52,7 @@ public class GyroADXRS450 implements Gyro {
 
   /** Returns the current angle in degrees including offset. */
   private double getAngleDeg() {
-    return gyro.getAngle() + offsetDeg;
+    return -gyro.getAngle() + offsetDeg;
   }
 
   /** Reset hardware angle to zero and clear offset. */

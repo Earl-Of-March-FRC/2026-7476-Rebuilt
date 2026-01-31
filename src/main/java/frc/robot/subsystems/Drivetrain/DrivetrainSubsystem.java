@@ -178,11 +178,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualControl) {
     if (isFieldRelative) {
+      Optional<Alliance> alliance = DriverStation.getAlliance();
+      boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
           speeds.omegaRadiansPerSecond,
-          DriverStation.getAlliance().get() == DriverStation.Alliance.Red && isManualControl
+          isRedAlliance && isManualControl
               ? getPose().getRotation().plus(Rotation2d.fromDegrees(180))
               : getPose().getRotation());
     }
@@ -322,14 +324,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public Translation2d getHubTranslation2dBotRelative() {
     Pose2d currentPose = getPose();
-    Translation2d hubTranslation;
 
-    // Determine hub position based on alliance
-    if (DriverStation.getAlliance().get() == Alliance.Red) {
-      hubTranslation = Constants.FieldConstants.kRedHubPose;
-    } else {
-      hubTranslation = Constants.FieldConstants.kBlueHubPose;
-    }
+    // Determine hub position based on alliance, default to blue
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
+    Translation2d hubTranslation = isRedAlliance
+        ? Constants.FieldConstants.kRedHubPose
+        : Constants.FieldConstants.kBlueHubPose;
 
     Translation2d directionToHub = hubTranslation.minus(currentPose.getTranslation());
     return directionToHub;
@@ -362,7 +363,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public Translation2d getRadialDistanceCorrectionVector(Distance desiredDistance) {
     Translation2d hubTranslation = getHubTranslation2dBotRelative();
 
-    hubTranslation = hubTranslation.div(hubTranslation.getNorm()); // Normalize to unit vector
+    double norm = hubTranslation.getNorm();
+    if (norm < 1e-6) {
+      // Robot is at the hub, no meaningful direction to correct
+      return new Translation2d();
+    }
+
+    hubTranslation = hubTranslation.div(norm); // Normalize to unit vector
     double correctionMagnitude = getRadialDistanceCorrectionVelocity(desiredDistance).in(MetersPerSecond);
 
     return hubTranslation.times(correctionMagnitude);
@@ -385,7 +392,18 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return True if in launching zone, false otherwise
    */
   public boolean isInLaunchingZone(Pose2d pose) {
-    if (DriverStation.getAlliance().get() == Alliance.Blue) {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    if (alliance.isPresent()) {
+      SmartDashboard.putString("Drivetrain/Alliance",
+          isBlueAlliance ? "Blue" : "Red");
+    } else {
+      SmartDashboard.putString("Drivetrain/Alliance",
+          "Unknown");
+    }
+
+    if (isBlueAlliance) {
       return pose.getX() < FieldConstants.kAcceptedLaunchingZone.in(Meters);
     } else {
       return pose.getX() > (FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedLaunchingZone).in(Meters));
