@@ -10,11 +10,11 @@ public class RaiseClimberCmd extends Command {
   public RaiseClimberCmd(ClimberSubsystem climber, double speed) {
     m_climber = climber;
     m_speed = speed;
-    addRequirements(m_climber); // It uses the climber
+    addRequirements(m_climber);
   }
 
   @Override
-  public void initialize() {
+  public void initialize() { // Go up and
     m_climber.setClimberSpeed(m_speed);
   }
 

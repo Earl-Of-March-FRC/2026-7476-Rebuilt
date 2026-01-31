@@ -33,6 +33,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -175,6 +176,44 @@ public final class Constants {
     public static final boolean kGyroReversed = false;
   }
 
+  public static final class AutoConstants { // Copypasted from 2025 7476 Reefscape Constants.AutoConstants
+    // Auto Parameters - Note that these are not the maximum capable speeds of
+    // the robot, rather the allowed maximum speeds
+
+    // Swerve drive
+    public static final double kMaxSpeedMetersPerSecond = 2; // Default 4.8
+    public static final double kMaxAccelerationMetersPerSecondSquared = 3;
+    public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI;
+    public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI;
+    public static final double kMaxAngularSpeed = 2 * Math.PI;
+
+    public static final double kPTranslationController = 1.5;
+    public static final double kPThetaController = 1;
+    public static final double kITranslationController = 0.75;
+    public static final double kIThetaController = 0;
+    public static final double kDTranslationController = 0.25;
+    public static final double kDThetaController = 0;
+
+    // public static final class EncoderAutoDriveConstants {
+    // public static final double kLeaveZoneMeters = 0.5; // Distance to travel
+    // public static final double kLeaveZoneVelocity = 0.5; // Velocity (Meters/S)
+    // to leave zone at
+    // }
+
+    // // Constraint for the motion profiled robot angle controller
+    // public static final TrapezoidProfile.Constraints kThetaControllerConstraints
+    // = new TrapezoidProfile.Constraints(
+    // kMaxAngularSpeedRadiansPerSecond,
+    // kMaxAngularAccelerationRadiansPerSecondSquared);
+
+    // public static final Pose2d kLaunchPoseBlue = new Pose2d(new
+    // Translation2d(7.475, 5.37),
+    // Rotation2d.fromDegrees(180));
+    // public static final Pose2d kLaunchPoseRed = new Pose2d(new
+    // Translation2d(10.075, 2.68), new Rotation2d(0));
+
+  }
+
   public static final class IntakeConstants {
     public static final int kIntakeMotorCanId = 10;
     public static final MotorType kMotorType = MotorType.kBrushless;
@@ -189,7 +228,7 @@ public final class Constants {
     // Percent output for intake rollers
     public static final double kIntakeSpeed = 0.5;
 
-    // Percent output for algae intake rollers
+    // Percent output for plow rollers
     public static final double kPlowSpeed = 0.7;
   }
 
@@ -213,18 +252,12 @@ public final class Constants {
 
   public static final class ClimberConstants {
 
-    // TODO this was just copypased from IndexerConstants so I mean
-    public static final int kMotorCanId = 11;
+    // TODO this was just copypased from IndexerConstants so I mean it's gonna be
+    // kinda cooked
+    public static final int kMotorId = 5;
     public static final MotorType kMotorType = MotorType.kBrushless;
+    public static final double kClimberMotorSpeed = 0.67;
 
-    /**
-     * Multiplier at which decides whether + or - inputs move the algae towards the
-     * launcher.
-     */
-    public static final double kDirectionConstant = -1.0;
-
-    public static final double kMotorReduction = 1.0;
-    public static final double kWheelDiameterMeters = 0.17;
   }
 
   public static final class SimulationConstants {
