@@ -22,6 +22,7 @@ import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
+import frc.robot.subsystems.Drivetrain.Gyro;
 import frc.robot.util.swerve.SwerveDriveProfile.SwerveDriveProfileID;
 
 public final class SwerveConfig {
@@ -30,7 +31,7 @@ public final class SwerveConfig {
   // the robot, rather the allowed maximum speeds
   public static SwerveDriveProfileID profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
 
-  public static NavXComType kGyroComType;
+  public static Gyro gyro;
 
   public static RobotConfig kRobotConfig;
 
@@ -78,7 +79,7 @@ public final class SwerveConfig {
     SwerveConfig.profileId = profile.profileId();
 
     // Apply new Gyro
-    SwerveConfig.kGyroComType = profile.gyroComType();
+    SwerveConfig.gyro = profile.gyro();
 
     // Apply speed and dimension constants
     SwerveConfig.kMaxSpeed = profile.maxSpeedMps();
