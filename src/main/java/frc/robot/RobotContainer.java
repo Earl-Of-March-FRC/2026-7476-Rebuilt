@@ -45,7 +45,6 @@ import frc.robot.util.swerve.SwerveConfig;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
-  public final PathGenerator pathGenerator;
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -100,7 +99,7 @@ public class RobotContainer {
       SimulatedArena.getInstance().addDriveTrainSimulation(simulatedSwerveDrive);
     }
 
-    pathGenerator = new PathGenerator(driveSub);
+    PathGenerator.setDrivetrain(driveSub);
 
     configureBindings();
     configureAutos();
@@ -147,12 +146,21 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.povDown().onTrue(Commands.defer(
-        () -> pathGenerator.crossNearestBump(MetersPerSecond.of(0)),
+    driverController.povLeft().onTrue(Commands.defer(
+        () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
         Set.of(driveSub)));
-    driverController.povUp().onTrue(Commands.defer(
-        () -> pathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
+    driverController.povRight().onTrue(Commands.defer(
+        () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
         Set.of(driveSub)));
+
+    // Cancel all driveSub commands, returning manual control
+    driverController.povDown().onTrue(
+        new InstantCommand() {
+          @Override
+          public void initialize() {
+            addRequirements(driveSub);
+          };
+        });
   }
 
   public Gyro getGyro() {
