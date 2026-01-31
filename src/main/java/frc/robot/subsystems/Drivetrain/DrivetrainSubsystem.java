@@ -539,12 +539,15 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     // Calculate target translation
     // (0,0) is ALWAYS on the blue alliance side
-    double targetX = FieldConstants.kBargeX + metersFromHub;
 
+    // double targetX = (double) FieldConstants.kHubXBlue + metersFromHub;
+    // casting error later
+    double targetX = 0;
     // Calculate target rotation based on side of field that robot is currently on
     // double targetRadians = targetAngle;
 
     return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));
+    // fix casting error later
   }
 
 }

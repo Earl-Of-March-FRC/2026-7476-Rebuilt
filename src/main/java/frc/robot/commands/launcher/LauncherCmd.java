@@ -2,7 +2,6 @@ package frc.robot.commands.launcher;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.launcher.*;
 
 public class LauncherCmd extends Command {
