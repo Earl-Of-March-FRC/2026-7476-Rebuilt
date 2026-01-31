@@ -36,6 +36,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -71,6 +72,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private boolean isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
   private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
+
+  // Low pas filters for velocity logging
+  private final LinearFilter vxFilter = LinearFilter.singlePoleIIR(0.15, 0.02);
+  private final LinearFilter vyFilter = LinearFilter.singlePoleIIR(0.15, 0.02);
+  private final LinearFilter omegaFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
 
   // Pose estimation with vision fusion capability
   // public final SwerveDrivePoseEstimator poseEstimator;
@@ -315,15 +321,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
       states[i] = modules[i].getState();
     }
     return states;
-  }
-
-  /**
-   * Gets the robot-relative chassis speeds.
-   * 
-   * @return Robot-relative chassis speeds
-   */
-  public ChassisSpeeds getRobotRelativeSpeeds() {
-    return kinematics.toChassisSpeeds(getModuleStates());
   }
 
   /**
@@ -716,6 +713,32 @@ public class DrivetrainSubsystem extends SubsystemBase {
           tagAmbiguities.stream().mapToDouble(n -> n).toArray());
     }
 
+    // Calculate velocity and acceleration
+    ChassisSpeeds speedsRaw = getChassisSpeedsRobotRelative();
+    double dt = 0.02;
+
+    double vxPrev = vxFilter.lastValue();
+    double vyPrev = vyFilter.lastValue();
+    double omegaPrev = omegaFilter.lastValue();
+    double vx = vxFilter.calculate(speedsRaw.vxMetersPerSecond);
+    double vy = vyFilter.calculate(speedsRaw.vyMetersPerSecond);
+    double omega = omegaFilter.calculate(speedsRaw.omegaRadiansPerSecond);
+
+    ChassisSpeeds speedsFiltered = new ChassisSpeeds(vx, vy, omega);
+
+    double velocityNormRaw = Math
+        .sqrt(Math.pow(speedsRaw.vxMetersPerSecond, 2) + Math.pow(speedsRaw.vyMetersPerSecond, 2));
+    double velocityNormFiltered = Math
+        .sqrt(Math.pow(speedsFiltered.vxMetersPerSecond, 2) + Math.pow(speedsFiltered.vyMetersPerSecond, 2));
+
+    // use a chassis speed object to represent translational and angular
+    // acceleration, this means that the units in the attribute names are
+    // innacurate, (m/s -> m/s2, Rad/s -> rad/s2)
+    // (do not log raw acceleration as it is too noisy)
+    ChassisSpeeds acceleration = new ChassisSpeeds((vx - vxPrev) / dt, (vy - vyPrev) / dt, (omega - omegaPrev) / dt);
+    double accelerationNorm = Math
+        .sqrt(Math.pow(acceleration.vxMetersPerSecond, 2) + Math.pow(acceleration.vyMetersPerSecond, 2));
+
     // Log everything
     Logger.recordOutput("Drivetrain/GyroDisconnected", gyroDisconnected);
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
@@ -723,6 +746,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Pose", getPose());
     Logger.recordOutput("Drivetrain/VisionlessPose", visionlessPose);
     Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityRaw", speedsRaw);
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityNormRaw", velocityNormRaw);
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityFiltered", speedsFiltered);
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityNormFiltered", velocityNormFiltered);
+    Logger.recordOutput("Drivetrain/Kinematics/Accelerations", acceleration);
+    Logger.recordOutput("Drivetrain/Kinematics/AccelerationNorm", accelerationNorm);
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
