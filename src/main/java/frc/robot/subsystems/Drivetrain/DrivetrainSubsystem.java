@@ -7,6 +7,7 @@ package frc.robot.subsystems.Drivetrain;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
@@ -28,6 +29,8 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.FieldConstants;
+import edu.wpi.first.wpilibj2.command.Command;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
@@ -36,9 +39,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private boolean gyroDisconnected = false;
   private boolean isFieldRelative = true;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
+  private final double kMetersFromHubHigh = 0;
+  private final double kMetersFromHubLow = 0;
 
   // Pose estimation with vision fusion capability
   private final SwerveDrivePoseEstimator poseEstimator;
+
+  public Supplier<Boolean> isUsingHighVelocities = () -> true;
 
   // Simulation
   private SwerveDriveSimulation simulatedSwerveDrive = null;
@@ -279,4 +286,25 @@ public class DrivetrainSubsystem extends SubsystemBase {
           this.simulatedSwerveDrive.getSimulatedDriveTrainPose());
     }
   }
+
+  public Pose2d getHubTargetPose(double targetAngle) {
+    System.out.println("getHubTargetPose");
+    Pose2d currentPose = getPose();
+
+    // Y coordinate stays the same as current pose
+    double targetY = currentPose.getY();
+
+    double metersFromHub = isUsingHighVelocities.get() ? kMetersFromHubHigh
+        : kMetersFromHubLow;
+
+    // Calculate target translation
+    // (0,0) is ALWAYS on the blue alliance side
+    double targetX = FieldConstants.kBargeX + metersFromHub;
+
+    // Calculate target rotation based on side of field that robot is currently on
+    // double targetRadians = targetAngle;
+
+    return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));
+  }
+
 }
