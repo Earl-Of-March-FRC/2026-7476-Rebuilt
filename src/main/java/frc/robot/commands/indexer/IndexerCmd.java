@@ -24,7 +24,7 @@ public class IndexerCmd extends Command {
 
   @Override
   public void execute() {
-
+    m_Indexer.setVelocity(50);
   }
 
   @Override
