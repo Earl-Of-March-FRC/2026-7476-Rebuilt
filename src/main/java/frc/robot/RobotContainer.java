@@ -14,6 +14,9 @@ import frc.robot.subsystems.Drivetrain.SwerveModule;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.Set;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
+import java.util.Set;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -41,6 +44,8 @@ import frc.robot.commands.drivetrain.RestrictedDriveCmd;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.util.swerve.FieldZones;
+import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -165,8 +170,12 @@ public class RobotContainer {
         () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
         Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
+    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(Commands.defer(
+        () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
+        Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+
     // Cancel all driveSub commands, returning manual control
-    driverController.povDown().onTrue(
+    driverController.leftBumper().onTrue(
         new InstantCommand() {
           @Override
           public void initialize() {

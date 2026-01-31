@@ -278,16 +278,19 @@ public final class Constants {
     public static final Distance kFieldLengthX = Meter.of(kfieldLayout.getFieldLength());
     // Parallel distance from edge to edge
     public static final Distance kFieldWidthY = Meter.of(kfieldLayout.getFieldWidth());
-    // Distance from field edge to middle of hub
-    public static final Distance kHubY = kFieldWidthY.div(2.0);
-    // Distance from blue driverstation wall to middle of hub
-    public static final Distance kHubXBlue = kAllianceWallToHubCenter;
-    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceWallToHubCenter);
 
     public static final Distance kEdgeToTrenchCenter = Inches.of(26.22);
     public static final Distance kEdgeToBumpCenter = Inches.of(104.34);
-
     public static final Distance kBumpWidth = Inches.of(47.00);
+
+    // Distance from field edge to middle of hub
+    public static final Distance kHubY = kFieldWidthY.div(2.0);
+    // Distance from blue driverstation wall to middle of hub
+    public static final Distance kHubXBlue = kAllianceZoneXLength;
+    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceZoneXLength);
+
+    public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
+    public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
 
     public static final Distance kCrossAllianceWaypointX = kAllianceZoneXLength
         .minus(SwerveConfig.kBumperWidth.div(2.0));
@@ -335,12 +338,5 @@ public final class Constants {
         new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
             kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Red Outpost
     };
-
-    public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
-    public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
-    // public static final Translation2d kBlueHubPose = new Translation2d(4.625594,
-    // kHubY.in(Meters));
-    // public static final Translation2d kRedHubPose = new Translation2d(11.915394,
-    // 4.034663);
   }
 }
