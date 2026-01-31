@@ -22,13 +22,16 @@ import frc.robot.Constants.ClimberConstants;
 // import frc.robot.Constants.LauncherConstants;
 import frc.robot.Constants.ModuleConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.swerve.SwerveConfig;
 
 public final class Configs {
-  public static final class MAXSwerveModule {
-    public static final SparkMaxConfig drivingConfig = new SparkMaxConfig();
-    public static final SparkMaxConfig turningConfig = new SparkMaxConfig();
+  public final class MAXSwerveModule {
+    public final SparkMaxConfig drivingConfig;
+    public final SparkMaxConfig turningConfig;
 
-    static {
+    public MAXSwerveModule() {
+      drivingConfig = new SparkMaxConfig();
+      turningConfig = new SparkMaxConfig();
       // Use module constants to calculate conversion factors and feed forward gain.
       Distance drivingFactor = ModuleConstants.kWheelDiameter.times(Math.PI)
           .div(ModuleConstants.kDrivingMotorReduction);
@@ -78,8 +81,8 @@ public final class Configs {
 
     public static final DriveTrainSimulationConfig drivetrainConfig = DriveTrainSimulationConfig.Default()
         .withGyro(SimulationConstants.kSimulatedGyro).withSwerveModule(swerveModuleConfig)
-        .withTrackLengthTrackWidth(DriveConstants.kWheelBase, DriveConstants.kTrackWidth)
-        .withBumperSize(DriveConstants.kBumperLength, DriveConstants.kBumperWidth);
+        .withTrackLengthTrackWidth(SwerveConfig.kWheelBase, SwerveConfig.kTrackWidth)
+        .withBumperSize(SwerveConfig.kBumperLength, SwerveConfig.kBumperWidth);
   }
 
   // public static final class ArmConfigs {

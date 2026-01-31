@@ -6,6 +6,7 @@ package frc.robot;
 
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
+import frc.robot.subsystems.Drivetrain.GyroADXRS450;
 import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
@@ -17,17 +18,28 @@ import static edu.wpi.first.units.Units.Degrees;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
-import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.util.swerve.ProfileSelector;
+import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.commands.intake.IntakeCmd;
 import frc.robot.commands.intake.PlowCmd;
 
@@ -41,28 +53,36 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
 
-  public RobotContainer() {
+  private LoggedDashboardChooser<Command> autoChooser;
 
-    if (Robot.isReal()) { // If it's not a simulation, make real subsystems :)
+  public RobotContainer() {
+    // Get profile from Elastic dashboard selector
+    SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
+    SwerveConfig.applyProfile(activeProfile);
+    // SwerveDriveProfile activeProfile = SwerveProfiles.COMP_BOT;
+    // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
+    // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
+
+    if (Robot.isReal()) {
       gyro = new GyroNavX();
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
-              Constants.DriveConstants.kFrontLeftDrivingCanId,
-              Constants.DriveConstants.kFrontLeftTurningCanId,
+              SwerveConfig.kFrontLeftDrivingCanId,
+              SwerveConfig.kFrontLeftTurningCanId,
               Constants.DriveConstants.kFrontLeftChassisAngularOffset),
           new MAXSwerveModule(
-              Constants.DriveConstants.kFrontRightDrivingCanId,
-              Constants.DriveConstants.kFrontRightTurningCanId,
+              SwerveConfig.kFrontRightDrivingCanId,
+              SwerveConfig.kFrontRightTurningCanId,
               Constants.DriveConstants.kFrontRightChassisAngularOffset),
           new MAXSwerveModule(
-              Constants.DriveConstants.kBackLeftDrivingCanId,
-              Constants.DriveConstants.kBackLeftTurningCanId,
+              SwerveConfig.kBackLeftDrivingCanId,
+              SwerveConfig.kBackLeftTurningCanId,
               Constants.DriveConstants.kBackLeftChassisAngularOffset),
           new MAXSwerveModule(
-              Constants.DriveConstants.kBackRightDrivingCanId,
-              Constants.DriveConstants.kBackRightTurningCanId,
+              SwerveConfig.kBackRightDrivingCanId,
+              SwerveConfig.kBackRightTurningCanId,
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
     } else { // If the robot is simulated, make simulated subs :P
@@ -83,7 +103,7 @@ public class RobotContainer {
     }
 
     configureBindings();
-
+    configureAutos();
   }
 
   private void configureBindings() {
@@ -110,7 +130,22 @@ public class RobotContainer {
                 OIConstants.kDriveDeadband),
             new Rotation2d(DriveConstants.kHeadingRestriction)));
 
+    // Only schedule when in Launching zone
+    driverController.x().and(driveSub::isBotInLaunchingZone).toggleOnTrue(
+        new DriveAtLaunchingRangeCmd(
+            driveSub,
+            () -> MathUtil.applyDeadband(
+                -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+                OIConstants.kDriveDeadband),
+            () -> MathUtil.applyDeadband(
+                -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
+                OIConstants.kDriveDeadband),
+            Constants.LauncherConstants.kLaunchRadius,
+            true));
+
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
+
+    driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     // Binding for Plow (Button 5 is usually Left Bumper)
     driverController.button(5).whileTrue(new IntakeCmd(intakeSub, IntakeConstants.kPlowSpeed));
@@ -119,4 +154,31 @@ public class RobotContainer {
     driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
 
   }
+
+  public Gyro getGyro() {
+    return gyro;
+  }
+
+  /**
+   * Use this method to define the autonomous command.
+   */
+  private void configureAutos() {
+    autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
+    autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
+    autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
+    SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
+
+  }
+
+  /**
+   * Use this to pass the autonomous command to the main {@link Robot} class.
+   *
+   * @return the command to run in autonomous
+   */
+  public Command getAutonomousCommand() {
+    Command selectedAuto = autoChooser.get();
+    Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
+    return selectedAuto;
+  }
+
 }

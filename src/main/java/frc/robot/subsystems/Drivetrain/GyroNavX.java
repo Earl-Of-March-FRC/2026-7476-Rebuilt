@@ -4,18 +4,19 @@
 package frc.robot.subsystems.Drivetrain;
 
 import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.util.swerve.SwerveConfig;
 
 public class GyroNavX implements Gyro {
   // Off Season Swerve
+  private final AHRS gyro;
+
   // private final AHRS gyro = new AHRS(NavXComType.kMXP_SPI);
 
   // SpongeBot
-  private final AHRS gyro = new AHRS(NavXComType.kUSB1);
 
   public GyroNavX() {
-
+    gyro = new AHRS(SwerveConfig.kGyroComType);
   }
 
   /**
