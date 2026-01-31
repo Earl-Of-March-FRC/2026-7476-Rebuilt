@@ -47,10 +47,11 @@ import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.swerve.SwerveConfig;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
-  private static final SwerveDriveKinematics kinematics = Constants.DriveConstants.kDriveKinematics;
+  private static final SwerveDriveKinematics kinematics = SwerveConfig.kDriveKinematics;
   private final Gyro gyro;
   private boolean gyroDisconnected = false;
   private boolean isFieldRelativeDesired = true;
@@ -127,7 +128,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Apply Sim Pose", true);
 
     // Do not use the auto generated robot config to allow for muiltiple profiles
-    RobotConfig config = DriveConstants.kRobotConfig;
+    RobotConfig config = SwerveConfig.kRobotConfig;
 
     // Set the robot's parameters for PathPlanner
     AutoBuilder.configure(
@@ -167,7 +168,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @param desiredStates Array of desired module states
    */
   public void setModuleStates(SwerveModuleState[] desiredStates) {
-    SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.DriveConstants.kMaxWheelSpeed);
+    SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, SwerveConfig.kMaxWheelSpeed);
 
     for (int i = 0; i < modules.length; i++) {
       modules[i].setDesiredState(desiredStates[i]);
@@ -194,9 +195,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
               ? getPose().getRotation().plus(Rotation2d.fromDegrees(180))
               : getPose().getRotation());
     }
-    SwerveModuleState[] states = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
+    SwerveModuleState[] states = SwerveConfig.kDriveKinematics.toSwerveModuleStates(speeds);
 
-    SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kMaxWheelSpeed);
+    SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveConfig.kMaxWheelSpeed);
 
     for (int i = 0; i < 4; i++) {
       modules[i].setDesiredState(states[i]);
@@ -346,8 +347,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     double currentDistance = hubTranslation.getNorm();
     return MetersPerSecond.of(MathUtil.clamp(
         -radialController.calculate(currentDistance, desiredDistance.in(Meters)),
-        -DriveConstants.kMaxSpeed.in(MetersPerSecond),
-        DriveConstants.kMaxSpeed.in(MetersPerSecond)));
+        -SwerveConfig.kMaxSpeed.in(MetersPerSecond),
+        SwerveConfig.kMaxSpeed.in(MetersPerSecond)));
   }
 
   /**
