@@ -202,17 +202,16 @@ public class PathGenerator {
         .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
   }
 
-
-   /**
+  /**
    * Create a command to go from the neutral zone to the launch zone going over
-   * the bump, will return
+   * the trench, will return
    * a command that does nothing and ends immediately if not currently in neutral
    * zone
    * 
    * @param endVelocity Desired end velocity
    * @return
    */
-  public static Command driveToLaunchZoneCommandBump(LinearVelocity endVelocity) {
+  public static Command driveToLaunchZoneCommandTrench(LinearVelocity endVelocity) {
     if (driveSub.getCurrentBotZone() != FieldZones.Neutral) {
       return new InstantCommand();
     }
@@ -228,11 +227,11 @@ public class PathGenerator {
           "Unknown");
     }
 
-    Translation2d[] neutralBumpTranslation2ds = isBlueAlliance
-        ? new Translation2d[] { FieldConstants.kBumpPathWaypoints[4], FieldConstants.kBumpPathWaypoints[5] }
-        : new Translation2d[] { FieldConstants.kBumpPathWaypoints[6], FieldConstants.kBumpPathWaypoints[7] };
+    Translation2d[] neutralTrenchTranslation2ds = isBlueAlliance
+        ? new Translation2d[] { FieldConstants.kTrenchPathWaypoints[4], FieldConstants.kTrenchPathWaypoints[5] }
+        : new Translation2d[] { FieldConstants.kTrenchPathWaypoints[6], FieldConstants.kTrenchPathWaypoints[7] };
 
-    Translation2d startTranslation2d = nearestTranslation2d(neutralBumpTranslation2ds);
+    Translation2d startTranslation2d = nearestTranslation2d(neutralTrenchTranslation2ds);
     Translation2d inLaunchZoneTranslation2d = new Translation2d(
         isBlueAlliance
             ? FieldConstants.kAcceptedLaunchingZone.minus(DriveConstants.kBumperWidth).in(Meters)
@@ -241,7 +240,7 @@ public class PathGenerator {
         startTranslation2d.getY());
 
     Rotation2d targetHeading = driveSub
-        .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kBumpHeadingRestriction.in(Degrees)), true);
+        .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kTrenchHeadingRestriction.in(Degrees)), true);
 
     // Define the start and end poses
     Pose2d start = new Pose2d(startTranslation2d,
@@ -255,14 +254,14 @@ public class PathGenerator {
     // Create the path using the waypoints created above
     PathPlannerPath path = new PathPlannerPath(
         waypoints,
-        DriveConstants.kBumpConstraints,
-        new IdealStartingState(DriveConstants.kBumpLinearVelocity, targetHeading),
+        DriveConstants.kTrenchConstraints,
+        new IdealStartingState(DriveConstants.kTrenchLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
     return AutoBuilder.pathfindThenFollowPath(path, DriveConstants.kPathfindingConstraints)
         .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
   }
-  
+
   /**
    * Helper method
    * Takes a list of Translation2ds and returns the index of the one closest to
