@@ -499,7 +499,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
         Logger.recordOutput("Vision/" + camera.getName() + "/RawEstimatedPose", estimation.estimatedPose);
 
-        if (PoseHelpers.isInField(estimation.estimatedPose)) {
+        if (PoseHelpers.isInField(estimation.estimatedPose)
+            && PoseHelpers.isOnGround(estimation.estimatedPose, PhotonConstants.kHeightTolerance)) {
 
           // ignore the result if it only has one tag and the tag is too small
           if (camResult.getTargets().size() == 1
@@ -700,6 +701,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
     Logger.recordOutput("Drivetrain/Pose", getPose());
+    Logger.recordOutput("Drivetrain/VisionlessPose", visionlessPose);
     Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);

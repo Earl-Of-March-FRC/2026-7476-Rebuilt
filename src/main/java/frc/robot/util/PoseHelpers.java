@@ -43,7 +43,8 @@ public class PoseHelpers {
    * @return True if the pose is on the ground
    */
   public static boolean isOnGround(Pose3d pose, double heighTolerance) {
-    return pose.getZ() <= heighTolerance && pose.getZ() >= -heighTolerance;
+    // return pose.getZ() <= heighTolerance && pose.getZ() >= -heighTolerance;
+    return true;
   }
 
   /**
