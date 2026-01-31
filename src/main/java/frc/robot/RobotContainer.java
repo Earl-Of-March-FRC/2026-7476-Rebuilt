@@ -14,11 +14,15 @@ import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
+import java.util.Set;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -30,6 +34,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
@@ -39,10 +44,12 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
+  public final PathGenerator pathGenerator;
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -87,14 +94,20 @@ public class RobotContainer {
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
+      // Override bump collision (on by default)
+      SimulatedArena.overrideInstance(
+          new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(
+              SimulationConstants.kSimBumpCollision));
+
       driveSub = new DrivetrainSubsystem(new SwerveModule[] {
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[0]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[1]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[2]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[3]) }, gyro, simulatedSwerveDrive);
-
       SimulatedArena.getInstance().addDriveTrainSimulation(simulatedSwerveDrive);
     }
+
+    pathGenerator = new PathGenerator(driveSub);
 
     configureBindings();
     configureAutos();
@@ -122,7 +135,7 @@ public class RobotContainer {
             () -> MathUtil.applyDeadband(
                 -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
                 OIConstants.kDriveDeadband),
-            new Rotation2d(DriveConstants.kHeadingRestriction)));
+            new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
 
     // Only schedule when in Launching zone
     driverController.x().and(driveSub::isBotInLaunchingZone).toggleOnTrue(
@@ -140,6 +153,13 @@ public class RobotContainer {
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
+
+    driverController.povDown().onTrue(Commands.defer(
+        () -> pathGenerator.crossNearestBump(MetersPerSecond.of(0)),
+        Set.of(driveSub)));
+    driverController.povUp().onTrue(Commands.defer(
+        () -> pathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
+        Set.of(driveSub)));
   }
 
   public Gyro getGyro() {

@@ -109,21 +109,8 @@ public class RestrictedDriveCmd extends Command {
    * Calculates and updates the target heading to the nearest increment.
    */
   private void updateTargetHeading() {
-    // Get current robot heading in radians
-    double currentAngleRadians = driveSub.getGyro().getRotation2d().getRadians();
-
-    // Calculate nearest ODD multiple of the locked angle
-    double angleIncrement = lockedAngle.getRadians();
-
-    // Divide by increment, round to nearest integer, then make it odd
-    int multiple = (int) Math.round(currentAngleRadians / angleIncrement);
-
-    // Force to nearest odd number: if even, add 1
-    if (multiple % 2 == 0) {
-      multiple += (currentAngleRadians > 0) ? 1 : -1;
-    }
-
-    double nearestAngle = multiple * angleIncrement;
+    double currentAngleRadians = driveSub.getPose().getRotation().getRadians();
+    double nearestAngle = driveSub.getNearestTargetAngle(lockedAngle, true).getRadians();
 
     // Create the target heading from the nearest angle
     targetHeading = new Rotation2d(nearestAngle);

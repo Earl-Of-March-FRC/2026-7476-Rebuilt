@@ -295,6 +295,38 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
+   * Calculates the nearest acceptable bot heading from a desired locked angle.
+   * 
+   * For example, if locked angle is 45 degrees and force off is true, the
+   * returned angle will be the
+   * nearest heading among the following options:
+   * 45, -45, 135, or -135
+   * 
+   * @param lockedAngle The heading the bot should be locked at
+   * @param forceOdd    Whether the returned heading must be an odd multiple
+   * @return The nearest acceptable heading
+   */
+  public Rotation2d getNearestTargetAngle(Rotation2d lockedAngle, boolean forceOdd) {
+    // Get current robot heading in radians
+    double currentAngleRadians = getPose().getRotation().getRadians();
+
+    // Calculate nearest ODD multiple of the locked angle
+    double angleIncrement = lockedAngle.getRadians();
+
+    // Divide by increment, round to nearest integer, then make it odd
+    int multiple = (int) Math.round(currentAngleRadians / angleIncrement);
+
+    // Force to nearest odd number: if even, add 1
+    if (forceOdd && multiple % 2 == 0) {
+      multiple += (currentAngleRadians > 0) ? 1 : -1;
+    }
+
+    double nearestAngle = multiple * angleIncrement;
+
+    return Rotation2d.fromRadians(nearestAngle);
+  }
+
+  /**
    * Resets the heading and radial controllers.
    */
   public void resetControllers() {
@@ -463,7 +495,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
     Logger.recordOutput("Drivetrain/Pose", currentPose);
-    Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
+    Logger.recordOutput("Drivetrain/GyroRotation", gyro.getRotation2d().getDegrees());
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
