@@ -113,17 +113,17 @@ public class Robot extends LoggedRobot {
     ProfileSelector.init();
     gyroCalibrated = true;
 
-    CameraServer.startAutomaticCapture();
+    // CameraServer.startAutomaticCapture();
 
-    // // Port forward Photonvision
-    // PortForwarder.add(5800, "photonvision.local", 5800);
-    // // Photonvision cameras
-    // PortForwarder.add(1181, "photonvision.local", 1181);
-    // PortForwarder.add(1182, "photonvision.local", 1182);
-    // PortForwarder.add(1183, "photonvision.local", 1183);
-    // PortForwarder.add(1184, "photonvision.local", 1184);
-    // PortForwarder.add(1185, "photonvision.local", 1185);
-    // PortForwarder.add(1186, "photonvision.local", 1186);
+    // Port forward Photonvision
+    PortForwarder.add(5800, "photonvision.local", 5800);
+    // Photonvision cameras
+    PortForwarder.add(1181, "photonvision.local", 1181);
+    PortForwarder.add(1182, "photonvision.local", 1182);
+    PortForwarder.add(1183, "photonvision.local", 1183);
+    PortForwarder.add(1184, "photonvision.local", 1184);
+    PortForwarder.add(1185, "photonvision.local", 1185);
+    PortForwarder.add(1186, "photonvision.local", 1186);
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
