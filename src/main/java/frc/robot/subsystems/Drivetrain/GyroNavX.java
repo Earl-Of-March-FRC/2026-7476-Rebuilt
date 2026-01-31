@@ -18,13 +18,7 @@ public class GyroNavX implements Gyro {
   // SpongeBot
 
   public GyroNavX() {
-    AHRS tempGyro;
-    if (DriveConstants.profileId == SwerveProfiles.SPONGE_BOT.profileId()) {
-      tempGyro = new AHRS(NavXComType.kUSB1);
-    } else {
-      tempGyro = new AHRS(NavXComType.kMXP_SPI);
-    }
-    gyro = tempGyro;
+    gyro = new AHRS(DriveConstants.gyroComType);
   }
 
   /**

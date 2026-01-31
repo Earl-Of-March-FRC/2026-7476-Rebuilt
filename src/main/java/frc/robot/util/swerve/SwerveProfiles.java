@@ -9,6 +9,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import com.studica.frc.AHRS.NavXComType;
+
 /**
  * Container class for predefined swerve drive profiles.
  * Each profile contains the complete configuration for a specific robot.
@@ -36,6 +38,7 @@ public final class SwerveProfiles {
       Meters.of(0.75),
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
+      NavXComType.kMXP_SPI,
       1);
 
   public static final SwerveDriveProfile SPONGE_BOT = new SwerveDriveProfile(
@@ -56,6 +59,7 @@ public final class SwerveProfiles {
       Meters.of(0.75),
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
+      NavXComType.kUSB1,
       2);
 
   /**
@@ -77,6 +81,7 @@ public final class SwerveProfiles {
       Meters.of(0.75),
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
+      NavXComType.kMXP_SPI,
       3);
 
   // Private constructor to prevent instantiation

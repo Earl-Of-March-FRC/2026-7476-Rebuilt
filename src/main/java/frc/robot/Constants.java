@@ -23,6 +23,7 @@ import org.ironmaple.simulation.drivesims.GyroSimulation;
 
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathConstraints;
+import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -108,6 +109,8 @@ public final class Constants {
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds
     public static int profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
+
+    public static NavXComType gyroComType;
 
     public static RobotConfig kRobotConfig;
 
