@@ -28,6 +28,7 @@ import frc.robot.Constants.DriveConstants;
 // import frc.robot.Constants.LauncherConstants;
 import frc.robot.Constants.ModuleConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.swerve.SwerveConfig;
 
 public final class Configs {
   public final class MAXSwerveModule {
@@ -86,8 +87,8 @@ public final class Configs {
 
     public static final DriveTrainSimulationConfig drivetrainConfig = DriveTrainSimulationConfig.Default()
         .withGyro(SimulationConstants.kSimulatedGyro).withSwerveModule(swerveModuleConfig)
-        .withTrackLengthTrackWidth(DriveConstants.kWheelBase, DriveConstants.kTrackWidth)
-        .withBumperSize(DriveConstants.kBumperLength, DriveConstants.kBumperWidth);
+        .withTrackLengthTrackWidth(SwerveConfig.kWheelBase, SwerveConfig.kTrackWidth)
+        .withBumperSize(SwerveConfig.kBumperLength, SwerveConfig.kBumperWidth);
   }
 
   // public static final class ArmConfigs {

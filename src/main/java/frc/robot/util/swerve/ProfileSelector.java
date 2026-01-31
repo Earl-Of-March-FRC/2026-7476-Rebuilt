@@ -94,16 +94,13 @@ public final class ProfileSelector {
       return SwerveProfiles.COMP_BOT;
     }
 
-    switch (name) {
-      case "SpongeBot":
-        return SwerveProfiles.SPONGE_BOT;
+    return switch (name) {
+      case "SpongeBot" -> SwerveProfiles.SPONGE_BOT;
+      case "OffSeasonSwerve" -> SwerveProfiles.OFF_SEASON_SWERVE;
+      case "CompBot" -> SwerveDriveProfile.COMP_BOT;
+      default -> SwerveDriveProfile.COMP_BOT;
+    };
 
-      case "OffSeasonSwerve":
-        return SwerveProfiles.OFF_SEASON_SWERVE;
-
-      case "CompBot":
-      default:
-        return SwerveProfiles.COMP_BOT;
-    }
   }
+
 }

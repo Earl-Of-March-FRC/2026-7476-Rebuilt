@@ -11,6 +11,8 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import com.studica.frc.AHRS.NavXComType;
 
+import frc.robot.util.swerve.SwerveDriveProfile.SwerveDriveProfileID;
+
 /**
  * Container class for predefined swerve drive profiles.
  * Each profile contains the complete configuration for a specific robot.
@@ -39,7 +41,7 @@ public final class SwerveProfiles {
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       NavXComType.kMXP_SPI,
-      1);
+      SwerveDriveProfileID.COMP_BOT);
 
   public static final SwerveDriveProfile SPONGE_BOT = new SwerveDriveProfile(
       new int[] { 1, 3, 5, 7 },
@@ -60,7 +62,7 @@ public final class SwerveProfiles {
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       NavXComType.kUSB1,
-      2);
+      SwerveDriveProfileID.SPONGE_BOT);
 
   /**
    * Off-season swerve drive configuration.
@@ -82,7 +84,7 @@ public final class SwerveProfiles {
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       NavXComType.kMXP_SPI,
-      3);
+      SwerveDriveProfileID.OFF_SEASON_SWERVE);
 
   // Private constructor to prevent instantiation
   private SwerveProfiles() {

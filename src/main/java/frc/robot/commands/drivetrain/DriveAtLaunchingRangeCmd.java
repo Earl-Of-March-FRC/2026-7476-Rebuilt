@@ -26,6 +26,7 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.swerve.SwerveConfig;
 
 /* 
  * Command for driving while maintaining a specific distance from the hub.
@@ -100,7 +101,7 @@ public class DriveAtLaunchingRangeCmd extends Command {
 
     Translation2d joystickInput = new Translation2d(xSupplier.get(), ySupplier.get());
     Translation2d projectedInput = perpendicularUnitVelocity.times(
-        joystickInput.dot(perpendicularUnitVelocity) * DriveConstants.kMaxSpeed.in(MetersPerSecond));
+        joystickInput.dot(perpendicularUnitVelocity) * SwerveConfig.kMaxSpeed.in(MetersPerSecond));
 
     // Get radial correction velocity
     Translation2d radialCorrectionVelocity = driveSub.getRadialDistanceCorrectionVector(launchingRange);
@@ -110,8 +111,8 @@ public class DriveAtLaunchingRangeCmd extends Command {
 
     // Limit max speed (avoid division by zero when stationary)
     double velocityNorm = finalVelocity.getNorm();
-    if (velocityNorm > DriveConstants.kMaxSpeed.in(MetersPerSecond)) {
-      finalVelocity = finalVelocity.div(velocityNorm).times(DriveConstants.kMaxSpeed.in(MetersPerSecond));
+    if (velocityNorm > SwerveConfig.kMaxSpeed.in(MetersPerSecond)) {
+      finalVelocity = finalVelocity.div(velocityNorm).times(SwerveConfig.kMaxSpeed.in(MetersPerSecond));
     }
 
     // Get heading correction to face the hub

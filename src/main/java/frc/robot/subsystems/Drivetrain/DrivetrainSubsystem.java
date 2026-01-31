@@ -6,11 +6,14 @@ package frc.robot.subsystems.Drivetrain;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.Optional;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -28,6 +31,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.MathUtil;
+
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -56,10 +60,11 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.PoseHelpers;
+import frc.robot.util.swerve.SwerveConfig;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
-  private static final SwerveDriveKinematics kinematics = Constants.DriveConstants.kDriveKinematics;
+  private static final SwerveDriveKinematics kinematics = SwerveConfig.kDriveKinematics;
   private final Gyro gyro;
   private boolean gyroDisconnected = false;
   private boolean isFieldRelativeDesired = true;
@@ -68,6 +73,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
 
   // Pose estimation with vision fusion capability
+  // public final SwerveDrivePoseEstimator poseEstimator;
   // public final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator visionlessPoseEstimator;
@@ -151,7 +157,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Apply Sim Pose", true);
 
     // Do not use the auto generated robot config to allow for muiltiple profiles
-    RobotConfig config = DriveConstants.kRobotConfig;
+    RobotConfig config = SwerveConfig.kRobotConfig;
 
     // Set the robot's parameters for PathPlanner
     AutoBuilder.configure(
@@ -183,6 +189,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
     resetPose(SimulationConstants.kStartingPose);
+    resetPose(SimulationConstants.kStartingPose);
   }
 
   /**
@@ -191,7 +198,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @param desiredStates Array of desired module states
    */
   public void setModuleStates(SwerveModuleState[] desiredStates) {
-    SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.DriveConstants.kMaxWheelSpeed);
+    SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, SwerveConfig.kMaxWheelSpeed);
 
     for (int i = 0; i < modules.length; i++) {
       modules[i].setDesiredState(desiredStates[i]);
@@ -203,6 +210,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * 
    * @param speeds          Desired chassis speeds
    * @param isFieldRelative Whether speeds are field-relative
+   * @param isManualControl Whether the control is manual (should an offset be
+   *                        applied for red alliance)
    * @param isManualControl Whether the control is manual (should an offset be
    *                        applied for red alliance)
    */
@@ -218,9 +227,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
               ? getPose().getRotation().plus(Rotation2d.fromDegrees(180))
               : getPose().getRotation());
     }
-    SwerveModuleState[] states = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
+    SwerveModuleState[] states = SwerveConfig.kDriveKinematics.toSwerveModuleStates(speeds);
 
-    SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kMaxWheelSpeed);
+    SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveConfig.kMaxWheelSpeed);
 
     for (int i = 0; i < 4; i++) {
       modules[i].setDesiredState(states[i]);
@@ -233,10 +242,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
   /**
    * Runs the drivetrain using the current field-relative setting. With manual
    * control.
+   * Runs the drivetrain using the current field-relative setting. With manual
+   * control.
    * 
    * @param speeds Desired chassis speeds
    */
   public void runVelocity(ChassisSpeeds speeds) {
+    runVelocity(speeds, this.isFieldRelativeReal, true);
     runVelocity(speeds, this.isFieldRelativeReal, true);
   }
 
@@ -260,6 +272,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void resetPose(Pose2d pose) {
     poseEstimator.resetPosition(gyro.getRotation2d(), getModulePositions(), pose);
+
+    if (simulatedSwerveDrive != null && !accurateSimOdometry) {
+      simulatedSwerveDrive.setSimulationWorldPose(pose);
+    }
 
     if (simulatedSwerveDrive != null && !accurateSimOdometry) {
       simulatedSwerveDrive.setSimulationWorldPose(pose);
@@ -383,8 +399,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     double currentDistance = hubTranslation.getNorm();
     return MetersPerSecond.of(MathUtil.clamp(
         -radialController.calculate(currentDistance, desiredDistance.in(Meters)),
-        -DriveConstants.kMaxSpeed.in(MetersPerSecond),
-        DriveConstants.kMaxSpeed.in(MetersPerSecond)));
+        -SwerveConfig.kMaxSpeed.in(MetersPerSecond),
+        SwerveConfig.kMaxSpeed.in(MetersPerSecond)));
   }
 
   /**
@@ -455,6 +471,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
   /**
    * Get the current used gyro
+   * 
+   * Do not use this to get the robot heading, as the gyro offset is applied later
+   * in the pose estimator,
+   * use getPose().getRotation() instead
    * 
    * Do not use this to get the robot heading, as the gyro offset is applied later
    * in the pose estimator,
@@ -707,6 +727,23 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
     boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Sim Pose", true);
+
+    // Retrieve SmartDashboard settings
+    if (simulatedSwerveDrive != null) {
+      accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
+
+      // Apply new sim pose if requested, then reset the trigger
+      if (applyNewSimPose) {
+        SmartDashboard.putBoolean("Apply Sim Pose", true);
+        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
+        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
+        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
+            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
+        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
+        simulatedSwerveDrive.setSimulationWorldPose(newPose);
+        resetPose(newPose);
+      }
+    }
 
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {

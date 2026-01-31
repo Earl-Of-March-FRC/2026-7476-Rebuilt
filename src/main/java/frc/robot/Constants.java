@@ -21,10 +21,6 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
-import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.path.PathConstraints;
-import com.studica.frc.AHRS.NavXComType;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
@@ -35,19 +31,14 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.units.measure.Velocity;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -106,27 +97,12 @@ public final class Constants {
   }
 
   public static final class DriveConstants {
-    // Driving Parameters - Note that these are not the maximum capable speeds of
-    // the robot, rather the allowed maximum speeds
-    public static int profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
-
-    public static NavXComType gyroComType;
-
-    public static RobotConfig kRobotConfig;
-
-    public static LinearVelocity kMaxWheelSpeed; // Max possible speed for wheel
-    public static LinearVelocity kMaxSpeed; // Default 4.8 - Max net robot translational speed
-    public static AngularVelocity kMaxAngularSpeed; // radians per second
-    public static LinearAcceleration kMaxAcceleration;
 
     // Ratios between robot limits in teleop vs auto
     public static final double kSpeedPathfindingRatio = 0.625;
     public static final double kAngularSpeedPathfindingRatio = 0.5;
     public static final double kAccelerationPathfindingRatio = 1.0 / 3.0;
 
-    public static LinearVelocity kMaxSpeedPathfinding;
-    public static AngularVelocity kMaxAngularSpeedPathfinding;
-    public static LinearAcceleration kMaxAccelerationPathfinding;
     // Angular acceleration is only limited in pathfinding mode
     public static AngularAcceleration kMaxAngularAccelerationPathfinding = RadiansPerSecondPerSecond.of(Math.PI);
 
@@ -147,8 +123,6 @@ public final class Constants {
     public static final double kPIDRadialControllerD = 0.0;
     public static final Distance kPIDRadialControllerTolerance = Meters.of(0.05);
 
-    public static PathConstraints kPathfindingConstraints;
-
     // To be used by PathPlanner
     public static final double kPTranslationController = 1.5;
     public static final double kITranslationController = 0.75;
@@ -158,33 +132,12 @@ public final class Constants {
     public static final double kIThetaController = 0;
     public static final double kDThetaController = 0;
 
-    // Chassis configuration
-    public static Distance kTrackWidth;
-    // Distance between centers of right and left wheels on robot
-    public static Distance kWheelBase;;
-    // Distance between front and back wheels on robot
-    public static SwerveDriveKinematics kDriveKinematics;
-
-    public static Distance kBumperLength; // Front to back
-    public static Distance kBumperWidth; // Left to right
-
     // Angular offsets of the modules relative to the chassis in radians
     public static final Angle kFrontLeftChassisAngularOffset = Radians.of(-Math.PI / 2);
     public static final Angle kFrontRightChassisAngularOffset = Radians.of(0);
     public static final Angle kBackLeftChassisAngularOffset = Radians.of(Math.PI);
     public static final Angle kBackRightChassisAngularOffset = Radians.of(Math.PI / 2);
 
-    public static int kFrontLeftDrivingCanId;
-    public static int kFrontRightDrivingCanId;
-    public static int kBackLeftDrivingCanId;
-    public static int kBackRightDrivingCanId;
-
-    public static int kFrontLeftTurningCanId;
-    public static int kFrontRightTurningCanId;
-    public static int kBackLeftTurningCanId;
-    public static int kBackRightTurningCanId;
-
-    public static final boolean kGyroReversed = false;
   }
 
   public static final class LauncherConstants {

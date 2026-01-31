@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.swerve.SwerveConfig;
 
 /**
  * Command for restricted swerve driving with locked heading.
@@ -65,7 +66,7 @@ public class RestrictedDriveCmd extends Command {
       Supplier<Double> xSupplier,
       Supplier<Double> ySupplier,
       Rotation2d lockedAngle) {
-    this(driveSub, xSupplier, ySupplier, lockedAngle, DriveConstants.kMaxSpeed);
+    this(driveSub, xSupplier, ySupplier, lockedAngle, SwerveConfig.kMaxSpeed);
   }
 
   @Override

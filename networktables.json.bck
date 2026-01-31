@@ -2,7 +2,7 @@
   {
     "name": "/Preferences/SelectedProfile",
     "type": "string",
-    "value": "CompBot",
+    "value": "OffSeasonSwerve",
     "properties": {
       "persistent": true
     }

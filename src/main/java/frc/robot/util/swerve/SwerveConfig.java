@@ -1,6 +1,5 @@
 package frc.robot.util.swerve;
 
-import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
@@ -11,20 +10,60 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathConstraints;
+import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.MultUnit;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearAcceleration;
+import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
+import frc.robot.util.swerve.SwerveDriveProfile.SwerveDriveProfileID;
 
-/**
- * Utility class for applying swerve drive profiles to the robot constants.
- * This centralizes the logic for updating all configuration values when
- * switching profiles.
- */
-public final class SwerveProfileApplicator {
+public final class SwerveConfig {
+
+  // Driving Parameters - Note that these are not the maximum capable speeds of
+  // the robot, rather the allowed maximum speeds
+  public static SwerveDriveProfileID profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
+
+  public static NavXComType kGyroComType;
+
+  public static RobotConfig kRobotConfig;
+
+  public static LinearVelocity kMaxWheelSpeed; // Max possible speed for wheel
+  public static LinearVelocity kMaxSpeed; // Default 4.8 - Max net robot translational speed
+  public static AngularVelocity kMaxAngularSpeed; // radians per second
+  public static LinearAcceleration kMaxAcceleration;
+
+  public static LinearVelocity kMaxSpeedPathfinding;
+  public static AngularVelocity kMaxAngularSpeedPathfinding;
+  public static LinearAcceleration kMaxAccelerationPathfinding;
+
+  public static PathConstraints kPathfindingConstraints;
+
+  // Chassis configuration
+  public static Distance kTrackWidth;
+  // Distance between centers of right and left wheels on robot
+  public static Distance kWheelBase;;
+  // Distance between front and back wheels on robot
+  public static SwerveDriveKinematics kDriveKinematics;
+
+  public static Distance kBumperLength; // Front to back
+  public static Distance kBumperWidth; // Left to right
+
+  public static int kFrontLeftDrivingCanId;
+  public static int kFrontRightDrivingCanId;
+  public static int kBackLeftDrivingCanId;
+  public static int kBackRightDrivingCanId;
+
+  public static int kFrontLeftTurningCanId;
+  public static int kFrontRightTurningCanId;
+  public static int kBackLeftTurningCanId;
+  public static int kBackRightTurningCanId;
 
   /**
    * Applies the given swerve drive profile to the robot's drive and module
@@ -38,6 +77,9 @@ public final class SwerveProfileApplicator {
     // Apply profile ID
     SwerveConfig.profileId = profile.profileId();
 
+    // Apply new Gyro
+    SwerveConfig.kGyroComType = profile.gyroComType();
+
     // Apply speed and dimension constants
     SwerveConfig.kMaxSpeed = profile.maxSpeedMps();
     SwerveConfig.kTrackWidth = profile.trackWidthMeters();
@@ -49,9 +91,6 @@ public final class SwerveProfileApplicator {
     ModuleConstants.kWheelDiameter = profile.wheelDiameterMeters();
     ModuleConstants.kWheelCircumference = profile.wheelDiameterMeters().times(Math.PI);
     ModuleConstants.kDrivingMotorReduction = profile.driveReduction();
-
-    // Apply gyro configuration
-    SwerveConfig.kGyroComType = profile.gyroComType();
 
     // Calculate drive wheel free speed
     ModuleConstants.kDriveWheelFreeSpeed = RotationsPerSecond.of(
@@ -119,7 +158,9 @@ public final class SwerveProfileApplicator {
   }
 
   // Private constructor to prevent instantiation
-  private SwerveProfileApplicator() {
-    throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+  private SwerveConfig() {
+    throw new UnsupportedOperationException(
+        this.getClass().getName() + " is a utility class and cannot be instantiated");
   }
+
 }
