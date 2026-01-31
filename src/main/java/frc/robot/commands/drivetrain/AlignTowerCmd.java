@@ -43,19 +43,17 @@ public class AlignTowerCmd extends Command {
 
     Pose2d currentPose = driveSub.getPose();
     Pose2d targetPose = driveSub.getHubTargetPose(0);
-    
+
     // PID Controller class thing does the math for us
     double xFeedback = translationController.calculate(currentPose.getX(), targetPose.getX());
     double yFeedback = translationController.calculate(currentPose.getY(), targetPose.getY());
 
     double currentAngle = currentPose.getRotation().getDegrees();
     double targetAngle = targetPose.getRotation().getDegrees();
-    
-
 
     AngularVelocity omega = DriveConstants.kMaxAngularSpeed;
 
-    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega));
+    // driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega));
 
     /*
      * 

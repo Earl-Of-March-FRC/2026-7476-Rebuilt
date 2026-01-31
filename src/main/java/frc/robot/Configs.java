@@ -141,18 +141,18 @@ public final class Configs {
     }
   }
 
-  public static final class ClimberConfigs {
+  // public static final class ClimberConfigs {
 
-    public static final SparkMaxConfig climberConfig = new SparkMaxConfig();
+  // public static final SparkMaxConfig climberConfig = new SparkMaxConfig();
 
-    static {
-      climberConfig.idleMode(IdleMode.kBrake);
-      climberConfig.smartCurrentLimit(40);
-      climberConfig.encoder
-          .velocityConversionFactor(ClimberConstants.kWheelDiameterMeters * Math.PI
-              / ClimberConstants.kMotorReduction / 60);
-    }
-  }
+  // static {
+  // climberConfig.idleMode(IdleMode.kBrake);
+  // climberConfig.smartCurrentLimit(40);
+  // climberConfig.encoder
+  // .velocityConversionFactor(ClimberConstants.kWheelDiameterMeters * Math.PI
+  // / ClimberConstants.kMotorReduction / 60);
+  // }
+  // }
 
   // public static final class LauncherConfigs {
   // public static final SparkMaxConfig frontLauncherConfig = new

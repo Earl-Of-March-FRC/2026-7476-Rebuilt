@@ -8,7 +8,7 @@ import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Configs.ClimberConfigs;
+// import frc.robot.Configs.ClimberConfigs;
 
 public class ClimberSubsystem extends SubsystemBase {
   private final SparkMax climberSpark;
@@ -19,9 +19,9 @@ public class ClimberSubsystem extends SubsystemBase {
     climberEncoder = climberSpark.getEncoder();
 
     // Apply your climber-specific configs (Current limits should be high here!)
-    climberSpark.configure(ClimberConfigs.climberConfig,
-        ResetMode.kNoResetSafeParameters,
-        PersistMode.kNoPersistParameters);
+    // climberSpark.configure(ClimberConfigs.climberConfig,
+    // ResetMode.kNoResetSafeParameters,
+    // PersistMode.kNoPersistParameters);
   }
 
   // Clanker Generated
