@@ -1,4 +1,6 @@
-package frc.utils;
+package frc.robot.util;
+
+import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -16,8 +18,8 @@ public class PoseHelpers {
    * @return True if the pose is within the field boundaries
    */
   public static boolean isInField(Pose3d pose) {
-    return pose.getX() >= 0 && pose.getX() <= FieldConstants.kFieldLengthX && pose.getY() >= 0
-        && pose.getY() <= FieldConstants.kFieldWidthY;
+    return pose.getX() >= 0 && pose.getX() <= FieldConstants.kFieldLengthX.in(Meters) && pose.getY() >= 0
+        && pose.getY() <= FieldConstants.kFieldWidthY.in(Meters);
   }
 
   /**
@@ -65,31 +67,6 @@ public class PoseHelpers {
    */
   public static double distanceBetween(Pose2d pose1, Pose2d pose2) {
     return distanceBetween(new Pose3d(pose1), new Pose3d(pose2));
-  }
-
-  /**
-   * Test if a robot is on the blue side of the field
-   * Note that this method does not consider the width of the robot. The robot can
-   * be outside the field boundaries.
-   * 
-   * @param pose A robot pose
-   * @return True if the robot is on the blue side of the field
-   */
-  public static boolean isOnBlueSide(Pose3d pose) {
-    double robotX = pose.getX();
-    return robotX - FieldConstants.kBargeX < 0;
-  }
-
-  /**
-   * Test if a robot is on the blue side of the field
-   * Note that this method does not consider the width of the robot. The robot can
-   * be outside the field boundaries.
-   * 
-   * @param pose A robot pose
-   * @return True if the robot is on the blue side of the field
-   */
-  public static boolean isOnBlueSide(Pose2d pose) {
-    return isOnBlueSide(new Pose3d(pose));
   }
 
   /**

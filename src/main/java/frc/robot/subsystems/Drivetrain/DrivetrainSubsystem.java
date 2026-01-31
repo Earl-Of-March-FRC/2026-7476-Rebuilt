@@ -4,9 +4,12 @@
 
 package frc.robot.subsystems.Drivetrain;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +22,12 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -34,24 +43,34 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.PhotonConstants;
-import frc.utils.PoseHelpers;
+import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.PoseHelpers;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
   private static final SwerveDriveKinematics kinematics = Constants.DriveConstants.kDriveKinematics;
   private final Gyro gyro;
   private boolean gyroDisconnected = false;
-  private boolean isFieldRelative = true;
+  private boolean isFieldRelativeDesired = true;
+  private boolean isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
+  private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
 
   // Pose estimation with vision fusion capability
-  private final SwerveDrivePoseEstimator odometry;
-  private final SwerveDrivePoseEstimator visionlessOdometry;
+  // public final SwerveDrivePoseEstimator poseEstimator;
+  private final SwerveDrivePoseEstimator poseEstimator;
+  private final SwerveDrivePoseEstimator visionlessPoseEstimator;
   private final PhotonCamera[] cameras = new PhotonCamera[PhotonConstants.numCameras];
   private final PhotonPoseEstimator[] photonPoseEstimators = new PhotonPoseEstimator[PhotonConstants.numCameras];
 
@@ -61,10 +80,16 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
   // Simulation
   private SwerveDriveSimulation simulatedSwerveDrive = null;
+  // Indicates whether getPose() should use real odometry or report actual
+  // simulated pose, for testing purposes
+  private boolean accurateSimOdometry = true;
 
   // Heading control for restricted driving
   private Rotation2d targetHeading = null;
   private final PIDController headingController;
+
+  // Controller for radial distance from hub
+  private final PIDController radialController;
 
   /**
    * Creates a new DrivetrainSubsystem.
@@ -81,14 +106,14 @@ public class DrivetrainSubsystem extends SubsystemBase {
     // Initialize pose estimator with standard deviations
     // First vector: odometry std devs (x, y, theta) - lower = more trust
     // Second vector: vision std devs (x, y, theta) - higher = less trust initially
-    odometry = new SwerveDrivePoseEstimator(
+    poseEstimator = new SwerveDrivePoseEstimator(
         kinematics,
         gyro.getRotation2d(),
         getModulePositions(),
         new Pose2d(),
         VecBuilder.fill(0.1, 0.1, 0.1), // Odometry standard deviations
         VecBuilder.fill(0.4, 0.4, 0.4)); // Vision standard deviations
-    visionlessOdometry = new SwerveDrivePoseEstimator(
+    visionlessPoseEstimator = new SwerveDrivePoseEstimator(
         kinematics,
         gyro.getRotation2d(),
         getModulePositions(),
@@ -109,6 +134,42 @@ public class DrivetrainSubsystem extends SubsystemBase {
         Constants.DriveConstants.kPIDHeadingControllerD);
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     headingController.setTolerance(Math.toRadians(Constants.DriveConstants.kPIDHeadingControllerTolerance));
+
+    radialController = new PIDController(
+        DriveConstants.kPIDRadialControllerP,
+        DriveConstants.kPIDRadialControllerI,
+        DriveConstants.kPIDRadialControllerD);
+    radialController.setTolerance(DriveConstants.kPIDRadialControllerTolerance.in(Meters));
+
+    // Debug feature to teleport bot odometry
+    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
+    SmartDashboard.putNumber("New Sim Pose X", SimulationConstants.kStartingPose.getX());
+    SmartDashboard.putNumber("New Sim Pose Y", SimulationConstants.kStartingPose.getY());
+    SmartDashboard.putNumber("New Sim Pose θ (Deg)", SimulationConstants.kStartingPose.getRotation().getDegrees());
+    // Display this value as a toggle button or toggle switch in Elastic to use it
+    // as a button
+    SmartDashboard.putBoolean("Apply Sim Pose", true);
+
+    // Do not use the auto generated robot config to allow for muiltiple profiles
+    RobotConfig config = DriveConstants.kRobotConfig;
+
+    // Set the robot's parameters for PathPlanner
+    AutoBuilder.configure(
+        this::getPose,
+        this::resetPose,
+        this::getChassisSpeedsRobotRelative,
+        (speeds, feedforwards) -> runVelocity(speeds, false, false),
+        new PPHolonomicDriveController(
+            new PIDConstants(DriveConstants.kPTranslationController, DriveConstants.kITranslationController,
+                DriveConstants.kDTranslationController),
+            new PIDConstants(DriveConstants.kPThetaController, DriveConstants.kIThetaController,
+                DriveConstants.kDThetaController)),
+        config,
+        () -> {
+          Optional<Alliance> alliance = DriverStation.getAlliance();
+          return alliance.isPresent() ? alliance.get() == DriverStation.Alliance.Red : false; // default to blue
+        },
+        this);
   }
 
   /**
@@ -121,6 +182,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public DrivetrainSubsystem(SwerveModule[] modules, Gyro gyro, SwerveDriveSimulation simulatedSwerveDrive) {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
+    resetPose(SimulationConstants.kStartingPose);
   }
 
   /**
@@ -141,14 +203,20 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * 
    * @param speeds          Desired chassis speeds
    * @param isFieldRelative Whether speeds are field-relative
+   * @param isManualControl Whether the control is manual (should an offset be
+   *                        applied for red alliance)
    */
-  public void runVelocity(ChassisSpeeds speeds, Boolean isFieldRelative) {
+  public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualControl) {
     if (isFieldRelative) {
+      Optional<Alliance> alliance = DriverStation.getAlliance();
+      boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
           speeds.omegaRadiansPerSecond,
-          gyro.getRotation2d());
+          isRedAlliance && isManualControl
+              ? getPose().getRotation().plus(Rotation2d.fromDegrees(180))
+              : getPose().getRotation());
     }
     SwerveModuleState[] states = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
 
@@ -163,12 +231,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Runs the drivetrain using the current field-relative setting.
+   * Runs the drivetrain using the current field-relative setting. With manual
+   * control.
    * 
    * @param speeds Desired chassis speeds
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    runVelocity(speeds, this.isFieldRelative);
+    runVelocity(speeds, this.isFieldRelativeReal, true);
   }
 
   /**
@@ -177,7 +246,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return Current estimated pose
    */
   public Pose2d getPose() {
-    return odometry.getEstimatedPosition();
+    if (!accurateSimOdometry && simulatedSwerveDrive != null) {
+      return simulatedSwerveDrive.getSimulatedDriveTrainPose();
+    } else {
+      return poseEstimator.getEstimatedPosition();
+    }
   }
 
   /**
@@ -186,7 +259,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @param pose The pose to reset to
    */
   public void resetPose(Pose2d pose) {
-    odometry.resetPosition(gyro.getRotation2d(), getModulePositions(), pose);
+    poseEstimator.resetPosition(gyro.getRotation2d(), getModulePositions(), pose);
+
+    if (simulatedSwerveDrive != null && !accurateSimOdometry) {
+      simulatedSwerveDrive.setSimulationWorldPose(pose);
+    }
+
     Logger.recordOutput("Drivetrain/PoseReset", pose);
   }
 
@@ -224,6 +302,15 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the robot-relative chassis speeds.
+   * 
+   * @return Robot-relative chassis speeds
+   */
+  public ChassisSpeeds getRobotRelativeSpeeds() {
+    return kinematics.toChassisSpeeds(getModuleStates());
+  }
+
+  /**
    * Sets a target heading for the robot to maintain.
    * Used in restricted drive mode.
    * 
@@ -245,15 +332,116 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
+   * Resets the heading and radial controllers.
+   */
+  public void resetControllers() {
+    headingController.reset();
+    radialController.reset();
+  }
+
+  /**
    * Gets the omega correction to maintain the target heading.
    * 
    * @param desiredHeading The desired heading to maintain
    * @return The angular velocity correction
    */
   public AngularVelocity getHeadingCorrectionOmega(Rotation2d desiredHeading) {
-    Rotation2d currentHeading = gyro.getRotation2d();
+    Rotation2d currentHeading = getPose().getRotation();
     return RadiansPerSecond.of(
         headingController.calculate(currentHeading.getRadians(), desiredHeading.getRadians()));
+  }
+
+  /**
+   * Gets the translation vector from the robot to the current alliance hub.
+   * 
+   * @return Translation2d vector pointing from robot to hub
+   */
+  public Translation2d getHubTranslation2dBotRelative() {
+    Pose2d currentPose = getPose();
+
+    // Determine hub position based on alliance, default to blue
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
+    Translation2d hubTranslation = isRedAlliance
+        ? Constants.FieldConstants.kRedHubPose
+        : Constants.FieldConstants.kBlueHubPose;
+
+    Translation2d directionToHub = hubTranslation.minus(currentPose.getTranslation());
+    return directionToHub;
+  }
+
+  /**
+   * Gets the linear velocity correction to maintain a desired radial distance
+   * from the hub.
+   * 
+   * @param desiredDistance The desired distance from the hub
+   * @return The linear velocity correction
+   */
+  public LinearVelocity getRadialDistanceCorrectionVelocity(Distance desiredDistance) {
+    Translation2d hubTranslation = getHubTranslation2dBotRelative();
+
+    double currentDistance = hubTranslation.getNorm();
+    return MetersPerSecond.of(MathUtil.clamp(
+        -radialController.calculate(currentDistance, desiredDistance.in(Meters)),
+        -DriveConstants.kMaxSpeed.in(MetersPerSecond),
+        DriveConstants.kMaxSpeed.in(MetersPerSecond)));
+  }
+
+  /**
+   * Gets the velocity vector correction to maintain a desired radial distance
+   * from the hub.
+   * 
+   * @param desiredDistance The desired distance from the hub
+   * @return The a Translation2d representing the correction vector
+   */
+  public Translation2d getRadialDistanceCorrectionVector(Distance desiredDistance) {
+    Translation2d hubTranslation = getHubTranslation2dBotRelative();
+
+    double norm = hubTranslation.getNorm();
+    if (norm < 1e-6) {
+      // Robot is at the hub, no meaningful direction to correct
+      return new Translation2d();
+    }
+
+    hubTranslation = hubTranslation.div(norm); // Normalize to unit vector
+    double correctionMagnitude = getRadialDistanceCorrectionVelocity(desiredDistance).in(MetersPerSecond);
+
+    return hubTranslation.times(correctionMagnitude);
+  }
+
+  /**
+   * Checks if the robot is within the accepted launching zone.
+   * 
+   * @return True if in launching zone, false otherwise
+   */
+  public boolean isBotInLaunchingZone() {
+    Pose2d pose = getPose();
+    return isInLaunchingZone(pose);
+  }
+
+  /**
+   * Checks if the given pose is within the accepted launching zone.
+   * 
+   * @param pose The pose to check
+   * @return True if in launching zone, false otherwise
+   */
+  public boolean isInLaunchingZone(Pose2d pose) {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    if (alliance.isPresent()) {
+      SmartDashboard.putString("Drivetrain/Alliance",
+          isBlueAlliance ? "Blue" : "Red");
+    } else {
+      SmartDashboard.putString("Drivetrain/Alliance",
+          "Unknown");
+    }
+
+    if (isBlueAlliance) {
+      return pose.getX() < FieldConstants.kAcceptedLaunchingZone.in(Meters);
+    } else {
+      return pose.getX() > (FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedLaunchingZone).in(Meters));
+    }
   }
 
   /**
@@ -261,12 +449,16 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * 
    * @return Current chassis speeds (robot-relative)
    */
-  public ChassisSpeeds getChassisSpeeds() {
+  public ChassisSpeeds getChassisSpeedsRobotRelative() {
     return kinematics.toChassisSpeeds(getModuleStates());
   }
 
   /**
    * Get the current used gyro
+   * 
+   * Do not use this to get the robot heading, as the gyro offset is applied later
+   * in the pose estimator,
+   * use getPose().getRotation() instead
    * 
    * @return Gyro object
    */
@@ -307,8 +499,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
         Logger.recordOutput("Vision/" + camera.getName() + "/RawEstimatedPose", estimation.estimatedPose);
 
-        if (PoseHelpers.isInField(estimation.estimatedPose) &&
-            PoseHelpers.isOnGround(estimation.estimatedPose, PhotonConstants.kHeightTolerance)) {
+        if (PoseHelpers.isInField(estimation.estimatedPose)) {
 
           // ignore the result if it only has one tag and the tag is too small
           if (camResult.getTargets().size() == 1
@@ -431,25 +622,33 @@ public class DrivetrainSubsystem extends SubsystemBase {
     return results;
   }
 
+  /**
+   * Toggles between field-relative and robot-relative control.
+   */
+  public void toggleFieldRelative() {
+    isFieldRelativeDesired = !isFieldRelativeDesired;
+  }
+
   @Override
   public void periodic() {
     // Check gyro connection with debouncing
     if (!gyroDebouncer.calculate(gyro.isConnected())) {
       gyroDisconnected = true;
-      isFieldRelative = false;
     } else {
       gyroDisconnected = false;
-      isFieldRelative = true;
     }
 
     // Get current states
     SwerveModuleState[] states = getModuleStates();
     SwerveModulePosition[] positions = getModulePositions();
 
+    // Update drive mode based on desired setting and gyro status
+    isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
+
     // Update pose estimator with odometry
     if (!gyroDisconnected) {
-      robotPose = odometry.update(gyro.getRotation2d(), positions);
-      visionlessPose = visionlessOdometry.update(gyro.getRotation2d(), positions);
+      robotPose = poseEstimator.update(gyro.getRotation2d(), positions);
+      visionlessPose = visionlessPoseEstimator.update(gyro.getRotation2d(), positions);
     }
 
     // Iterate through each camera
@@ -477,7 +676,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
         }
 
         Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
-        odometry.addVisionMeasurement(estimatedPose, visionPose.timestampSeconds);
+        poseEstimator.addVisionMeasurement(estimatedPose, visionPose.timestampSeconds);
 
         // Log vision poses
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
@@ -498,15 +697,52 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     // Log everything
     Logger.recordOutput("Drivetrain/GyroDisconnected", gyroDisconnected);
-    Logger.recordOutput("Drivetrain/IsFieldRelative", isFieldRelative);
-    Logger.recordOutput("Drivetrain/Pose", robotPose);
+    Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
+    Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
+    Logger.recordOutput("Drivetrain/Pose", getPose());
     Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
+    boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Sim Pose", true);
+
+    // Retrieve SmartDashboard settings
+    if (simulatedSwerveDrive != null) {
+      accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
+
+      // Apply new sim pose if requested, then reset the trigger
+      if (applyNewSimPose) {
+        SmartDashboard.putBoolean("Apply Sim Pose", true);
+        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
+        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
+        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
+            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
+        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
+        simulatedSwerveDrive.setSimulationWorldPose(newPose);
+        resetPose(newPose);
+      }
+    }
+
+    // Apply new sim pose if requested, then reset the trigger
+    if (applyNewSimPose) {
+      SmartDashboard.putBoolean("Apply Sim Pose", true);
+      double x = SmartDashboard.getNumber("New Sim Pose X", getPose().getX());
+      double y = SmartDashboard.getNumber("New Sim Pose Y", getPose().getY());
+      double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
+          getPose().getRotation().getDegrees());
+      Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
+      resetPose(newPose);
+    }
+
     if (this.targetHeading != null) {
       Logger.recordOutput("Drivetrain/TargetHeading", this.getTargetHeading().getDegrees());
     }
+
+    field.setRobotPose(getPose());
+    SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
+    SmartDashboard.putBoolean("Gyro Connected", !gyroDisconnected);
+    SmartDashboard.putBoolean("Is Field Relative Desired", isFieldRelativeDesired);
+    SmartDashboard.putBoolean("Is Field Relative Real", isFieldRelativeReal);
   }
 
   @Override
