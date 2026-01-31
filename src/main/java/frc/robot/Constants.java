@@ -21,10 +21,6 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
-import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.path.PathConstraints;
-import com.studica.frc.AHRS.NavXComType;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
@@ -35,19 +31,14 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.units.measure.Velocity;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -199,9 +190,9 @@ public final class Constants {
     public static final int kAlgaePipeline = 1;
     public static final int kAprilTagPipeline = 0;
 
-    public static final String kCamera1 = "camera1";
-    public static final String kCamera2 = "camera2";
-    public static final String kCamera3 = "camera3";
+    public static final String kCamera1 = "Arducam_1";
+    public static final String kCamera2 = "Arducam_2";
+    public static final String kCamera3 = "Arducam_3";
     public static final String[] kCameras = { kCamera1, kCamera2, kCamera3 };
     public static final List<Vector<N3>> kCameraStandardDeviations = List.of(
         kCamera1StandardDeviation,

@@ -91,19 +91,16 @@ public final class ProfileSelector {
    */
   private static SwerveDriveProfile getProfileByName(String name) {
     if (name == null) {
-      return SwerveDriveProfile.COMP_BOT;
+      return SwerveProfiles.COMP_BOT;
     }
 
-    switch (name) {
-      case "SpongeBot":
-        return SwerveDriveProfile.SPONGE_BOT;
+    return switch (name) {
+      case "SpongeBot" -> SwerveProfiles.SPONGE_BOT;
+      case "OffSeasonSwerve" -> SwerveProfiles.OFF_SEASON_SWERVE;
+      case "CompBot" -> SwerveDriveProfile.COMP_BOT;
+      default -> SwerveDriveProfile.COMP_BOT;
+    };
 
-      case "OffSeasonSwerve":
-        return SwerveDriveProfile.OFF_SEASON_SWERVE;
-
-      case "CompBot":
-      default:
-        return SwerveDriveProfile.COMP_BOT;
-    }
   }
+
 }
