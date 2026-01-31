@@ -35,6 +35,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -54,8 +55,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private boolean isFieldRelativeDesired = true;
   private boolean isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
+  private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
 
   // Pose estimation with vision fusion capability
+  // public final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator poseEstimator;
 
   // Simulation
@@ -500,6 +503,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
     if (this.targetHeading != null) {
       Logger.recordOutput("Drivetrain/TargetHeading", this.targetHeading.getDegrees());
     }
+
+    field.setRobotPose(currentPose);
+    SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
+    SmartDashboard.putBoolean("Gyro Connected", !gyroDisconnected);
+    SmartDashboard.putBoolean("Is Field Relative Desired", isFieldRelativeDesired);
+    SmartDashboard.putBoolean("Is Field Relative Real", isFieldRelativeReal);
   }
 
   @Override
