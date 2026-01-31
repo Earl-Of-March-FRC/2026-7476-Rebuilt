@@ -58,11 +58,8 @@ public class RobotContainer {
     // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
 
     if (Robot.isReal()) {
-      if (activeProfile.profileId() == SwerveProfiles.COMP_BOT.profileId()) {
-        gyro = new GyroADXRS450();
-      } else {
-        gyro = new GyroNavX();
-      }
+      gyro = new GyroNavX();
+
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               Constants.DriveConstants.kFrontLeftDrivingCanId,
