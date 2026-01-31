@@ -203,6 +203,66 @@ public class PathGenerator {
   }
 
   /**
+   * Create a command to go from the neutral zone to the launch zone going over
+   * the trench, will return
+   * a command that does nothing and ends immediately if not currently in neutral
+   * zone
+   * 
+   * @param endVelocity Desired end velocity
+   * @return
+   */
+  public static Command driveToLaunchZoneCommandTrench(LinearVelocity endVelocity) {
+    if (driveSub.getCurrentBotZone() != FieldZones.Neutral) {
+      return new InstantCommand();
+    }
+
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    if (alliance.isPresent()) {
+      SmartDashboard.putString("Drivetrain/Alliance",
+          isBlueAlliance ? "Blue" : "Red");
+    } else {
+      SmartDashboard.putString("Drivetrain/Alliance",
+          "Unknown");
+    }
+
+    Translation2d[] neutralTrenchTranslation2ds = isBlueAlliance
+        ? new Translation2d[] { FieldConstants.kTrenchPathWaypoints[4], FieldConstants.kTrenchPathWaypoints[5] }
+        : new Translation2d[] { FieldConstants.kTrenchPathWaypoints[6], FieldConstants.kTrenchPathWaypoints[7] };
+
+    Translation2d startTranslation2d = nearestTranslation2d(neutralTrenchTranslation2ds);
+    Translation2d inLaunchZoneTranslation2d = new Translation2d(
+        isBlueAlliance
+            ? FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth).in(Meters)
+            : FieldConstants.kFieldLengthX
+                .minus(FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth)).in(Meters),
+        startTranslation2d.getY());
+
+    Rotation2d targetHeading = driveSub
+        .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kTrenchHeadingRestriction.in(Degrees)), true);
+
+    // Define the start and end poses
+    Pose2d start = new Pose2d(startTranslation2d,
+        targetHeading);
+    Pose2d end = new Pose2d(inLaunchZoneTranslation2d,
+        targetHeading);
+
+    // Convert to waypoint list
+    List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(start, end);
+
+    // Create the path using the waypoints created above
+    PathPlannerPath path = new PathPlannerPath(
+        waypoints,
+        DriveConstants.kTrenchConstraints,
+        new IdealStartingState(DriveConstants.kTrenchLinearVelocity, targetHeading),
+        new GoalEndState(endVelocity, targetHeading));
+
+    return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
+        .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
+  }
+
+  /**
    * Helper method
    * Takes a list of Translation2ds and returns the index of the one closest to
    * the bot
