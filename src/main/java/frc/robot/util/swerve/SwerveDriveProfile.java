@@ -43,7 +43,13 @@ public record SwerveDriveProfile(
     Mass robotMass,
     MomentOfInertia robotMOI,
     NavXComType gyroComType,
-    int profileId) {
+    SwerveDriveProfileID profileId) {
+
+  public static enum SwerveDriveProfileID {
+    COMP_BOT,
+    SPONGE_BOT,
+    OFF_SEASON_SWERVE
+  }
 
   /**
    * SpongeBot swerve drive configuration.
@@ -67,7 +73,7 @@ public record SwerveDriveProfile(
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       NavXComType.kMXP_SPI,
-      1);
+      SwerveDriveProfileID.COMP_BOT);
 
   public static final SwerveDriveProfile SPONGE_BOT = new SwerveDriveProfile(
       new int[] { 1, 3, 5, 7 },
@@ -88,7 +94,7 @@ public record SwerveDriveProfile(
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       NavXComType.kUSB1,
-      2);
+      SwerveDriveProfileID.SPONGE_BOT);
 
   /**
    * Off-season swerve drive configuration.
@@ -110,13 +116,13 @@ public record SwerveDriveProfile(
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       NavXComType.kMXP_SPI,
-      3);
+      SwerveDriveProfileID.OFF_SEASON_SWERVE);
 
   public String getName() {
     return switch (profileId) {
-      case 1 -> "CompBot";
-      case 2 -> "SpongeBot";
-      case 3 -> "OffSeasonSwerve";
+      case COMP_BOT -> "CompBot";
+      case SPONGE_BOT -> "SpongeBot";
+      case OFF_SEASON_SWERVE -> "OffSeasonSwerve";
       default -> "CompBot";
     };
   }

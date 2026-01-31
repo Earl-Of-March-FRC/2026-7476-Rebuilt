@@ -22,12 +22,13 @@ import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
+import frc.robot.util.swerve.SwerveDriveProfile.SwerveDriveProfileID;
 
 public final class SwerveConfig {
 
   // Driving Parameters - Note that these are not the maximum capable speeds of
   // the robot, rather the allowed maximum speeds
-  public static int profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
+  public static SwerveDriveProfileID profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
 
   public static NavXComType kGyroComType;
 
@@ -63,8 +64,6 @@ public final class SwerveConfig {
   public static int kFrontRightTurningCanId;
   public static int kBackLeftTurningCanId;
   public static int kBackRightTurningCanId;
-
-  public static final boolean kGyroReversed = false;
 
   /**
    * Applies the given swerve drive profile to the robot's drive and module

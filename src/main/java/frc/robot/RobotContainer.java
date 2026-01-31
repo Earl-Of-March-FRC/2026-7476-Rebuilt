@@ -33,13 +33,12 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
-import frc.robot.util.swerve.SwerveProfiles;
-import frc.robot.util.swerve.SwerveProfileApplicator;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.util.swerve.ProfileSelector;
+import frc.robot.util.swerve.SwerveConfig;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
@@ -51,8 +50,8 @@ public class RobotContainer {
 
   public RobotContainer() {
     // Get profile from Elastic dashboard selector
-    SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveProfiles.COMP_BOT);
-    SwerveProfileApplicator.applyProfile(activeProfile);
+    SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
+    SwerveConfig.applyProfile(activeProfile);
     // SwerveDriveProfile activeProfile = SwerveProfiles.COMP_BOT;
     // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
     // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
@@ -62,20 +61,20 @@ public class RobotContainer {
 
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
-              Constants.DriveConstants.kFrontLeftDrivingCanId,
-              Constants.DriveConstants.kFrontLeftTurningCanId,
+              SwerveConfig.kFrontLeftDrivingCanId,
+              SwerveConfig.kFrontLeftTurningCanId,
               Constants.DriveConstants.kFrontLeftChassisAngularOffset),
           new MAXSwerveModule(
-              Constants.DriveConstants.kFrontRightDrivingCanId,
-              Constants.DriveConstants.kFrontRightTurningCanId,
+              SwerveConfig.kFrontRightDrivingCanId,
+              SwerveConfig.kFrontRightTurningCanId,
               Constants.DriveConstants.kFrontRightChassisAngularOffset),
           new MAXSwerveModule(
-              Constants.DriveConstants.kBackLeftDrivingCanId,
-              Constants.DriveConstants.kBackLeftTurningCanId,
+              SwerveConfig.kBackLeftDrivingCanId,
+              SwerveConfig.kBackLeftTurningCanId,
               Constants.DriveConstants.kBackLeftChassisAngularOffset),
           new MAXSwerveModule(
-              Constants.DriveConstants.kBackRightDrivingCanId,
-              Constants.DriveConstants.kBackRightTurningCanId,
+              SwerveConfig.kBackRightDrivingCanId,
+              SwerveConfig.kBackRightTurningCanId,
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
     } else {
