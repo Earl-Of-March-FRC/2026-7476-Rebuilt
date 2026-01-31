@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.IdealStartingState;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.Waypoint;
 
@@ -25,15 +26,10 @@ import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
  * Helper class to generate paths on the fly
  */
 public class PathGenerator {
-  private final DrivetrainSubsystem driveSub;
+  private static DrivetrainSubsystem driveSub;
 
-  /**
-   * Initialize a path generator for a drivetrain subsystem
-   * 
-   * @param driveSub The drivetrain to use in commands
-   */
-  public PathGenerator(DrivetrainSubsystem driveSub) {
-    this.driveSub = driveSub;
+  public static void setDrivetrain(DrivetrainSubsystem driveSubsystem) {
+    driveSub = driveSubsystem;
   }
 
   /**
@@ -42,7 +38,7 @@ public class PathGenerator {
    * @param endVelocity the desried end velocity after crossing
    * @return The command to schedule
    */
-  public Command crossNearestTrench(LinearVelocity endVelocity) {
+  public static Command crossNearestTrench(LinearVelocity endVelocity) {
     PathPlannerPath trenchPath = crossTrenchPath(endVelocity, nearestIndex(FieldConstants.kTrenchPathWaypoints));
 
     return AutoBuilder.pathfindThenFollowPath(trenchPath, DriveConstants.kPathfindingConstraints);
@@ -57,7 +53,7 @@ public class PathGenerator {
    *                    start (IDs set in FieldConstants)
    * @return A path to cross the trench
    */
-  private PathPlannerPath crossTrenchPath(LinearVelocity endVelocity, int trenchID) {
+  private static PathPlannerPath crossTrenchPath(LinearVelocity endVelocity, int trenchID) {
     // Calculate The heading with which to cross the trench
     Rotation2d targetHeading = driveSub
         .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kTrenchHeadingRestriction.in(Degrees)), false);
@@ -77,7 +73,7 @@ public class PathGenerator {
     PathPlannerPath path = new PathPlannerPath(
         waypoints,
         DriveConstants.kBumpConstraints,
-        null,
+        new IdealStartingState(DriveConstants.kBumpLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
     return path;
@@ -89,7 +85,7 @@ public class PathGenerator {
    * @param endVelocity the desried end velocity after crossing
    * @return The command to schedule
    */
-  public Command crossNearestBump(LinearVelocity endVelocity) {
+  public static Command crossNearestBump(LinearVelocity endVelocity) {
     PathPlannerPath bumpPath = crossBumpPath(endVelocity, nearestIndex(FieldConstants.kBumpPathWaypoints));
 
     return AutoBuilder.pathfindThenFollowPath(bumpPath, DriveConstants.kPathfindingConstraints);
@@ -103,7 +99,7 @@ public class PathGenerator {
    *                    start (IDs set in FieldConstants)
    * @return A path to cross the bump
    */
-  private PathPlannerPath crossBumpPath(LinearVelocity endVelocity, int bumpID) {
+  private static PathPlannerPath crossBumpPath(LinearVelocity endVelocity, int bumpID) {
     // Calculate The heading with which to cross the bump
     Rotation2d targetHeading = driveSub
         .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kBumpHeadingRestriction.in(Degrees)), true);
@@ -123,7 +119,7 @@ public class PathGenerator {
     PathPlannerPath path = new PathPlannerPath(
         waypoints,
         DriveConstants.kBumpConstraints,
-        null,
+        new IdealStartingState(DriveConstants.kTrenchLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
     return path;
@@ -137,7 +133,7 @@ public class PathGenerator {
    * @param poseTranslation2ds The list of Translation2ds
    * @return The index of the nearest one
    */
-  private int nearestIndex(Translation2d[] poseTranslation2ds) {
+  private static int nearestIndex(Translation2d[] poseTranslation2ds) {
     int nearestIndex = 0;
 
     Translation2d currTranslation = driveSub.getPose().getTranslation();
