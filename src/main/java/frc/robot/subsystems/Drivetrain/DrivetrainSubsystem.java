@@ -45,6 +45,7 @@ import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.swerve.FieldZones;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
@@ -405,22 +406,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Checks if the robot is within the accepted launching zone.
-   * 
-   * @return True if in launching zone, false otherwise
-   */
-  public boolean isBotInLaunchingZone() {
-    Pose2d pose = getPose();
-    return isInLaunchingZone(pose);
-  }
-
-  /**
-   * Checks if the given pose is within the accepted launching zone.
+   * Calculate what zone of the field a pose is in
    * 
    * @param pose The pose to check
-   * @return True if in launching zone, false otherwise
+   * @return The zone the pose is in
    */
-  public boolean isInLaunchingZone(Pose2d pose) {
+  public FieldZones getPoseZone(Pose2d pose) {
     Optional<Alliance> alliance = DriverStation.getAlliance();
     boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
@@ -432,11 +423,33 @@ public class DrivetrainSubsystem extends SubsystemBase {
           "Unknown");
     }
 
-    if (isBlueAlliance) {
-      return pose.getX() < FieldConstants.kAcceptedLaunchingZone.in(Meters);
-    } else {
-      return pose.getX() > (FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedLaunchingZone).in(Meters));
+    if (pose.getX() > FieldConstants.kAllianceZoneXLength.in(Meters)
+        && pose.getX() < FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength).in(Meters)) {
+      return FieldZones.Neutral;
     }
+
+    if ((pose.getX() < FieldConstants.kAcceptedLaunchingZone.in(Meters) && isBlueAlliance) ||
+        (pose.getX() < FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedLaunchingZone).in(Meters)
+            && !isBlueAlliance)) {
+      return FieldZones.Launch;
+    }
+
+    if ((pose.getX() < FieldConstants.kAllianceZoneXLength.in(Meters) && isBlueAlliance) ||
+        (pose.getX() < FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength).in(Meters)
+            && !isBlueAlliance)) {
+      return FieldZones.Alliance;
+    }
+
+    return FieldZones.Enemy;
+  }
+
+  /**
+   * Calculate what zone of the field the bot is in
+   * 
+   * @return The current zone the bot is in
+   */
+  public FieldZones getCurrentBotZone() {
+    return getPoseZone(getPose());
   }
 
   /**
@@ -495,6 +508,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
     Logger.recordOutput("Drivetrain/Pose", currentPose);
+    Logger.recordOutput("Drivetrain/Zone", getCurrentBotZone().name());
     Logger.recordOutput("Drivetrain/GyroRotation", gyro.getRotation2d().getDegrees());
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);

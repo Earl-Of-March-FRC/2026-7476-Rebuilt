@@ -44,6 +44,7 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 
@@ -113,7 +114,8 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    driveSub.setDefaultCommand(new DriveCmd(
+
+    DriveCmd driveCmd = new DriveCmd(
         driveSub,
         () -> MathUtil.applyDeadband(
             -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
@@ -123,31 +125,36 @@ public class RobotContainer {
             OIConstants.kDriveDeadband),
         () -> MathUtil.applyDeadband(
             -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis),
-            OIConstants.kDriveDeadband)));
+            OIConstants.kDriveDeadband));
 
-    driverController.a().toggleOnTrue(
-        new RestrictedDriveCmd(
-            driveSub,
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-                OIConstants.kDriveDeadband),
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-                OIConstants.kDriveDeadband),
-            new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
+    RestrictedDriveCmd restrictedDriveCmd = new RestrictedDriveCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
+            OIConstants.kDriveDeadband),
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction));
+
+    DriveAtLaunchingRangeCmd driveAtLaunchingRangeCmd = new DriveAtLaunchingRangeCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
+            OIConstants.kDriveDeadband),
+        Constants.LauncherConstants.kLaunchRadius,
+        true);
+
+    driveSub.setDefaultCommand(driveCmd);
+
+    driverController.a().toggleOnTrue(restrictedDriveCmd);
 
     // Only schedule when in Launching zone
-    driverController.x().and(driveSub::isBotInLaunchingZone).toggleOnTrue(
-        new DriveAtLaunchingRangeCmd(
-            driveSub,
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-                OIConstants.kDriveDeadband),
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-                OIConstants.kDriveDeadband),
-            Constants.LauncherConstants.kLaunchRadius,
-            true));
+    driverController.x().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(driveAtLaunchingRangeCmd);
 
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
@@ -156,9 +163,14 @@ public class RobotContainer {
     driverController.povLeft().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
         Set.of(driveSub)));
+
     driverController.povRight().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
         Set.of(driveSub)));
+
+    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(Commands.defer(
+        () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
+        Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
     // Cancel all driveSub commands, returning manual control
     driverController.povDown().onTrue(
