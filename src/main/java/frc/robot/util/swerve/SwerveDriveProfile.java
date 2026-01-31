@@ -42,13 +42,19 @@ public record SwerveDriveProfile(
     Distance bumperWidth,
     Mass robotMass,
     MomentOfInertia robotMOI,
-    Gyro gyro,
+    GyroType gyro,
     SwerveDriveProfileID profileId) {
 
   public static enum SwerveDriveProfileID {
     COMP_BOT,
     SPONGE_BOT,
     OFF_SEASON_SWERVE
+  }
+
+  public static enum GyroType {
+    NavX_MXP_SPI,
+    NavX_USB1,
+    ADXRS450
   }
 
   /**
@@ -72,7 +78,7 @@ public record SwerveDriveProfile(
       Meters.of(0.75),
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
-      new GyroNavX(NavXComType.kMXP_SPI),
+      GyroType.NavX_MXP_SPI,
       SwerveDriveProfileID.COMP_BOT);
 
   public static final SwerveDriveProfile SPONGE_BOT = new SwerveDriveProfile(
@@ -93,7 +99,7 @@ public record SwerveDriveProfile(
       Meters.of(0.75),
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
-      new GyroNavX(NavXComType.kUSB1),
+      GyroType.NavX_USB1,
       SwerveDriveProfileID.SPONGE_BOT);
 
   /**
@@ -115,7 +121,7 @@ public record SwerveDriveProfile(
       Meters.of(0.75),
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
-      new GyroADXRS450(),
+      GyroType.ADXRS450,
       SwerveDriveProfileID.OFF_SEASON_SWERVE);
 
   public String getName() {
