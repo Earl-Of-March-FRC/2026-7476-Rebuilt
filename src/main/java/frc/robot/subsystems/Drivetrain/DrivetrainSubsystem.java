@@ -6,16 +6,24 @@ package frc.robot.subsystems.Drivetrain;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.Optional;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -23,13 +31,17 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.MathUtil;
+
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -46,7 +58,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
 
 public class DrivetrainSubsystem extends SubsystemBase {
@@ -66,7 +80,15 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
   // Pose estimation with vision fusion capability
   // public final SwerveDrivePoseEstimator poseEstimator;
+  // public final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator poseEstimator;
+  private final SwerveDrivePoseEstimator visionlessPoseEstimator;
+  private final PhotonCamera[] cameras = new PhotonCamera[PhotonConstants.numCameras];
+  private final PhotonPoseEstimator[] photonPoseEstimators = new PhotonPoseEstimator[PhotonConstants.numCameras];
+
+  // Current pose of the robot
+  private Pose2d robotPose = new Pose2d();
+  private Pose2d visionlessPose = new Pose2d();
 
   // Simulation
   private SwerveDriveSimulation simulatedSwerveDrive = null;
@@ -103,6 +125,19 @@ public class DrivetrainSubsystem extends SubsystemBase {
         new Pose2d(),
         VecBuilder.fill(0.1, 0.1, 0.1), // Odometry standard deviations
         VecBuilder.fill(0.4, 0.4, 0.4)); // Vision standard deviations
+    visionlessPoseEstimator = new SwerveDrivePoseEstimator(
+        kinematics,
+        gyro.getRotation2d(),
+        getModulePositions(),
+        new Pose2d());
+
+    // Setup cameras to see april tags. Wow! That makes me really happy.
+    for (int i = 0; i < PhotonConstants.numCameras; i++) {
+      cameras[i] = new PhotonCamera(PhotonConstants.kCameras[i]);
+      photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PhotonConstants.kRobotToCams[i]);
+    }
 
     // Initialize heading controller for auto-rotation in restricted mode
     headingController = new PIDController(
@@ -160,6 +195,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
     resetPose(SimulationConstants.kStartingPose);
+    resetPose(SimulationConstants.kStartingPose);
   }
 
   /**
@@ -180,6 +216,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * 
    * @param speeds          Desired chassis speeds
    * @param isFieldRelative Whether speeds are field-relative
+   * @param isManualControl Whether the control is manual (should an offset be
+   *                        applied for red alliance)
    * @param isManualControl Whether the control is manual (should an offset be
    *                        applied for red alliance)
    */
@@ -210,10 +248,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
   /**
    * Runs the drivetrain using the current field-relative setting. With manual
    * control.
+   * Runs the drivetrain using the current field-relative setting. With manual
+   * control.
    * 
    * @param speeds Desired chassis speeds
    */
   public void runVelocity(ChassisSpeeds speeds) {
+    runVelocity(speeds, this.isFieldRelativeReal, true);
     runVelocity(speeds, this.isFieldRelativeReal, true);
   }
 
@@ -237,6 +278,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void resetPose(Pose2d pose) {
     poseEstimator.resetPosition(gyro.getRotation2d(), getModulePositions(), pose);
+
+    if (simulatedSwerveDrive != null && !accurateSimOdometry) {
+      simulatedSwerveDrive.setSimulationWorldPose(pose);
+    }
 
     if (simulatedSwerveDrive != null && !accurateSimOdometry) {
       simulatedSwerveDrive.setSimulationWorldPose(pose);
@@ -286,6 +331,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void setTargetHeading(Rotation2d heading) {
     this.targetHeading = heading;
+  }
+
+  public Rotation2d getTargetHeading() {
+    return this.targetHeading;
   }
 
   /**
@@ -424,10 +473,171 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * in the pose estimator,
    * use getPose().getRotation() instead
    * 
+   * Do not use this to get the robot heading, as the gyro offset is applied later
+   * in the pose estimator,
+   * use getPose().getRotation() instead
+   * 
    * @return Gyro object
    */
   public Gyro getGyro() {
     return gyro;
+  }
+
+  /**
+   * Get an estimate of the robot's pose using vision data from PhotonVisision.
+   * This method will filter out invalid and unprobable results.
+   * 
+   * @param poseEstimator          The PhotonPoseEstimator object to use for
+   *                               estimating the robot's pose
+   * @param camera                 The PhotonCamera object to use for getting
+   *                               vision data
+   * @param robotToCam             The Transform3d object representing the
+   *                               transformation
+   *                               from the robot to the camera
+   * @param prevEstimatedRobotPose The previous estimated pose object
+   */
+  public List<EstimatedRobotPose> getEstimatedGlobalPose(PhotonPoseEstimator poseEstimator, PhotonCamera camera,
+      Transform3d robotToCam,
+      Pose2d prevEstimatedRobotPose) {
+    poseEstimator.setReferencePose(prevEstimatedRobotPose);
+
+    List<EstimatedRobotPose> results = new ArrayList<>();
+    List<PhotonPipelineResult> camResults = camera.getAllUnreadResults();
+
+    for (PhotonPipelineResult camResult : camResults) {
+      if (!camResult.hasTargets()) {
+        continue;
+      }
+
+      // check if the built in pose estimator pose is reasonable
+      Optional<EstimatedRobotPose> optionalEstimation = poseEstimator.update(camResult);
+      if (optionalEstimation.isPresent()) {
+        EstimatedRobotPose estimation = optionalEstimation.get();
+
+        Logger.recordOutput("Vision/" + camera.getName() + "/RawEstimatedPose", estimation.estimatedPose);
+
+        if (PoseHelpers.isInField(estimation.estimatedPose)
+            && PoseHelpers.isOnGround(estimation.estimatedPose, PhotonConstants.kHeightTolerance)) {
+
+          // ignore the result if it only has one tag and the tag is too small
+          if (camResult.getTargets().size() == 1
+              && camResult.getTargets().get(0).area <= PhotonConstants.kMinSingleTagArea) {
+            continue;
+          }
+
+          results.add(estimation);
+          continue;
+        }
+      }
+
+      double timestamp = camResult.getTimestampSeconds();
+      List<PhotonTrackedTarget> targetsUsed = new ArrayList<>();
+
+      // if the built in pose estimator is not reasonable, compute it ourselves
+      if (camResult.hasTargets()) {
+        List<PhotonTrackedTarget> targets = camResult.getTargets();
+        List<Pose3d> validPoses = new ArrayList<>();
+        for (PhotonTrackedTarget target : targets) {
+
+          // ignore targets with high pose ambiguity
+          if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityDiscardThreshold) {
+            continue;
+          }
+
+          int targetId = target.fiducialId;
+          Optional<Pose3d> optionalTagPose = FieldConstants.kfieldLayout.getTagPose(targetId);
+          // it should never be empty, but just in case
+          if (optionalTagPose.isEmpty()) {
+            continue;
+          }
+          Pose3d tagPose = optionalTagPose.get();
+
+          // if the ambiguity is high, only use the pose that is reasonable
+          if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityThreshold) {
+            Transform3d bestCamToTarget = target.getBestCameraToTarget();
+            Transform3d altCamToTarget = target.getAlternateCameraToTarget();
+
+            // robotTransform = tagTransform - camToTarget - robotToCam
+            Pose3d bestRobotPose = tagPose.transformBy(bestCamToTarget.inverse())
+                .transformBy(robotToCam.inverse());
+            Pose3d altRobotPose = tagPose.transformBy(altCamToTarget.inverse()).transformBy(robotToCam.inverse());
+
+            Logger.recordOutput("Vision/" + camera.getName() + "/FallbackBestPose", bestRobotPose);
+            Logger.recordOutput("Vision/" + camera.getName() + "/FallbackAltPose", altRobotPose);
+
+            // check if they are reasonable
+            boolean isBestPoseValid = PoseHelpers.isInField(bestRobotPose) &&
+                PoseHelpers.isOnGround(bestRobotPose, PhotonConstants.kHeightTolerance);
+            boolean isAltPoseValid = PoseHelpers.isInField(altRobotPose)
+                && PoseHelpers.isOnGround(altRobotPose, PhotonConstants.kHeightTolerance);
+            if (isBestPoseValid && isAltPoseValid) {
+              targetsUsed.add(target);
+              // if both are valid, use the one that is closer to the previous estimation
+              double bestDistance = PoseHelpers.distanceBetween(bestRobotPose, new Pose3d(prevEstimatedRobotPose));
+              double altDistance = PoseHelpers.distanceBetween(altRobotPose, new Pose3d(prevEstimatedRobotPose));
+              if (bestDistance < altDistance) {
+                validPoses.add(bestRobotPose);
+              } else {
+                validPoses.add(altRobotPose);
+              }
+            } else if (isBestPoseValid) {
+              targetsUsed.add(target);
+              validPoses.add(bestRobotPose);
+            } else if (isAltPoseValid) {
+              targetsUsed.add(target);
+              validPoses.add(altRobotPose);
+            }
+            continue;
+          }
+
+          // if the ambiguity is low, use the pose directly
+          Transform3d camToTarget = target.getBestCameraToTarget();
+          // robotTransform = tagTransform - camToTarget - robotToCam
+          Pose3d robotPose = tagPose.transformBy(camToTarget.inverse()).transformBy(robotToCam.inverse());
+          // check if the pose is reasonable
+          if (PoseHelpers.isInField(robotPose) && PoseHelpers.isOnGround(robotPose, PhotonConstants.kHeightTolerance)) {
+            validPoses.add(robotPose);
+            targetsUsed.add(target);
+          }
+        }
+
+        // if there are no valid poses, ignore this frame
+        if (validPoses.isEmpty()) {
+          continue;
+        }
+
+        double totalX = 0;
+        double totalY = 0;
+        double totalZRot = 0;
+
+        for (Pose3d pose : validPoses) {
+          totalX += pose.getX();
+          totalY += pose.getY();
+
+          totalZRot += pose.getRotation().getZ();
+        }
+
+        final int count = validPoses.size();
+        Pose3d averagePose = new Pose3d(
+            totalX / count, // X average
+            totalY / count, // Y average
+            0, // Z forced to 0 (validated by isOnGround)
+            new Rotation3d(0, 0, totalZRot / count) // Average Z rotation
+        );
+
+        Logger.recordOutput("Vision/" + camera.getName() + "/FallbackPose", averagePose);
+
+        // ignore the result if it only has one tag and the tag is too small
+        if (camResult.getTargets().size() == 1
+            && camResult.getTargets().get(0).area <= PhotonConstants.kMinSingleTagArea) {
+          continue;
+        }
+        results
+            .add(new EstimatedRobotPose(averagePose, timestamp, targetsUsed,
+                PoseStrategy.CLOSEST_TO_REFERENCE_POSE));
+      }
+    }
+    return results;
   }
 
   /**
@@ -446,18 +656,62 @@ public class DrivetrainSubsystem extends SubsystemBase {
       gyroDisconnected = false;
     }
 
+    // Get current states
+    SwerveModuleState[] states = getModuleStates();
+    SwerveModulePosition[] positions = getModulePositions();
+
     // Update drive mode based on desired setting and gyro status
     isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
 
     // Update pose estimator with odometry
     if (!gyroDisconnected) {
-      poseEstimator.update(gyro.getRotation2d(), getModulePositions());
+      robotPose = poseEstimator.update(gyro.getRotation2d(), positions);
+      visionlessPose = visionlessPoseEstimator.update(gyro.getRotation2d(), positions);
     }
 
-    // Get current states and pose
-    SwerveModuleState[] states = getModuleStates();
-    SwerveModulePosition[] positions = getModulePositions();
-    Pose2d currentPose = getPose();
+    // Iterate through each camera
+    for (int i = 0; i < PhotonConstants.numCameras; i++) {
+      // Get all poses from camera
+      List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
+          PhotonConstants.kRobotToCams[i],
+          robotPose);
+
+      List<Integer> fiducialIds = new ArrayList<>();
+      List<Pose3d> fiducialIdPoses = new ArrayList<>();
+      List<Double> tagAreas = new ArrayList<>();
+      List<Double> tagAmbiguities = new ArrayList<>();
+
+      // Iterate through each pose to check for ambiguity
+      for (EstimatedRobotPose visionPose : visionPoses) {
+        // Iterate through the targets used to estimate the pose
+        for (PhotonTrackedTarget target : visionPose.targetsUsed) {
+          fiducialIds.add(target.fiducialId);
+          if (FieldConstants.kfieldLayout.getTagPose(target.fiducialId).isPresent()) {
+            fiducialIdPoses.add(FieldConstants.kfieldLayout.getTagPose(target.fiducialId).get());
+          }
+          tagAreas.add(target.area);
+          tagAmbiguities.add(target.poseAmbiguity);
+        }
+
+        Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
+        poseEstimator.addVisionMeasurement(estimatedPose, visionPose.timestampSeconds);
+
+        // Log vision poses
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
+
+      }
+
+      // Log targets estimated from robot
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetIds",
+          fiducialIds.stream().mapToInt(n -> n).toArray());
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetPoses",
+          fiducialIdPoses.toArray(new Pose3d[fiducialIdPoses.size()]));
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAreas",
+          tagAreas.stream().mapToDouble(n -> n).toArray());
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAmbiguities",
+          tagAmbiguities.stream().mapToDouble(n -> n).toArray());
+    }
 
     // Calculate velocity and acceleration
     ChassisSpeeds speedsRaw = getChassisSpeedsRobotRelative();
@@ -489,7 +743,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/GyroDisconnected", gyroDisconnected);
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
-    Logger.recordOutput("Drivetrain/Pose", currentPose);
+    Logger.recordOutput("Drivetrain/Pose", getPose());
+    Logger.recordOutput("Drivetrain/VisionlessPose", visionlessPose);
     Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
     Logger.recordOutput("Drivetrain/Kinematics/VelocityRaw", speedsRaw);
     Logger.recordOutput("Drivetrain/Kinematics/VelocityNormRaw", velocityNormRaw);
@@ -501,6 +756,23 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
     boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Sim Pose", true);
+
+    // Retrieve SmartDashboard settings
+    if (simulatedSwerveDrive != null) {
+      accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
+
+      // Apply new sim pose if requested, then reset the trigger
+      if (applyNewSimPose) {
+        SmartDashboard.putBoolean("Apply Sim Pose", true);
+        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
+        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
+        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
+            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
+        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
+        simulatedSwerveDrive.setSimulationWorldPose(newPose);
+        resetPose(newPose);
+      }
+    }
 
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
@@ -531,10 +803,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
     }
 
     if (this.targetHeading != null) {
-      Logger.recordOutput("Drivetrain/TargetHeading", this.targetHeading.getDegrees());
+      Logger.recordOutput("Drivetrain/TargetHeading", this.getTargetHeading().getDegrees());
     }
 
-    field.setRobotPose(currentPose);
+    field.setRobotPose(getPose());
     SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
     SmartDashboard.putBoolean("Gyro Connected", !gyroDisconnected);
     SmartDashboard.putBoolean("Is Field Relative Desired", isFieldRelativeDesired);
