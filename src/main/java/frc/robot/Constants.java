@@ -110,8 +110,6 @@ public final class Constants {
     // the robot, rather the allowed maximum speeds
     public static int profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
 
-    public static NavXComType gyroComType;
-
     public static RobotConfig kRobotConfig;
 
     public static LinearVelocity kMaxWheelSpeed; // Max possible speed for wheel

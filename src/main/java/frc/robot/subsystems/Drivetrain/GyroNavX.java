@@ -18,7 +18,7 @@ public class GyroNavX implements Gyro {
   // SpongeBot
 
   public GyroNavX() {
-    gyro = new AHRS(DriveConstants.gyroComType);
+    gyro = new AHRS();
   }
 
   /**
