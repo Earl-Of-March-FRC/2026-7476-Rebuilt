@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.PoseHelpers;
 
 /**
  * Helper class to generate paths on the fly
@@ -46,7 +47,7 @@ public class PathGenerator {
    */
   public static Command crossNearestTrench(LinearVelocity endVelocity) {
     PathPlannerPath trenchPath = crossTrenchPath(endVelocity,
-        nearestTranslation2dIndex(FieldConstants.kTrenchPathWaypoints));
+        PoseHelpers.nearestTranslation2dIndex(FieldConstants.kTrenchPathWaypoints, driveSub.getPose()));
 
     // return AutoBuilder.pathfindThenFollowPath(trenchPath,
     // DriveConstants.kPathfindingConstraints).until(() -> (driveSub
@@ -98,7 +99,8 @@ public class PathGenerator {
    * @return The command to schedule
    */
   public static Command crossNearestBump(LinearVelocity endVelocity) {
-    PathPlannerPath bumpPath = crossBumpPath(endVelocity, nearestTranslation2dIndex(FieldConstants.kBumpPathWaypoints));
+    PathPlannerPath bumpPath = crossBumpPath(endVelocity,
+        PoseHelpers.nearestTranslation2dIndex(FieldConstants.kBumpPathWaypoints, driveSub.getPose()));
 
     // return AutoBuilder.pathfindThenFollowPath(bumpPath,
     // DriveConstants.kPathfindingConstraints).until(() -> (driveSub
@@ -171,7 +173,7 @@ public class PathGenerator {
         ? new Translation2d[] { FieldConstants.kBumpPathWaypoints[4], FieldConstants.kBumpPathWaypoints[5] }
         : new Translation2d[] { FieldConstants.kBumpPathWaypoints[6], FieldConstants.kBumpPathWaypoints[7] };
 
-    Translation2d startTranslation2d = nearestTranslation2d(neutralBumpTranslation2ds);
+    Translation2d startTranslation2d = PoseHelpers.nearestTranslation2d(neutralBumpTranslation2ds, driveSub.getPose());
     Translation2d inLaunchZoneTranslation2d = new Translation2d(
         isBlueAlliance
             ? FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth).in(Meters)
@@ -231,7 +233,8 @@ public class PathGenerator {
         ? new Translation2d[] { FieldConstants.kTrenchPathWaypoints[4], FieldConstants.kTrenchPathWaypoints[5] }
         : new Translation2d[] { FieldConstants.kTrenchPathWaypoints[6], FieldConstants.kTrenchPathWaypoints[7] };
 
-    Translation2d startTranslation2d = nearestTranslation2d(neutralTrenchTranslation2ds);
+    Translation2d startTranslation2d = PoseHelpers.nearestTranslation2d(neutralTrenchTranslation2ds,
+        driveSub.getPose());
     Translation2d inLaunchZoneTranslation2d = new Translation2d(
         isBlueAlliance
             ? FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth).in(Meters)
@@ -261,40 +264,4 @@ public class PathGenerator {
     return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
         .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
   }
-
-  /**
-   * Helper method
-   * Takes a list of Translation2ds and returns the index of the one closest to
-   * the bot
-   * 
-   * @param poseTranslation2ds The list of Translation2ds
-   * @return The index of the nearest one
-   */
-  private static int nearestTranslation2dIndex(Translation2d[] poseTranslation2ds) {
-    int nearestIndex = 0;
-
-    Translation2d currTranslation = driveSub.getPose().getTranslation();
-    for (int i = 0; i < poseTranslation2ds.length; i++) {
-      double d1 = currTranslation.getDistance(poseTranslation2ds[i]);
-      double d2 = currTranslation.getDistance(poseTranslation2ds[nearestIndex]);
-
-      if (d1 < d2) {
-        nearestIndex = i;
-      }
-    }
-    return nearestIndex;
-  }
-
-  /**
-   * Helper method
-   * Takes a list of Translation2ds and returns the one closest to
-   * the bot
-   * 
-   * @param poseTranslation2ds The list of Translation2ds
-   * @return The nearest one
-   */
-  private static Translation2d nearestTranslation2d(Translation2d[] poseTranslation2ds) {
-    return poseTranslation2ds[nearestTranslation2dIndex(poseTranslation2ds)];
-  }
-
 }

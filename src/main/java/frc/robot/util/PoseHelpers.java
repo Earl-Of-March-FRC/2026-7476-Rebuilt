@@ -5,6 +5,8 @@ import static edu.wpi.first.units.Units.Meters;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Distance;
 import frc.robot.Constants.FieldConstants;
 
 public class PoseHelpers {
@@ -80,4 +82,68 @@ public class PoseHelpers {
     return new Pose2d(pose.getX(), pose.getY(), new Rotation2d(pose.getRotation().getZ()));
   }
 
+  /**
+   * Takes a list of Translation2ds and returns the index of the one closest to
+   * the given pose
+   * 
+   * @param poseTranslation2ds The list of Translation2ds
+   * @param pose               The pose to measure distances against
+   * @return The index of the nearest one
+   */
+  public static int nearestTranslation2dIndex(Translation2d[] poseTranslation2ds, Pose2d pose) {
+    int nearestIndex = 0;
+
+    Translation2d currTranslation = pose.getTranslation();
+    for (int i = 0; i < poseTranslation2ds.length; i++) {
+      double d1 = currTranslation.getDistance(poseTranslation2ds[i]);
+      double d2 = currTranslation.getDistance(poseTranslation2ds[nearestIndex]);
+
+      if (d1 < d2) {
+        nearestIndex = i;
+      }
+    }
+    return nearestIndex;
+  }
+
+  /**
+   * Takes a list of Translation2ds and returns the one closest to
+   * the given pose
+   * 
+   * @param poseTranslation2ds The list of Translation2ds
+   * @param pose               The pose to measure distances against
+   * @return The nearest one
+   */
+  public static Translation2d nearestTranslation2d(Translation2d[] poseTranslation2ds, Pose2d pose) {
+    return poseTranslation2ds[nearestTranslation2dIndex(poseTranslation2ds, pose)];
+  }
+
+  /**
+   * Returns the Y coordinate of the center of the trench nearest the given pose
+   * 
+   * @param pose The current pose
+   * @return The Y coordinate of the nearest trench
+   */
+  public static Distance nearestTrenchY(Pose2d pose) {
+    // Default to top
+    if (pose.getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
+      return FieldConstants.kEdgeToTrenchCenter;
+    } else {
+      return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToTrenchCenter);
+    }
+  }
+
+  /**
+   * Returns the Y coordinate of the center of the bump nearest the given pose
+   * 
+   * @param pose The current pose
+   * @return The Y coordinate of the nearest trench
+   */
+  public static Distance nearestBumpY(Pose2d pose) {
+    // Default to top
+    if (pose.getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
+      return FieldConstants.kEdgeToBumpCenter;
+    } else {
+      return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToBumpCenter);
+    }
+  }
 }

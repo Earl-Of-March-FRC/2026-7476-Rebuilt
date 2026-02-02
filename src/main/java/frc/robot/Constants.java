@@ -129,6 +129,18 @@ public final class Constants {
     public static final double kPIDRadialControllerD = 0.0;
     public static final Distance kPIDRadialControllerTolerance = Meters.of(0.05);
 
+    // Parameters for X and Y controllers (gains should be identical if possible,
+    // but controllers shold be decoupled)
+    public static final double kPIDXControllerP = 0.5;
+    public static final double kPIDXControllerI = 0.01;
+    public static final double kPIDXControllerD = 0.0;
+    public static final Distance kPIDXControllerTolerance = Meters.of(0.05);
+
+    public static final double kPIDYControllerP = kPIDXControllerP;
+    public static final double kPIDYControllerI = kPIDXControllerI;
+    public static final double kPIDYControllerD = kPIDXControllerD;
+    public static final Distance kPIDYControllerTolerance = kPIDXControllerTolerance;
+
     // Define seperate constraints for the bump and trench, Independant of the
     // swerve profile
     public static final LinearVelocity kBumpLinearVelocity = MetersPerSecond.of(3);
