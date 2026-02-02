@@ -160,10 +160,10 @@ public final class Constants {
     public static final AngularAcceleration kTrenchAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
 
     public static final PathConstraints kTrenchConstraints = new PathConstraints(
-        kBumpLinearVelocity,
-        kBumpLinearAcceleration,
-        kBumpAngularVelocity,
-        kBumpAngularAcceleration);
+        kTrenchLinearVelocity,
+        kTrenchLinearAcceleration,
+        kTrenchAngularVelocity,
+        kTrenchAngularAcceleration);
 
     // To be used by PathPlanner
     public static final double kPTranslationController = 1.5;
