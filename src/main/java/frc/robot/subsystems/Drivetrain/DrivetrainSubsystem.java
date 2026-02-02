@@ -557,10 +557,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
     boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
     if (alliance.isPresent()) {
-      SmartDashboard.putString("Drivetrain/Alliance",
+      Logger.recordOutput("Drivetrain/Alliance",
           isBlueAlliance ? "Blue" : "Red");
     } else {
-      SmartDashboard.putString("Drivetrain/Alliance",
+      Logger.recordOutput("Drivetrain/Alliance",
           "Unknown");
     }
 

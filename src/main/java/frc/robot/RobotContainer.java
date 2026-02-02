@@ -160,13 +160,13 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    // driverController.povLeft().onTrue(Commands.defer(
-    // () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
-    // Set.of(driveSub)));
+    driverController.rightBumper().onTrue(Commands.defer(
+        () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
+        Set.of(driveSub)));
 
-    // driverController.povRight().onTrue(Commands.defer(
-    // () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
-    // Set.of(driveSub)));
+    driverController.leftBumper().onTrue(Commands.defer(
+        () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
+        Set.of(driveSub)));
 
     // Lock Y coordinate to the nearest bump and align heading
     driverController.povRight().toggleOnTrue(new DriveLockedHeadingAndYCmd(
@@ -197,7 +197,7 @@ public class RobotContainer {
             Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
     // Cancel all driveSub commands, returning manual control
-    driverController.leftBumper().onTrue(
+    driverController.button(7).onTrue(
         Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
   }
 

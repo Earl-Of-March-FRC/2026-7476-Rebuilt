@@ -9,6 +9,8 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.IdealStartingState;
@@ -89,6 +91,11 @@ public class PathGenerator {
         new IdealStartingState(DriveConstants.kTrenchLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
+    Logger.recordOutput("Drivetrain/DynamicPaths/Start", start);
+    Logger.recordOutput("Drivetrain/DynamicPaths/end", end);
+
+    path.preventFlipping = true;
+
     return path;
   }
 
@@ -141,6 +148,11 @@ public class PathGenerator {
         new IdealStartingState(DriveConstants.kBumpLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
+    Logger.recordOutput("Drivetrain/DynamicPaths/Start", start);
+    Logger.recordOutput("Drivetrain/DynamicPaths/end", end);
+
+    path.preventFlipping = true;
+
     return path;
   }
 
@@ -162,10 +174,10 @@ public class PathGenerator {
     boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
     if (alliance.isPresent()) {
-      SmartDashboard.putString("Drivetrain/Alliance",
+      Logger.recordOutput("Drivetrain/Alliance",
           isBlueAlliance ? "Blue" : "Red");
     } else {
-      SmartDashboard.putString("Drivetrain/Alliance",
+      Logger.recordOutput("Drivetrain/Alliance",
           "Unknown");
     }
 
@@ -199,6 +211,11 @@ public class PathGenerator {
         DriveConstants.kBumpConstraints,
         new IdealStartingState(DriveConstants.kBumpLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
+
+    Logger.recordOutput("Drivetrain/DynamicPaths/Start", start);
+    Logger.recordOutput("Drivetrain/DynamicPaths/end", end);
+
+    path.preventFlipping = true;
 
     return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
         .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
@@ -260,6 +277,11 @@ public class PathGenerator {
         DriveConstants.kTrenchConstraints,
         new IdealStartingState(DriveConstants.kTrenchLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
+
+    Logger.recordOutput("Drivetrain/DynamicPaths/Start", start);
+    Logger.recordOutput("Drivetrain/DynamicPaths/end", end);
+
+    path.preventFlipping = true;
 
     return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
         .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
