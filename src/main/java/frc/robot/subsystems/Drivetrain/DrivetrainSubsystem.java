@@ -170,13 +170,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
     yController.setTolerance(DriveConstants.kPIDYControllerTolerance.in(Meters));
 
     // Debug feature to teleport bot odometry
-    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
-    SmartDashboard.putNumber("New Sim Pose X", SimulationConstants.kStartingPose.getX());
-    SmartDashboard.putNumber("New Sim Pose Y", SimulationConstants.kStartingPose.getY());
-    SmartDashboard.putNumber("New Sim Pose θ (Deg)", SimulationConstants.kStartingPose.getRotation().getDegrees());
+    SmartDashboard.putNumber("New Pose X", getPose().getX());
+    SmartDashboard.putNumber("New Pose Y", getPose().getY());
+    SmartDashboard.putNumber("New Pose θ (Deg)", getPose().getRotation().getDegrees());
     // Display this value as a toggle button or toggle switch in Elastic to use it
     // as a button
-    SmartDashboard.putBoolean("Apply Sim Pose", true);
+    SmartDashboard.putBoolean("Apply Pose", true);
 
     // Do not use the auto generated robot config to allow for muiltiple profiles
     RobotConfig config = SwerveConfig.kRobotConfig;
@@ -210,7 +209,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public DrivetrainSubsystem(SwerveModule[] modules, Gyro gyro, SwerveDriveSimulation simulatedSwerveDrive) {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
-    resetPose(SimulationConstants.kStartingPose);
+    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
     resetPose(SimulationConstants.kStartingPose);
   }
 
@@ -304,10 +303,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void resetPose(Pose2d pose) {
     poseEstimator.resetPosition(gyro.getRotation2d(), getModulePositions(), pose);
-
-    if (simulatedSwerveDrive != null && !accurateSimOdometry) {
-      simulatedSwerveDrive.setSimulationWorldPose(pose);
-    }
 
     if (simulatedSwerveDrive != null && !accurateSimOdometry) {
       simulatedSwerveDrive.setSimulationWorldPose(pose);
@@ -892,51 +887,24 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
-    boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Sim Pose", true);
-
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
       accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
-
-      // Apply new sim pose if requested, then reset the trigger
-      if (applyNewSimPose) {
-        SmartDashboard.putBoolean("Apply Sim Pose", true);
-        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
-        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
-        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
-        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
-        simulatedSwerveDrive.setSimulationWorldPose(newPose);
-        resetPose(newPose);
-      }
-    }
-
-    // Retrieve SmartDashboard settings
-    if (simulatedSwerveDrive != null) {
-      accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
-
-      // Apply new sim pose if requested, then reset the trigger
-      if (applyNewSimPose) {
-        SmartDashboard.putBoolean("Apply Sim Pose", true);
-        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
-        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
-        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
-        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
-        simulatedSwerveDrive.setSimulationWorldPose(newPose);
-        resetPose(newPose);
-      }
     }
 
     // Apply new sim pose if requested, then reset the trigger
+    // Check if button has been pressed
+    boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Pose", true);
     if (applyNewSimPose) {
-      SmartDashboard.putBoolean("Apply Sim Pose", true);
-      double x = SmartDashboard.getNumber("New Sim Pose X", getPose().getX());
-      double y = SmartDashboard.getNumber("New Sim Pose Y", getPose().getY());
-      double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-          getPose().getRotation().getDegrees());
+      SmartDashboard.putBoolean("Apply Pose", true);
+      double x = SmartDashboard.getNumber("New Pose X", getPose().getX());
+      double y = SmartDashboard.getNumber("New Pose Y", getPose().getY());
+      double theta = SmartDashboard.getNumber("New Pose θ (Deg)", getPose().getRotation().getDegrees());
       Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
       resetPose(newPose);
+      if (simulatedSwerveDrive != null) {
+        simulatedSwerveDrive.setSimulationWorldPose(newPose);
+      }
     }
 
     if (this.targetHeading != null) {
