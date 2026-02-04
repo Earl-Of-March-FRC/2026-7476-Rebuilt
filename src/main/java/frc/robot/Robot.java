@@ -4,10 +4,7 @@
 
 package frc.robot;
 
-import java.util.Optional;
-
 import org.ironmaple.simulation.SimulatedArena;
-import org.ironmaple.simulation.motorsims.MapleMotorSim;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
@@ -17,10 +14,6 @@ import org.littletonrobotics.urcl.URCL;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 
 import edu.wpi.first.net.PortForwarder;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -36,15 +29,8 @@ import frc.robot.util.swerve.ProfileSelector;
 public class Robot extends LoggedRobot {
   private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
+  private final GameModel gameModel = new GameModel();
 
-  private double matchTime, phaseTime;
-  private boolean isHubActiveFirst = true;
-  private boolean currentHubState = true;
-  private boolean nextHubState = true;
-  private final int[] hubSwitchTimestamps = { 130, 105, 80, 55 };
-  private int currentPeriod;
-
-  private char allianceColour;
   private Command autonomousCommand;
 
   /*
@@ -94,18 +80,7 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
 
     SmartDashboard.putBoolean("Auto?", isAutonomous());
-
-    SmartDashboard.putNumber("Match Time", matchTime);
-
-    SmartDashboard.putNumber("Phase Time", phaseTime);
-
-    SmartDashboard.putData("Commands coming soon: ", CommandScheduler.getInstance());
-
-    SmartDashboard.putBoolean("Starting Hub State", isHubActiveFirst);
-
-    SmartDashboard.putBoolean("Hub State", currentHubState);
-
-    SmartDashboard.putBoolean("Next Hub State", nextHubState);
+    SmartDashboard.putData("Commands", CommandScheduler.getInstance());
   }
 
   @Override
@@ -117,8 +92,6 @@ public class Robot extends LoggedRobot {
     m_robotContainer.getGyro().calibrate();
     ProfileSelector.init();
     gyroCalibrated = true;
-
-    // CameraServer.startAutomaticCapture();
 
     // Port forward Photonvision
     PortForwarder.add(5800, "photonvision.local", 5800);
@@ -150,8 +123,7 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void autonomousInit() {
-    currentHubState = true;
-    SmartDashboard.putString("Current Phase", "Auto");
+    gameModel.initAuto();
     autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
@@ -163,82 +135,18 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    matchTime = DriverStation.getMatchTime() + 140;
-
-    phaseTime = DriverStation.getMatchTime();
+    gameModel.updateAuto();
   }
 
   @Override
   public void teleopInit() {
-    SmartDashboard.putString("Current Phase", "Transition");
+    gameModel.initTeleop();
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    matchTime = DriverStation.getMatchTime();
-
-    if (matchTime >= 135) {
-      Optional<Alliance> alliance = DriverStation.getAlliance();
-      if (alliance.isPresent()) {
-        if (alliance.get() == Alliance.Red) {
-          allianceColour = 'R';
-        } else {
-          allianceColour = 'B';
-        }
-      }
-
-      String gameData = DriverStation.getGameSpecificMessage();
-
-      if (gameData.length() > 0) {
-        if (gameData.charAt(0) == allianceColour) {
-          isHubActiveFirst = false;
-        } else {
-          isHubActiveFirst = true;
-        }
-
-        nextHubState = isHubActiveFirst;
-      }
-    }
-
-    for (int i = 0; i < hubSwitchTimestamps.length; i++) {
-      if ((int) matchTime == hubSwitchTimestamps[i]) {
-        currentPeriod = i + 1;
-        SmartDashboard.putString("Current Phase", "Phase " + currentPeriod + "/4");
-        if (i % 2 == 0) {
-          currentHubState = isHubActiveFirst;
-        } else {
-          currentHubState = !isHubActiveFirst;
-        }
-
-        nextHubState = switch (i) {
-          case 0, 1, 2 -> !currentHubState;
-          default -> true;
-        };
-
-        break;
-      }
-    }
-
-    if ((int) matchTime == 30) {
-      currentHubState = true;
-      SmartDashboard.putString("Current Phase", "End Game");
-
-    }
-
-    if (DriverStation.getMatchTime() >= 130) {
-      phaseTime = DriverStation.getMatchTime() - 130;
-    } else if (DriverStation.getMatchTime() >= 105) {
-      phaseTime = DriverStation.getMatchTime() - 105;
-    } else if (DriverStation.getMatchTime() >= 80) {
-      phaseTime = DriverStation.getMatchTime() - 80;
-    } else if (DriverStation.getMatchTime() >= 55) {
-      phaseTime = DriverStation.getMatchTime() - 55;
-    } else if (DriverStation.getMatchTime() >= 30) {
-      phaseTime = DriverStation.getMatchTime() - 30;
-    } else {
-      phaseTime = DriverStation.getMatchTime();
-    }
+    gameModel.updateTeleop();
   }
 
   @Override
@@ -263,5 +171,12 @@ public class Robot extends LoggedRobot {
     SimulatedArena.getInstance().simulationPeriodic();
     Logger.recordOutput("FieldSimulation/Fuel",
         SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
+  }
+
+  /**
+   * Get the GameModel instance for use by commands.
+   */
+  public GameModel getGameModel() {
+    return gameModel;
   }
 }
