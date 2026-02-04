@@ -137,10 +137,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     // Setup cameras to see april tags. Wow! That makes me really happy.
     for (int i = 0; i < PhotonConstants.numCameras; i++) {
-      cameras[i] = new PhotonCamera(PhotonConstants.kCameras[i]);
+      cameras[i] = new PhotonCamera(PhotonConstants.kCameras[i].name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
           PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PhotonConstants.kRobotToCams[i]);
+          PhotonConstants.kCameras[i].getRobotToCameraTransform());
     }
 
     // Initialize Controllers
@@ -809,7 +809,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     for (int i = 0; i < PhotonConstants.numCameras; i++) {
       // Get all poses from camera
       List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
-          PhotonConstants.kRobotToCams[i],
+          PhotonConstants.kCameras[i].getRobotToCameraTransform(),
           robotPose);
 
       List<Integer> fiducialIds = new ArrayList<>();
