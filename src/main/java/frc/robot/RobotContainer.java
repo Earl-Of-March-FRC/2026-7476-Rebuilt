@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
 import frc.robot.subsystems.Drivetrain.GyroADXRS450;
@@ -12,7 +13,10 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.launcher.LauncherSubsystem;
+
 import static edu.wpi.first.units.Units.Degrees;
 
 import org.ironmaple.simulation.SimulatedArena;
@@ -31,6 +35,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.IntakeConstants;
+import frc.robot.Constants.LauncherConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
@@ -49,6 +54,9 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
   public final IntakeSubsystem intakeSub;
+  public final LauncherSubsystem launcherSub;
+  public final IndexerSubsystem indexerSub;
+  public final ClimberSubsystem ClimberSub;
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -67,6 +75,9 @@ public class RobotContainer {
       gyro = new GyroNavX();
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
+      launcherSub = new LauncherSubsystem(null); // set when we have more information
+      indexerSub = new IndexerSubsystem(null);
+      ClimberSub = new ClimberSubsystem(null);
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               SwerveConfig.kFrontLeftDrivingCanId,
@@ -93,6 +104,9 @@ public class RobotContainer {
 
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless));
+      launcherSub = new LauncherSubsystem(null);
+      indexerSub = new IndexerSubsystem(null);
+      ClimberSub = new ClimberSubsystem(null);
       driveSub = new DrivetrainSubsystem(new SwerveModule[] {
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[0]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[1]),
@@ -152,6 +166,26 @@ public class RobotContainer {
 
     // Binding for Intake (Button 6 is usually Right Bumper)
     driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
+
+    // driverController.y().onTrue(new IndexToBeamBreakCmd(indexerSub, () -> 0.75));
+    // driverController.leftBumper().whileTrue(
+    // new IndexerSetVelocityManualCmd(indexerSub, () -> -0.75));
+    // driverController.rightBumper().whileTrue(
+    // new IndexerSetVelocityManualCmd(indexerSub, () -> 1));
+
+    // // Launcher commands
+    // driverController.leftTrigger().whileTrue(
+    // new LauncherSetVelocityPIDCmd(launcherSub, () ->
+    // -launcherSub.getPreferredFrontVelocity(),
+    // () -> -launcherSub.getPreferredBackVelocity()));
+    // driverController.rightTrigger().toggleOnTrue(
+    // new LauncherSetVelocityPIDCmd(launcherSub, () ->
+    // launcherSub.getPreferredFrontVelocity(),
+    // () -> launcherSub.getPreferredBackVelocity()));
+    // driverController.povDown().toggleOnTrue(
+    // new LauncherSetVelocityPIDCmd(launcherSub, () ->
+    // LauncherConstants.kVelocityYeetForward,
+    // () -> LauncherConstants.kVelocityYeetBack));
 
   }
 
