@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Meters;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Distance;
 import frc.robot.Constants.FieldConstants;
 
 public class PoseHelpers {
@@ -42,7 +43,7 @@ public class PoseHelpers {
    *                       sides)
    * @return True if the pose is on the ground
    */
-  public static boolean isOnGround(Pose3d pose, double heighTolerance) {
+  public static boolean isOnGround(Pose3d pose, Distance heighTolerance) {
     // return pose.getZ() <= heighTolerance && pose.getZ() >= -heighTolerance;
     return true;
   }
