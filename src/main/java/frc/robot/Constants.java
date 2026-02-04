@@ -15,11 +15,13 @@ import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.io.File;
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
+import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
 
@@ -42,6 +44,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
 
@@ -58,13 +61,13 @@ import frc.robot.util.vision.CameraProfile;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
-
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
     public static final double kDriveDeadband = 0.2;
     public static final int kDriverControllerXAxis = 0;
     public static final int kDriverControllerYAxis = 1;
     public static final int kDriverControllerRotAxis = 4;
+    public static final File kDeployDirectory = Filesystem.getDeployDirectory();
   }
 
   public static final class ModuleConstants {
@@ -208,6 +211,8 @@ public final class Constants {
   }
 
   public static final class PhotonConstants {
+    public static final File kCalibrationFile = new File(Filesystem.getDeployDirectory().getPath(),
+        "simulated_camera_settings\\arducam_OV9281_calibration_1280x720.json");
 
     // Camera profiles - each camera's configuration in one place
     public static final CameraProfile kCamera1Profile = new CameraProfile(
@@ -218,8 +223,9 @@ public final class Constants {
         Meters.of(0.307), // x
         Meters.of(0.180), // y
         Meters.of(0.750), // z
-        VecBuilder.fill(0.3, 0.3, 0.3) // standard deviation
-    );
+        VecBuilder.fill(0.3, 0.3, 0.3), // standard deviation
+        kCalibrationFile,
+        new int[] { 1280, 720 });
 
     public static final CameraProfile kCamera2Profile = new CameraProfile(
         "Arducam_2",
@@ -229,8 +235,9 @@ public final class Constants {
         Meters.of(-0.3327), // x
         Meters.of(0.0), // y
         Meters.of(0.3708), // z
-        VecBuilder.fill(0.9, 0.9, 0.9) // standard deviation
-    );
+        VecBuilder.fill(0.9, 0.9, 0.9), // standard deviation
+        kCalibrationFile,
+        new int[] { 1280, 720 });
 
     public static final CameraProfile kCamera3Profile = new CameraProfile(
         "Arducam_3",
@@ -240,8 +247,9 @@ public final class Constants {
         Meters.of(0.238), // x
         Meters.of(-0.294), // y
         Meters.of(0.625), // z
-        VecBuilder.fill(0.5, 0.5, 0.5) // standard deviation
-    );
+        VecBuilder.fill(0.5, 0.5, 0.5), // standard deviation
+        kCalibrationFile,
+        new int[] { 1280, 720 });
 
     public static final int kAprilTagPipeline = 0;
 
@@ -253,6 +261,7 @@ public final class Constants {
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
+    public static final TargetModel kTargetModel = TargetModel.kAprilTag36h11;
   }
 
   public static class FieldConstants {
