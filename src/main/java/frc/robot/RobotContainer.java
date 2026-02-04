@@ -104,9 +104,9 @@ public class RobotContainer {
 
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless));
-      launcherSub = new LauncherSubsystem(null);
-      indexerSub = new IndexerSubsystem(null);
-      ClimberSub = new ClimberSubsystem(null);
+      launcherSub = new LauncherSubsystem(new SparkMax(0, null));
+      indexerSub = new IndexerSubsystem(new SparkMax(0, null));
+      ClimberSub = new ClimberSubsystem(new SparkMax(0, null));
       driveSub = new DrivetrainSubsystem(new SwerveModule[] {
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[0]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[1]),
