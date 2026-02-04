@@ -241,7 +241,14 @@ public final class Constants {
     // kinda cooked
     public static final int kMotorId = 5;
     public static final MotorType kMotorType = MotorType.kBrushless;
-    public static final double kClimberMotorSpeed = 0.67;
+
+    public static final double kClimberStowPositionInches = 0;
+    public static final double kClimberClimbPositionInches = 32;
+    public static final double kClimberMotorRaiseSpeed = 0.67;
+    public static final double kClimberMotorHookSpeed = 0.67;
+
+    public static final double kMinClimberLength = -1;
+    public static final double kMaxClimberLength = 33;
 
   }
 
