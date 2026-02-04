@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.littletonrobotics.junction.Logger;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.IdealStartingState;
-import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.Waypoint;
 
@@ -27,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
-import frc.robot.util.PoseHelpers;
 
 /**
  * Helper class to generate paths on the fly
@@ -61,7 +57,7 @@ public class PathGenerator {
    */
   public static Command crossNearestTrench(LinearVelocity endVelocity) {
     PathPlannerPath trenchPath = crossTrenchPath(endVelocity,
-        PoseHelpers.nearestTranslation2dIndex(FieldConstants.kTrenchPathWaypoints, driveSub.getPose()));
+        nearestTranslation2dIndex(FieldConstants.kTrenchPathWaypoints));
 
     // return AutoBuilder.pathfindThenFollowPath(trenchPath,
     // DriveConstants.kPathfindingConstraints).until(() -> (drive()
@@ -69,7 +65,7 @@ public class PathGenerator {
     // .getPoseZone(trenchPath.getPathPoses().get(trenchPath.getPathPoses().size() -
     // 1))));
 
-    return pathFindThenFollowPathNoFlip(trenchPath, SwerveConfig.kPathfindingConstraints);
+    return AutoBuilder.pathfindThenFollowPath(trenchPath, SwerveConfig.kPathfindingConstraints);
   }
 
   /**
@@ -103,11 +99,6 @@ public class PathGenerator {
         new IdealStartingState(DriveConstants.kTrenchLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
-    Logger.recordOutput("Drivetrain/DynamicPaths/Start", start);
-    Logger.recordOutput("Drivetrain/DynamicPaths/end", end);
-
-    path.preventFlipping = true;
-
     return path;
   }
 
@@ -118,8 +109,7 @@ public class PathGenerator {
    * @return The command to schedule
    */
   public static Command crossNearestBump(LinearVelocity endVelocity) {
-    PathPlannerPath bumpPath = crossBumpPath(endVelocity,
-        PoseHelpers.nearestTranslation2dIndex(FieldConstants.kBumpPathWaypoints, driveSub.getPose()));
+    PathPlannerPath bumpPath = crossBumpPath(endVelocity, nearestTranslation2dIndex(FieldConstants.kBumpPathWaypoints));
 
     // return AutoBuilder.pathfindThenFollowPath(bumpPath,
     // DriveConstants.kPathfindingConstraints).until(() -> (drive()
@@ -127,7 +117,7 @@ public class PathGenerator {
     // drive().getPoseZone(bumpPath.getPathPoses().get(bumpPath.getPathPoses().size()
     // - 1))));
 
-    return pathFindThenFollowPathNoFlip(bumpPath, SwerveConfig.kPathfindingConstraints);
+    return AutoBuilder.pathfindThenFollowPath(bumpPath, SwerveConfig.kPathfindingConstraints);
   }
 
   /**
@@ -160,11 +150,6 @@ public class PathGenerator {
         new IdealStartingState(DriveConstants.kBumpLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
-    Logger.recordOutput("Drivetrain/DynamicPaths/Start", start);
-    Logger.recordOutput("Drivetrain/DynamicPaths/end", end);
-
-    path.preventFlipping = true;
-
     return path;
   }
 
@@ -186,10 +171,10 @@ public class PathGenerator {
     boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
     if (alliance.isPresent()) {
-      Logger.recordOutput("Drivetrain/Alliance",
+      SmartDashboard.putString("Drivetrain/Alliance",
           isBlueAlliance ? "Blue" : "Red");
     } else {
-      Logger.recordOutput("Drivetrain/Alliance",
+      SmartDashboard.putString("Drivetrain/Alliance",
           "Unknown");
     }
 
@@ -197,7 +182,7 @@ public class PathGenerator {
         ? new Translation2d[] { FieldConstants.kBumpPathWaypoints[4], FieldConstants.kBumpPathWaypoints[5] }
         : new Translation2d[] { FieldConstants.kBumpPathWaypoints[6], FieldConstants.kBumpPathWaypoints[7] };
 
-    Translation2d startTranslation2d = PoseHelpers.nearestTranslation2d(neutralBumpTranslation2ds, driveSub.getPose());
+    Translation2d startTranslation2d = nearestTranslation2d(neutralBumpTranslation2ds);
     Translation2d inLaunchZoneTranslation2d = new Translation2d(
         isBlueAlliance
             ? FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth).in(Meters)
@@ -257,8 +242,7 @@ public class PathGenerator {
         ? new Translation2d[] { FieldConstants.kTrenchPathWaypoints[4], FieldConstants.kTrenchPathWaypoints[5] }
         : new Translation2d[] { FieldConstants.kTrenchPathWaypoints[6], FieldConstants.kTrenchPathWaypoints[7] };
 
-    Translation2d startTranslation2d = PoseHelpers.nearestTranslation2d(neutralTrenchTranslation2ds,
-        driveSub.getPose());
+    Translation2d startTranslation2d = nearestTranslation2d(neutralTrenchTranslation2ds);
     Translation2d inLaunchZoneTranslation2d = new Translation2d(
         isBlueAlliance
             ? FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth).in(Meters)
@@ -290,22 +274,37 @@ public class PathGenerator {
   }
 
   /**
-   * Autobuilder pathfinding will always apply the shouldFlip supplier when using
-   * pathfindThenFollowPath(), even if the path.preventFlipping = true. The only
-   * way to circumvent this is to manually compose pathfinToPose() and followPath
+   * Helper method
+   * Takes a list of Translation2ds and returns the index of the one closest to
+   * the bot
    * 
-   * @param path        The path to pathfind to, and then follow
-   * @param constraints The pathfinding constraints
-   * @return The command that will pathfind and then follow path
+   * @param poseTranslation2ds The list of Translation2ds
+   * @return The index of the nearest one
    */
-  private static Command pathFindThenFollowPathNoFlip(PathPlannerPath path, PathConstraints constraints) {
-    Pose2d pathStartPose = path.getPathPoses().get(0);
-    LinearVelocity pathStartVelocity = path.getIdealStartingState().velocity();
+  private static int nearestTranslation2dIndex(Translation2d[] poseTranslation2ds) {
+    int nearestIndex = 0;
 
     Translation2d currTranslation = drive().getPose().getTranslation();
     for (int i = 0; i < poseTranslation2ds.length; i++) {
       double d1 = currTranslation.getDistance(poseTranslation2ds[i]);
       double d2 = currTranslation.getDistance(poseTranslation2ds[nearestIndex]);
 
+      if (d1 < d2) {
+        nearestIndex = i;
+      }
+    }
+    return nearestIndex;
+  }
+
+  /**
+   * Helper method
+   * Takes a list of Translation2ds and returns the one closest to
+   * the bot
+   * 
+   * @param poseTranslation2ds The list of Translation2ds
+   * @return The nearest one
+   */
+  private static Translation2d nearestTranslation2d(Translation2d[] poseTranslation2ds) {
+    return poseTranslation2ds[nearestTranslation2dIndex(poseTranslation2ds)];
   }
 }
