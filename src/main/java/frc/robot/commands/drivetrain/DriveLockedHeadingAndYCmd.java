@@ -5,15 +5,20 @@
 package frc.robot.commands.drivetrain;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.dyn4j.geometry.Rotation;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
@@ -27,32 +32,36 @@ import frc.robot.util.swerve.SwerveConfig;
  * while still allowing full X-Y translational movement with the joystick.
  * The robot will automatically rotate to maintain the locked heading.
  */
-public class RestrictedDriveCmd extends Command {
+public class DriveLockedHeadingAndYCmd extends Command {
   private final DrivetrainSubsystem driveSub;
   private final Supplier<Double> xSupplier;
-  private final Supplier<Double> ySupplier;
+  private final Supplier<Distance> ySetpointSupplier;
   private final Rotation2d lockedAngle;
   private final LinearVelocity maxSpeed;
+  private Distance ySetpoint;
   private Rotation2d targetHeading;
 
   /**
-   * Creates a new RestrictedDriveCmd.
+   * Creates a new DriveLockedHeadingAndYCmd.
    * 
-   * @param driveSub    The drivetrain subsystem
-   * @param xSupplier   Supplier for X-axis input (-1 to 1, field-relative)
-   * @param ySupplier   Supplier for Y-axis input (-1 to 1, field-relative)
-   * @param lockedAngle The angle to lock the robot's heading to (field-relative)
-   * @param maxSpeed    Maximum speed in meters per second
+   * @param driveSub          The drivetrain subsystem
+   * @param xSupplier         Supplier for X-axis input (-1 to 1, field-relative)
+   * @param ySetpointSupplier Supplier for the Y coordinate setpoint (Origin is at
+   *                          blue outpost,
+   *                          positive Y is along alliance Wall)
+   * @param lockedAngle       The angle to lock the robot's heading to
+   *                          (field-relative)
+   * @param maxSpeed          Maximum speed in meters per second
    */
-  public RestrictedDriveCmd(
+  public DriveLockedHeadingAndYCmd(
       DrivetrainSubsystem driveSub,
       Supplier<Double> xSupplier,
-      Supplier<Double> ySupplier,
+      Supplier<Distance> ySetpoint,
       Rotation2d lockedAngle,
       LinearVelocity maxSpeed) {
     this.driveSub = driveSub;
     this.xSupplier = xSupplier;
-    this.ySupplier = ySupplier;
+    this.ySetpointSupplier = ySetpoint;
     this.lockedAngle = lockedAngle;
     this.maxSpeed = maxSpeed;
     addRequirements(driveSub);
@@ -60,17 +69,27 @@ public class RestrictedDriveCmd extends Command {
 
   /**
    * Convenience constructor with default speed limit.
+   * 
+   * @param driveSub          The drivetrain subsystem
+   * @param xSupplier         Supplier for X-axis input (-1 to 1, field-relative)
+   * @param ySetpointSupplier Supplier for the Y coordinate setpoint (Origin is at
+   *                          blue outpost,
+   *                          positive Y is along alliance Wall)
+   * @param lockedAngle       The angle to lock the robot's heading to
+   *                          (field-relative)
    */
-  public RestrictedDriveCmd(
+  public DriveLockedHeadingAndYCmd(
       DrivetrainSubsystem driveSub,
       Supplier<Double> xSupplier,
-      Supplier<Double> ySupplier,
+      Supplier<Distance> ySetpoint,
       Rotation2d lockedAngle) {
-    this(driveSub, xSupplier, ySupplier, lockedAngle, SwerveConfig.kMaxSpeed);
+    this(driveSub, xSupplier, ySetpoint, lockedAngle, SwerveConfig.kMaxSpeed);
   }
 
   @Override
   public void initialize() {
+    ySetpoint = ySetpointSupplier.get();
+    driveSub.setYSetpoint(ySetpoint);
     // Calculate and set initial target heading
     updateTargetHeading();
   }
@@ -93,17 +112,27 @@ public class RestrictedDriveCmd extends Command {
     // Log that the command is active
     Logger.recordOutput("Drivetrain/RestrictedMode", true);
     Logger.recordOutput("Drivetrain/LockedAngle", targetHeading.getDegrees());
-    Logger.recordOutput("Drivetrain/RestrictedMode/Error", Math.toDegrees(error));
+    Logger.recordOutput("Drivetrain/LockedY", ySetpoint);
+    Logger.recordOutput("Drivetrain/RestrictedMode/HeadingError", Math.toDegrees(error));
 
-    // Get X and Y joystick inputs (full 2D control)
+    // Get X input and Y PID
     LinearVelocity xVel = maxSpeed.times(xSupplier.get());
-    LinearVelocity yVel = maxSpeed.times(ySupplier.get());
+    LinearVelocity yVel = driveSub.getYCorrectionMetersPerSecond(maxSpeed);
+
+    // Limit max speed again
+    Translation2d vel = new Translation2d(xVel.in(MetersPerSecond), yVel.in(MetersPerSecond));
+
+    if (vel.getNorm() > maxSpeed.in(MetersPerSecond)) {
+      vel = vel.div(vel.getNorm()).times(maxSpeed.in(MetersPerSecond));
+      xVel = MetersPerSecond.of(vel.getX());
+      yVel = MetersPerSecond.of(vel.getY());
+    }
 
     // Get rotational velocity to maintain the CALCULATED heading
     AngularVelocity omega = driveSub.getHeadingCorrectionOmega(targetHeading);
 
     // Apply chassis speeds (field-relative with locked heading)
-    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, true);
+    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, true, false);
   }
 
   /**
