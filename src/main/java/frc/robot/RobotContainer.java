@@ -11,6 +11,8 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.Set;
@@ -40,10 +42,12 @@ import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
-import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
@@ -125,16 +129,6 @@ public class RobotContainer {
             -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis),
             OIConstants.kDriveDeadband));
 
-    RestrictedDriveCmd restrictedDriveCmd = new RestrictedDriveCmd(
-        driveSub,
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-            OIConstants.kDriveDeadband),
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-            OIConstants.kDriveDeadband),
-        new Rotation2d(DriveConstants.kBumpHeadingRestriction));
-
     DriveAtLaunchingRangeCmd driveAtLaunchingRangeCmd = new DriveAtLaunchingRangeCmd(
         driveSub,
         () -> MathUtil.applyDeadband(
@@ -148,7 +142,15 @@ public class RobotContainer {
 
     driveSub.setDefaultCommand(driveCmd);
 
-    driverController.a().toggleOnTrue(restrictedDriveCmd);
+    driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
+            OIConstants.kDriveDeadband),
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
 
     // Only schedule when in Launching zone
     driverController.x().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
@@ -158,30 +160,45 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.povLeft().onTrue(Commands.defer(
+    driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
         Set.of(driveSub)));
 
-    driverController.povRight().onTrue(Commands.defer(
+    driverController.leftBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
         Set.of(driveSub)));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(Commands.defer(
-        () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
-        Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+    // Lock Y coordinate to the nearest bump and align heading
+    driverController.povRight().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> PoseHelpers.nearestBumpY(driveSub.getPose()),
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
 
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(Commands.defer(
-        () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
-        Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+    // Lock Y coordinate to the nearest trench and align heading
+    driverController.povLeft().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
+        new Rotation2d(DriveConstants.kTrenchHeadingRestriction)));
+
+    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
+        Commands.defer(
+            () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
+            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+
+    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
+        Commands.defer(
+            () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
+            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
     // Cancel all driveSub commands, returning manual control
-    driverController.leftBumper().onTrue(
-        new InstantCommand() {
-          @Override
-          public void initialize() {
-            addRequirements(driveSub);
-          };
-        });
+    driverController.button(7).onTrue(
+        Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
   }
 
   public Gyro getGyro() {

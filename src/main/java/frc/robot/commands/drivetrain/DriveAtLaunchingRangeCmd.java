@@ -95,13 +95,15 @@ public class DriveAtLaunchingRangeCmd extends Command {
     Translation2d perpendicularUnitVelocity = toHub.rotateBy(new Rotation2d(Math.PI / 2.0));
     perpendicularUnitVelocity = perpendicularUnitVelocity.div(toHubNorm);
 
-    // Invert for red alliance to maintain consistent controls
+    Translation2d joystickInput = new Translation2d(xSupplier.get(), ySupplier.get());
+
+    // Invert for red alliance to maintain consistent controls, this must be done
+    // before projection
     Optional<Alliance> alliance = DriverStation.getAlliance();
     if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-      perpendicularUnitVelocity = perpendicularUnitVelocity.times(-1);
+      joystickInput = joystickInput.times(-1);
     }
 
-    Translation2d joystickInput = new Translation2d(xSupplier.get(), ySupplier.get());
     Translation2d projectedInput = perpendicularUnitVelocity.times(
         joystickInput.dot(perpendicularUnitVelocity) * SwerveConfig.kMaxSpeed.in(MetersPerSecond));
 

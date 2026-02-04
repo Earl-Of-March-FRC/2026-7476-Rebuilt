@@ -1,12 +1,9 @@
 package frc.robot.util.swerve;
 
-import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Rotation;
-
-import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -32,10 +29,24 @@ import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
  * Helper class to generate paths on the fly
  */
 public class PathGenerator {
+  // Do not access driveSub directly, use drive() to avoid NPE
   private static DrivetrainSubsystem driveSub;
+  private static boolean configured = false;
 
   public static void setDrivetrain(DrivetrainSubsystem driveSubsystem) {
-    driveSub = driveSubsystem;
+    if (configured) {
+      throw new IllegalStateException("PathGenerator already configured");
+    }
+    driveSub = Objects.requireNonNull(driveSubsystem, "Drivetrain cannot be null");
+    configured = true;
+  }
+
+  private static DrivetrainSubsystem drive() {
+    if (!configured) {
+      throw new IllegalStateException(
+          "PathGenerator used before setDrivetrain() was called");
+    }
+    return driveSub;
   }
 
   /**
@@ -49,8 +60,8 @@ public class PathGenerator {
         nearestTranslation2dIndex(FieldConstants.kTrenchPathWaypoints));
 
     // return AutoBuilder.pathfindThenFollowPath(trenchPath,
-    // DriveConstants.kPathfindingConstraints).until(() -> (driveSub
-    // .getCurrentBotZone() == driveSub
+    // DriveConstants.kPathfindingConstraints).until(() -> (drive()
+    // .getCurrentBotZone() == drive()
     // .getPoseZone(trenchPath.getPathPoses().get(trenchPath.getPathPoses().size() -
     // 1))));
 
@@ -68,7 +79,7 @@ public class PathGenerator {
    */
   private static PathPlannerPath crossTrenchPath(LinearVelocity endVelocity, int trenchID) {
     // Calculate The heading with which to cross the trench
-    Rotation2d targetHeading = driveSub
+    Rotation2d targetHeading = drive()
         .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kTrenchHeadingRestriction.in(Degrees)), false);
 
     // Define the start and end poses
@@ -101,9 +112,9 @@ public class PathGenerator {
     PathPlannerPath bumpPath = crossBumpPath(endVelocity, nearestTranslation2dIndex(FieldConstants.kBumpPathWaypoints));
 
     // return AutoBuilder.pathfindThenFollowPath(bumpPath,
-    // DriveConstants.kPathfindingConstraints).until(() -> (driveSub
+    // DriveConstants.kPathfindingConstraints).until(() -> (drive()
     // .getCurrentBotZone() ==
-    // driveSub.getPoseZone(bumpPath.getPathPoses().get(bumpPath.getPathPoses().size()
+    // drive().getPoseZone(bumpPath.getPathPoses().get(bumpPath.getPathPoses().size()
     // - 1))));
 
     return AutoBuilder.pathfindThenFollowPath(bumpPath, SwerveConfig.kPathfindingConstraints);
@@ -119,7 +130,7 @@ public class PathGenerator {
    */
   private static PathPlannerPath crossBumpPath(LinearVelocity endVelocity, int bumpID) {
     // Calculate The heading with which to cross the bump
-    Rotation2d targetHeading = driveSub
+    Rotation2d targetHeading = drive()
         .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kBumpHeadingRestriction.in(Degrees)), true);
 
     // Define the start and end poses
@@ -152,7 +163,7 @@ public class PathGenerator {
    * @return
    */
   public static Command driveToLaunchZoneCommandBump(LinearVelocity endVelocity) {
-    if (driveSub.getCurrentBotZone() != FieldZones.Neutral) {
+    if (drive().getCurrentBotZone() != FieldZones.Neutral) {
       return new InstantCommand();
     }
 
@@ -179,7 +190,7 @@ public class PathGenerator {
                 .minus(FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth)).in(Meters),
         startTranslation2d.getY());
 
-    Rotation2d targetHeading = driveSub
+    Rotation2d targetHeading = drive()
         .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kBumpHeadingRestriction.in(Degrees)), true);
 
     // Define the start and end poses
@@ -199,7 +210,7 @@ public class PathGenerator {
         new GoalEndState(endVelocity, targetHeading));
 
     return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
-        .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
+        .until(() -> (drive().getCurrentBotZone() == FieldZones.Launch));
   }
 
   /**
@@ -212,7 +223,7 @@ public class PathGenerator {
    * @return
    */
   public static Command driveToLaunchZoneCommandTrench(LinearVelocity endVelocity) {
-    if (driveSub.getCurrentBotZone() != FieldZones.Neutral) {
+    if (drive().getCurrentBotZone() != FieldZones.Neutral) {
       return new InstantCommand();
     }
 
@@ -239,7 +250,7 @@ public class PathGenerator {
                 .minus(FieldConstants.kAcceptedLaunchingZone.minus(SwerveConfig.kBumperWidth)).in(Meters),
         startTranslation2d.getY());
 
-    Rotation2d targetHeading = driveSub
+    Rotation2d targetHeading = drive()
         .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kTrenchHeadingRestriction.in(Degrees)), true);
 
     // Define the start and end poses
@@ -259,7 +270,7 @@ public class PathGenerator {
         new GoalEndState(endVelocity, targetHeading));
 
     return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
-        .until(() -> (driveSub.getCurrentBotZone() == FieldZones.Launch));
+        .until(() -> (drive().getCurrentBotZone() == FieldZones.Launch));
   }
 
   /**
@@ -273,7 +284,7 @@ public class PathGenerator {
   private static int nearestTranslation2dIndex(Translation2d[] poseTranslation2ds) {
     int nearestIndex = 0;
 
-    Translation2d currTranslation = driveSub.getPose().getTranslation();
+    Translation2d currTranslation = drive().getPose().getTranslation();
     for (int i = 0; i < poseTranslation2ds.length; i++) {
       double d1 = currTranslation.getDistance(poseTranslation2ds[i]);
       double d2 = currTranslation.getDistance(poseTranslation2ds[nearestIndex]);
@@ -296,5 +307,4 @@ public class PathGenerator {
   private static Translation2d nearestTranslation2d(Translation2d[] poseTranslation2ds) {
     return poseTranslation2ds[nearestTranslation2dIndex(poseTranslation2ds)];
   }
-
 }
