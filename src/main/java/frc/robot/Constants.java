@@ -199,7 +199,7 @@ public final class Constants {
     public static final double kSimulatedCoefficentOfFriction = COTS.WHEELS.COLSONS.cof;
     public static final int kGearRatioLevel = 2;
 
-    public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromDegrees(180));
+    public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromRotations(Math.PI));
 
     // Whether the bump should have defined collision
     // Maple sim provides 2d simulation, and cannot simulate the bump accurately,
@@ -212,34 +212,34 @@ public final class Constants {
     // Camera profiles - each camera's configuration in one place
     public static final CameraProfile kCamera1Profile = new CameraProfile(
         "Arducam_1",
-        0.0, // roll
-        0.1301, // pitch
-        0.0, // yaw
-        0.307, // x
-        0.180, // y
-        0.750, // z
+        Radians.of(0.0), // roll
+        Radians.of(0.1301), // pitch
+        Radians.of(0.0), // yaw
+        Meters.of(0.307), // x
+        Meters.of(0.180), // y
+        Meters.of(0.750), // z
         VecBuilder.fill(0.3, 0.3, 0.3) // standard deviation
     );
 
     public static final CameraProfile kCamera2Profile = new CameraProfile(
         "Arducam_2",
-        0.0, // roll
-        0.0, // pitch
-        Math.PI, // yaw
-        -0.3327, // x
-        0.0, // y
-        0.3708, // z
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(Math.PI), // yaw
+        Meters.of(-0.3327), // x
+        Meters.of(0.0), // y
+        Meters.of(0.3708), // z
         VecBuilder.fill(0.9, 0.9, 0.9) // standard deviation
     );
 
     public static final CameraProfile kCamera3Profile = new CameraProfile(
         "Arducam_3",
-        0.0, // roll
-        0.0, // pitch
-        0.7069, // yaw
-        0.238, // x
-        -0.294, // y
-        0.625, // z
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(0.7069), // yaw
+        Meters.of(0.238), // x
+        Meters.of(-0.294), // y
+        Meters.of(0.625), // z
         VecBuilder.fill(0.5, 0.5, 0.5) // standard deviation
     );
 
@@ -264,7 +264,7 @@ public final class Constants {
         kCamera3Profile.getRobotToCameraTransform() // Camera 3 Transform3d
     };
 
-    public static final double kHeightTolerance = 0.5; // meters above and below ground
+    public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
