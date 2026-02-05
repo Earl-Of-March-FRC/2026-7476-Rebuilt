@@ -162,16 +162,24 @@ public class DrivetrainSubsystem extends SubsystemBase {
           throw new IllegalStateException(
               "simulatedVision is null... Please ensure the VisionSystemSim is initialized when simulating the robot.");
         }
-        try {
-          System.out.println(currentProfile.calibrationFile().getPath());
-          SimCameraProperties simulatedProperties = new SimCameraProperties(currentProfile.calibrationFile().getPath(),
-              currentProfile.resolution()[0], currentProfile.resolution()[1]);
-          PhotonCameraSim simulatedCamera = new PhotonCameraSim(cameras[i], simulatedProperties);
-          simulatedVision.addCamera(simulatedCamera, currentProfile.getRobotToCameraTransform());
-        } catch (IOException e) {
-          System.err.println(
-              "Could not read camera configuration file to simulate camera " + i + ": " + e.getMessage());
-        }
+        // try {
+        System.out.println(currentProfile.calibrationFile().getPath());
+        // SimCameraProperties simulatedProperties = new
+        // SimCameraProperties(currentProfile.calibrationFile().getPath(),
+        // currentProfile.resolution()[0], currentProfile.resolution()[1]);
+        SimCameraProperties simulatedProperties = new SimCameraProperties();
+        simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+            Rotation2d.fromDegrees(70));
+        simulatedProperties.setFPS(30);
+        simulatedProperties.setAvgLatencyMs(35);
+        simulatedProperties.setLatencyStdDevMs(5);
+        PhotonCameraSim simulatedCamera = new PhotonCameraSim(cameras[i], simulatedProperties);
+        simulatedVision.addCamera(simulatedCamera, currentProfile.getRobotToCameraTransform());
+        // } catch (IOException e) {
+        // System.err.println(
+        // "Could not read camera configuration file to simulate camera " + i + ": " +
+        // e.getMessage());
+        // }
       }
 
     }
