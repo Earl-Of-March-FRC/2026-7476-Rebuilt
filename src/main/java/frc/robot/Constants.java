@@ -268,6 +268,20 @@ public final class Constants {
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
+
+    public static final Distance kVisionBaseXYStdDev = Meters.of(0.3);
+    public static final Angle kVisionBaseThetaStdDev = Radians.of(0.3);
+
+    public static final double kVisionMaxStdDev = 5.0;
+
+    public static final Distance kVisionCloseDistance = Meters.of(2.0); // "Close" threshold
+    public static final Distance kVisionFarDistance = Meters.of(6.0); // "Far" threshold
+
+    public static final double kVisionDistanceScaleFactor = 0.5;
+
+    public static final double kVisionHighAmbiguityThreshold = 0.2;
+
+    public static final double kVisionHighAmbiguityMultiplier = 1.5;
   }
 
   public static class FieldConstants {
