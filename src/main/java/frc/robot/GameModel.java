@@ -45,6 +45,7 @@ public class GameModel {
   private static final double GRACE_DURATION = 3.0;
 
   /** Match time thresholds for phase transitions */
+  private static final int AUTO_END = 140;
   private static final int TRANSITION_END = 130;
   private static final int SHIFT_1_END = 105;
   private static final int SHIFT_2_END = 80;
@@ -57,6 +58,7 @@ public class GameModel {
 
   private MatchPhase phase = MatchPhase.DISABLED;
   private boolean hubActive = true;
+  private boolean nextHubActive = true;
   private boolean weWonAuto = false;
   private boolean autoWinnerDetected = false;
   private boolean autoWinnerFromFms = false;
@@ -118,7 +120,9 @@ public class GameModel {
    * Get seconds until the next phase transition.
    */
   public double getTimeToNextShift() {
-    if (matchTime > TRANSITION_END) {
+    if (matchTime > AUTO_END) {
+      return matchTime - AUTO_END;
+    } else if (matchTime > TRANSITION_END) {
       return matchTime - TRANSITION_END;
     } else if (matchTime > SHIFT_1_END) {
       return matchTime - SHIFT_1_END;
@@ -214,10 +218,12 @@ public class GameModel {
     matchTime = DriverStation.getMatchTime();
 
     // Detect auto winner during TRANSITION. After TRANSITION, freeze to a safe
-    // default if still unknown to avoid mid-shift flips when/if the message arrives late.
+    // default if still unknown to avoid mid-shift flips when/if the message arrives
+    // late.
     if (!autoWinnerDetected) {
       // Try to read the FMS message while it is expected to be available.
-      // Also allow a single "last chance" read on the boundary tick right as transition ends.
+      // Also allow a single "last chance" read on the boundary tick right as
+      // transition ends.
       detectAutoWinner();
       if (!autoWinnerDetected && matchTime <= TRANSITION_END) {
         // Default assumption if we never received the message (practice/sim/DS glitch)
@@ -253,18 +259,25 @@ public class GameModel {
     if (matchTime > TRANSITION_END) {
       phase = MatchPhase.TRANSITION;
       hubActive = true;
+      if (autoWinnerDetected && weWonAuto) {
+        nextHubActive = false;
+      }
     } else if (matchTime > SHIFT_1_END) {
       phase = MatchPhase.SHIFT_1;
       hubActive = !weWonAuto; // Loser of auto is active first
+      nextHubActive = weWonAuto;
     } else if (matchTime > SHIFT_2_END) {
       phase = MatchPhase.SHIFT_2;
       hubActive = weWonAuto;
+      nextHubActive = !weWonAuto;
     } else if (matchTime > SHIFT_3_END) {
       phase = MatchPhase.SHIFT_3;
       hubActive = !weWonAuto;
+      nextHubActive = weWonAuto;
     } else if (matchTime > SHIFT_4_END) {
       phase = MatchPhase.SHIFT_4;
       hubActive = weWonAuto;
+      nextHubActive = true;
     } else {
       phase = MatchPhase.ENDGAME;
       hubActive = true;
@@ -285,7 +298,8 @@ public class GameModel {
   private double getTeleopDtSeconds() {
     double nowSec = Timer.getFPGATimestamp();
 
-    // If this is the first call (or we were not initialized), assume nominal loop time.
+    // If this is the first call (or we were not initialized), assume nominal loop
+    // time.
     if (lastTeleopUpdateTimestampSec <= 0.0) {
       lastTeleopUpdateTimestampSec = nowSec;
       return 0.02;
@@ -354,11 +368,12 @@ public class GameModel {
 
   private void publishState() {
     SmartDashboard.putString("Game/Phase", phase.name());
-    SmartDashboard.putBoolean("Game/HubActive", hubActive);
-    SmartDashboard.putBoolean("Game/CanScore", canScore());
-    SmartDashboard.putNumber("Game/GraceRemaining", graceTimer);
-    SmartDashboard.putNumber("Game/TimeToNextShift", getTimeToNextShift());
-    SmartDashboard.putNumber("Game/MatchTime", matchTime);
+    SmartDashboard.putBoolean("Game/Hub State", hubActive);
+    SmartDashboard.putBoolean("Game/Next Hub State", nextHubActive);
+    SmartDashboard.putBoolean("Game/Can Score", canScore());
+    SmartDashboard.putNumber("Game/Grace Remaining", graceTimer);
+    SmartDashboard.putNumber("Game/Phase Time", getTimeToNextShift());
+    SmartDashboard.putNumber("Game/Match Time", matchTime);
     SmartDashboard.putBoolean("Game/WeWonAuto", weWonAuto);
     SmartDashboard.putBoolean("Game/AutoWinnerDetected", autoWinnerDetected);
     SmartDashboard.putBoolean("Game/AutoWinnerFromFms", autoWinnerFromFms);
