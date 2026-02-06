@@ -26,6 +26,8 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.swerve.FieldZones;
+import frc.robot.util.swerve.SwerveConfig;
 
 /* 
  * Command for driving while maintaining a specific distance from the hub.
@@ -43,6 +45,7 @@ public class DriveAtLaunchingRangeCmd extends Command {
   private final Supplier<Double> ySupplier;
   private final Distance launchingRange;
   private final boolean leadShots;
+  private boolean atLimit;
 
   /**
    * Creates a new DriveAtLaunchingRangeCmd.
@@ -92,15 +95,17 @@ public class DriveAtLaunchingRangeCmd extends Command {
     Translation2d perpendicularUnitVelocity = toHub.rotateBy(new Rotation2d(Math.PI / 2.0));
     perpendicularUnitVelocity = perpendicularUnitVelocity.div(toHubNorm);
 
-    // Invert for red alliance to maintain consistent controls
+    Translation2d joystickInput = new Translation2d(xSupplier.get(), ySupplier.get());
+
+    // Invert for red alliance to maintain consistent controls, this must be done
+    // before projection
     Optional<Alliance> alliance = DriverStation.getAlliance();
     if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-      perpendicularUnitVelocity = perpendicularUnitVelocity.times(-1);
+      joystickInput = joystickInput.times(-1);
     }
 
-    Translation2d joystickInput = new Translation2d(xSupplier.get(), ySupplier.get());
     Translation2d projectedInput = perpendicularUnitVelocity.times(
-        joystickInput.dot(perpendicularUnitVelocity) * DriveConstants.kMaxSpeed.in(MetersPerSecond));
+        joystickInput.dot(perpendicularUnitVelocity) * SwerveConfig.kMaxSpeed.in(MetersPerSecond));
 
     // Get radial correction velocity
     Translation2d radialCorrectionVelocity = driveSub.getRadialDistanceCorrectionVector(launchingRange);
@@ -110,36 +115,37 @@ public class DriveAtLaunchingRangeCmd extends Command {
 
     // Limit max speed (avoid division by zero when stationary)
     double velocityNorm = finalVelocity.getNorm();
-    if (velocityNorm > DriveConstants.kMaxSpeed.in(MetersPerSecond)) {
-      finalVelocity = finalVelocity.div(velocityNorm).times(DriveConstants.kMaxSpeed.in(MetersPerSecond));
+    if (velocityNorm > SwerveConfig.kMaxSpeed.in(MetersPerSecond)) {
+      finalVelocity = finalVelocity.div(velocityNorm).times(SwerveConfig.kMaxSpeed.in(MetersPerSecond));
     }
+
+    // Get current velocity
+    ChassisSpeeds currentChassisSpeeds = driveSub.getChassisSpeedsRobotRelative();
+    // Convert to field-relative speeds
+    currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
+        driveSub.getPose().getRotation());
+    Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
+        currentChassisSpeeds.vyMetersPerSecond);
 
     // Get heading correction to face the hub
     Translation2d targetBotRelative = toHub;
     if (leadShots) {
-      ChassisSpeeds currentChassisSpeeds = driveSub.getChassisSpeedsRobotRelative();
-      // Convert to field-relative speeds
-      currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
-          driveSub.getPose().getRotation());
-      Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
-          currentChassisSpeeds.vyMetersPerSecond);
       targetBotRelative = targetBotRelative.minus(velocity.times(LauncherConstants.kBallAirTime.in(Seconds)));
     }
 
     Rotation2d desiredHeading = targetBotRelative.getAngle();
     double omega = driveSub.getHeadingCorrectionOmega(desiredHeading).in(RadiansPerSecond);
 
-    // Predict future pose 5 cycles ahead (20ms timestep)
-    Pose2d botPose = driveSub.getPose();
-    Pose2d futurePose = new Pose2d(
-        botPose.getTranslation().plus(finalVelocity.times(0.02 * 5)),
-        botPose.getRotation());
+    // Predict future pose 6 command cycles ahead with 10 substeps
+    Pose2d futurePose = futurePoseWithSubSteps(atLimit ? finalVelocity : velocity, 0.12, 20);
 
     // Only drive if still in launching zone
-    if (driveSub.isInLaunchingZone(futurePose)) {
+    if (driveSub.getPoseZone(futurePose) == FieldZones.Launch) {
       driveSub.runVelocity(new ChassisSpeeds(finalVelocity.getX(), finalVelocity.getY(), omega), true, false);
+      atLimit = false;
     } else {
       driveSub.runVelocity(new ChassisSpeeds(0, 0, omega), true, false);
+      atLimit = true;
     }
 
     // Perform logging
@@ -150,6 +156,8 @@ public class DriveAtLaunchingRangeCmd extends Command {
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/HubPoseBotRelative", toHub);
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/LeadCorrection", targetBotRelative.minus(toHub));
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/TargetBotRelative", targetBotRelative);
+    Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/NextPose", futurePose);
+    Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/AtLimit", atLimit);
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/RadialCorrection",
         new ChassisSpeeds(radialCorrectionVelocity.getX(), radialCorrectionVelocity.getY(), 0));
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/ProjectedInput",
@@ -173,6 +181,59 @@ public class DriveAtLaunchingRangeCmd extends Command {
   @Override
   public boolean isFinished() {
     // Only track hub when in accepted launching zone
-    return !driveSub.isBotInLaunchingZone();
+    return !(driveSub.getCurrentBotZone() == FieldZones.Launch);
   }
+
+  /**
+   * Predicts what the next Pose2d of the bot will be if the current velocity is
+   * maintained for a duration of dt, uses substeps to keep the velocity aligned
+   * with the
+   * curve. This method will only predict the translation, not the rotation
+   * 
+   * @param velocity The current velocity, field relative
+   * @param dt       The total timestep
+   * @param numSteps The number of calculation steps
+   * @return The predicted Pose2d
+   */
+  private Pose2d futurePoseWithSubSteps(Translation2d velocity, double dt, int numSteps) {
+    Pose2d currentPose = driveSub.getPose();
+    Translation2d position = currentPose.getTranslation();
+
+    // Initial hub-relative vector
+    Translation2d toHub = driveSub.getHubTranslation2dBotRelative();
+    double radius = toHub.getNorm();
+    if (radius < 1e-6) {
+      return currentPose;
+    }
+
+    Translation2d hubField = toHub.plus(position);
+
+    // Initial unit vectors
+    Translation2d radialUnit = toHub.div(radius);
+    Translation2d tangentUnit = radialUnit.rotateBy(Rotation2d.fromRadians(Math.PI / 2));
+
+    // Preserve scalar components
+    double radialSpeed = velocity.dot(radialUnit);
+    double tangentialSpeed = velocity.dot(tangentUnit);
+
+    double dtSubStep = dt / numSteps;
+
+    for (int i = 0; i < numSteps; i++) {
+      // Recompute hub-relative vector from predicted pose
+      Translation2d toHubField = hubField.minus(position);
+      double r = toHubField.getNorm();
+      if (r < 1e-6)
+        break;
+
+      Translation2d radial = toHubField.div(r);
+      Translation2d tangent = radial.rotateBy(Rotation2d.fromRadians(Math.PI / 2));
+
+      Translation2d stepVelocity = radial.times(radialSpeed).plus(tangent.times(tangentialSpeed));
+
+      position = position.plus(stepVelocity.times(dtSubStep));
+    }
+
+    return new Pose2d(position, currentPose.getRotation());
+  }
+
 }
