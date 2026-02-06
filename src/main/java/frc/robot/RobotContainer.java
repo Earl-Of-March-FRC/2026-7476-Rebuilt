@@ -21,6 +21,7 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -150,6 +151,12 @@ public class RobotContainer {
     autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
+
+    autoChooser.addOption("BumpRightL1", new PathPlannerAuto("BumpRightL1"));
+    autoChooser.addOption("BumpLeftL1", new PathPlannerAuto("BumpLeftL1"));
+    autoChooser.addOption("TrenchRightL1", new PathPlannerAuto("TrenchRightL1"));
+    autoChooser.addOption("TrenchLeftL1", new PathPlannerAuto("TrenchLeftL1"));
+
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
 
