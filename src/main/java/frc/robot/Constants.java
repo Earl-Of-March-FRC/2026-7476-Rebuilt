@@ -191,6 +191,20 @@ public final class Constants {
     // leadshots
   }
 
+  public static final class GameModelConstants {
+    /** Match time thresholds for phase transitions */
+    public static final int AUTO_END = 140;
+    public static final int TRANSITION_END = 130;
+    public static final int SHIFT_1_END = 105;
+    public static final int SHIFT_2_END = 80;
+    public static final int SHIFT_3_END = 55;
+    public static final int SHIFT_4_END = 30;
+
+    /** Grace window duration after hub deactivates (seconds) */
+    public static final double GRACE_DURATION = 3.0;
+
+  }
+
   public static final class SimulationConstants {
     public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro(); // Simulated instance of our
     // gyro
@@ -253,6 +267,20 @@ public final class Constants {
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
+
+    public static final Distance kVisionBaseXYStdDev = Meters.of(0.3);
+    public static final Angle kVisionBaseThetaStdDev = Radians.of(0.3);
+
+    public static final double kVisionMaxStdDev = 5.0;
+
+    public static final Distance kVisionCloseDistance = Meters.of(2.0); // "Close" threshold
+    public static final Distance kVisionFarDistance = Meters.of(6.0); // "Far" threshold
+
+    public static final double kVisionDistanceScaleFactor = 0.5;
+
+    public static final double kVisionHighAmbiguityThreshold = 0.2;
+
+    public static final double kVisionHighAmbiguityMultiplier = 1.5;
   }
 
   public static class FieldConstants {

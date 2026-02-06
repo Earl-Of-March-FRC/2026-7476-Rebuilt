@@ -6,14 +6,11 @@ package frc.robot.subsystems.Drivetrain;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import edu.wpi.first.math.Vector;
 import java.util.ArrayList;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Optional;
 import java.util.Optional;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -47,6 +44,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.units.measure.Distance;
@@ -62,6 +60,7 @@ import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
 
 public class DrivetrainSubsystem extends SubsystemBase {
@@ -170,13 +169,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
     yController.setTolerance(DriveConstants.kPIDYControllerTolerance.in(Meters));
 
     // Debug feature to teleport bot odometry
-    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
-    SmartDashboard.putNumber("New Sim Pose X", SimulationConstants.kStartingPose.getX());
-    SmartDashboard.putNumber("New Sim Pose Y", SimulationConstants.kStartingPose.getY());
-    SmartDashboard.putNumber("New Sim Pose θ (Deg)", SimulationConstants.kStartingPose.getRotation().getDegrees());
+    SmartDashboard.putNumber("New Pose X", getPose().getX());
+    SmartDashboard.putNumber("New Pose Y", getPose().getY());
+    SmartDashboard.putNumber("New Pose θ (Deg)", getPose().getRotation().getDegrees());
     // Display this value as a toggle button or toggle switch in Elastic to use it
     // as a button
-    SmartDashboard.putBoolean("Apply Sim Pose", true);
+    SmartDashboard.putBoolean("Apply Pose", true);
 
     // Do not use the auto generated robot config to allow for muiltiple profiles
     RobotConfig config = SwerveConfig.kRobotConfig;
@@ -210,7 +208,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public DrivetrainSubsystem(SwerveModule[] modules, Gyro gyro, SwerveDriveSimulation simulatedSwerveDrive) {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
-    resetPose(SimulationConstants.kStartingPose);
+    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
     resetPose(SimulationConstants.kStartingPose);
   }
 
@@ -304,10 +302,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void resetPose(Pose2d pose) {
     poseEstimator.resetPosition(gyro.getRotation2d(), getModulePositions(), pose);
-
-    if (simulatedSwerveDrive != null && !accurateSimOdometry) {
-      simulatedSwerveDrive.setSimulationWorldPose(pose);
-    }
 
     if (simulatedSwerveDrive != null && !accurateSimOdometry) {
       simulatedSwerveDrive.setSimulationWorldPose(pose);
@@ -816,6 +810,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
       List<Pose3d> fiducialIdPoses = new ArrayList<>();
       List<Double> tagAreas = new ArrayList<>();
       List<Double> tagAmbiguities = new ArrayList<>();
+      List<Double> stdDevsX = new ArrayList<>();
+      List<Double> stdDevsY = new ArrayList<>();
+      List<Double> stdDevsTheta = new ArrayList<>();
 
       // Iterate through each pose to check for ambiguity
       for (EstimatedRobotPose visionPose : visionPoses) {
@@ -830,12 +827,26 @@ public class DrivetrainSubsystem extends SubsystemBase {
         }
 
         Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
-        poseEstimator.addVisionMeasurement(estimatedPose, visionPose.timestampSeconds);
 
-        // Log vision poses
+        // Calculate dynamic standard deviations based on measurement quality
+        Vector<N3> stdDevs = VisionStdDevCalculator.calculateStdDevs(
+            visionPose,
+            PhotonConstants.kCameraStandardDeviations.get(i));
+
+        // Add vision measurement with dynamic standard deviations
+        poseEstimator.addVisionMeasurement(
+            estimatedPose,
+            visionPose.timestampSeconds,
+            stdDevs);
+
+        // Store std devs for logging
+        stdDevsX.add(stdDevs.get(0));
+        stdDevsY.add(stdDevs.get(1));
+        stdDevsTheta.add(stdDevs.get(2));
+
+        // Log vision poses and standard deviations
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
-
       }
 
       // Log targets estimated from robot
@@ -847,6 +858,16 @@ public class DrivetrainSubsystem extends SubsystemBase {
           tagAreas.stream().mapToDouble(n -> n).toArray());
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAmbiguities",
           tagAmbiguities.stream().mapToDouble(n -> n).toArray());
+
+      // Log dynamic standard deviations for tuning
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsX",
+          stdDevsX.stream().mapToDouble(n -> n).toArray());
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsY",
+          stdDevsY.stream().mapToDouble(n -> n).toArray());
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsTheta",
+          stdDevsTheta.stream().mapToDouble(n -> n).toArray());
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/NumTargets",
+          visionPoses.stream().mapToInt(p -> p.targetsUsed.size()).toArray());
     }
 
     // Calculate velocity and acceleration
@@ -892,51 +913,24 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
 
-    boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Sim Pose", true);
-
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
       accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
-
-      // Apply new sim pose if requested, then reset the trigger
-      if (applyNewSimPose) {
-        SmartDashboard.putBoolean("Apply Sim Pose", true);
-        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
-        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
-        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
-        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
-        simulatedSwerveDrive.setSimulationWorldPose(newPose);
-        resetPose(newPose);
-      }
-    }
-
-    // Retrieve SmartDashboard settings
-    if (simulatedSwerveDrive != null) {
-      accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
-
-      // Apply new sim pose if requested, then reset the trigger
-      if (applyNewSimPose) {
-        SmartDashboard.putBoolean("Apply Sim Pose", true);
-        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
-        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
-        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
-        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
-        simulatedSwerveDrive.setSimulationWorldPose(newPose);
-        resetPose(newPose);
-      }
     }
 
     // Apply new sim pose if requested, then reset the trigger
+    // Check if button has been pressed
+    boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Pose", true);
     if (applyNewSimPose) {
-      SmartDashboard.putBoolean("Apply Sim Pose", true);
-      double x = SmartDashboard.getNumber("New Sim Pose X", getPose().getX());
-      double y = SmartDashboard.getNumber("New Sim Pose Y", getPose().getY());
-      double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-          getPose().getRotation().getDegrees());
+      SmartDashboard.putBoolean("Apply Pose", true);
+      double x = SmartDashboard.getNumber("New Pose X", getPose().getX());
+      double y = SmartDashboard.getNumber("New Pose Y", getPose().getY());
+      double theta = SmartDashboard.getNumber("New Pose θ (Deg)", getPose().getRotation().getDegrees());
       Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
       resetPose(newPose);
+      if (simulatedSwerveDrive != null) {
+        simulatedSwerveDrive.setSimulationWorldPose(newPose);
+      }
     }
 
     if (this.targetHeading != null) {

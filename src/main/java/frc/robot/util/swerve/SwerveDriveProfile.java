@@ -57,6 +57,10 @@ public record SwerveDriveProfile(
     ADXRS450
   }
 
+  public String getGyroName() {
+    return gyro().toString();
+  }
+
   /**
    * SpongeBot swerve drive configuration.
    */
