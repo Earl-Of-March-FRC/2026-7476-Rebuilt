@@ -225,10 +225,10 @@ public final class Constants {
         "Arducam_2",
         Radians.of(0.0), // roll
         Radians.of(0.0), // pitch
-        Radians.of(Math.PI), // yaw
-        Meters.of(-0.3327), // x
-        Meters.of(0.0), // y
-        Meters.of(0.3708), // z
+        Radians.of(0.7069), // yaws
+        Meters.of(0.238), // x
+        Meters.of(-0.294), // y
+        Meters.of(0.625), // z
         VecBuilder.fill(0.9, 0.9, 0.9) // standard deviation
     );
 
@@ -236,10 +236,10 @@ public final class Constants {
         "Arducam_3",
         Radians.of(0.0), // roll
         Radians.of(0.0), // pitch
-        Radians.of(0.7069), // yaw
-        Meters.of(0.238), // x
-        Meters.of(-0.294), // y
-        Meters.of(0.625), // z
+        Radians.of(Math.PI), // yaw
+        Meters.of(-0.3327), // x
+        Meters.of(0.0), // y
+        Meters.of(0.3708), // z
         VecBuilder.fill(0.5, 0.5, 0.5) // standard deviation
     );
 

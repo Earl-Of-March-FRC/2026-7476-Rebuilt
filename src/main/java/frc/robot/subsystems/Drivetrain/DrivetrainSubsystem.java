@@ -845,6 +845,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
         stdDevsTheta.add(stdDevs.get(2));
 
         // Log vision poses and standard deviations
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StandardDeviation",
+            new double[] { stdDevs.get(0), stdDevs.get(1), stdDevs.get(2) });
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
       }
@@ -860,12 +862,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
           tagAmbiguities.stream().mapToDouble(n -> n).toArray());
 
       // Log dynamic standard deviations for tuning
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsX",
-          stdDevsX.stream().mapToDouble(n -> n).toArray());
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsY",
-          stdDevsY.stream().mapToDouble(n -> n).toArray());
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsTheta",
-          stdDevsTheta.stream().mapToDouble(n -> n).toArray());
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/NumTargets",
           visionPoses.stream().mapToInt(p -> p.targetsUsed.size()).toArray());
     }
