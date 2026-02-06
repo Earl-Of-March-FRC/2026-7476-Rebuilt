@@ -191,6 +191,20 @@ public final class Constants {
     // leadshots
   }
 
+  public static final class GameModelConstants {
+    /** Match time thresholds for phase transitions */
+    public static final int AUTO_END = 140;
+    public static final int TRANSITION_END = 130;
+    public static final int SHIFT_1_END = 105;
+    public static final int SHIFT_2_END = 80;
+    public static final int SHIFT_3_END = 55;
+    public static final int SHIFT_4_END = 30;
+
+    /** Grace window duration after hub deactivates (seconds) */
+    public static final double GRACE_DURATION = 3.0;
+
+  }
+
   public static final class SimulationConstants {
     public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro(); // Simulated instance of our
     // gyro
