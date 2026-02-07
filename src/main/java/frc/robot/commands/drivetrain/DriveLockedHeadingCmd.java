@@ -28,6 +28,9 @@ import frc.robot.util.swerve.SwerveConfig;
  * This command locks the robot's heading to a specific angle (e.g., 45 degrees)
  * while still allowing full X-Y translational movement with the joystick.
  * The robot will automatically rotate to maintain the locked heading.
+ * 
+ * Locking behavior: Locks to the nearest acute angle (≤90°) relative to the
+ * current quadrant based on gyro position.
  */
 public class DriveLockedHeadingCmd extends Command {
   private final DrivetrainSubsystem driveSub;
@@ -43,7 +46,7 @@ public class DriveLockedHeadingCmd extends Command {
    * @param driveSub    The drivetrain subsystem
    * @param xSupplier   Supplier for X-axis input (-1 to 1, field-relative)
    * @param ySupplier   Supplier for Y-axis input (-1 to 1, field-relative)
-   * @param lockedAngle The angle to lock the robot's heading to (field-relative)
+   * @param lockedAngle The acute angle to lock the robot's heading to (≤90°)
    * @param maxSpeed    Maximum speed in meters per second
    */
   public DriveLockedHeadingCmd(
@@ -114,23 +117,36 @@ public class DriveLockedHeadingCmd extends Command {
     AngularVelocity omega = driveSub.getHeadingCorrectionOmega(targetHeading);
 
     // Apply chassis speeds (field-relative with locked heading)
-    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, false);
+    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega));
   }
 
   /**
-   * Calculates and updates the target heading to the nearest increment.
+   * Calculates and updates the target heading to the nearest acute angle
+   * relative to the current quadrant.
    */
   private void updateTargetHeading() {
     double currentAngleRadians = driveSub.getPose().getRotation().getRadians();
-    double nearestAngle = driveSub.getNearestTargetAngle(lockedAngle, true).getRadians();
+    double acuteAngleRadians = lockedAngle.getRadians();
 
-    // Create the target heading from the nearest angle
-    targetHeading = new Rotation2d(nearestAngle);
+    // Find which 90-degree quadrant we're in
+    int quadrant = (int) Math.floor((currentAngleRadians + Math.PI) / (Math.PI / 2));
+
+    // Calculate base angle for the quadrant (0, π/2, π, -π/2)
+    double baseAngle = (quadrant * Math.PI / 2) - Math.PI;
+
+    // Apply acute angle: alternate between adding and subtracting based on quadrant
+    double targetAngleRadians = baseAngle
+        + ((quadrant % 2 == 0) ? acuteAngleRadians : (Math.PI / 2 - acuteAngleRadians));
+
+    // Create the target heading from the calculated angle
+    targetHeading = new Rotation2d(targetAngleRadians);
 
     // Set the target heading for the robot to maintain
     driveSub.setTargetHeading(targetHeading);
+
     Logger.recordOutput("Drivetrain/RestrictedMode/CurrentAngle", Math.toDegrees(currentAngleRadians));
-    Logger.recordOutput("Drivetrain/RestrictedMode/TargetAngle", Math.toDegrees(nearestAngle));
+    Logger.recordOutput("Drivetrain/RestrictedMode/TargetAngle", Math.toDegrees(targetAngleRadians));
+    Logger.recordOutput("Drivetrain/RestrictedMode/Quadrant", quadrant);
   }
 
   @Override
