@@ -9,6 +9,7 @@ import java.util.Optional;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.IdealStartingState;
+import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.Waypoint;
 
@@ -294,6 +295,24 @@ public class PathGenerator {
       }
     }
     return nearestIndex;
+  }
+
+  /**
+   * Load the L1 climb path and return a pathfinding command for it.
+   * If loading fails the method returns an InstantCommand so callers can
+   * schedule it without null checks.
+   */
+  public static Command loadL1ClimbCommand(String L1PathFile) {
+    try {
+      // Load the path we want to pathfind to and follow
+      PathPlannerPath path = PathPlannerPath.fromPathFile(L1PathFile);
+
+      // Since AutoBuilder is configured, we can use it to build pathfinding commands
+      return AutoBuilder.pathfindThenFollowPath(path, DriveConstants.L1ClimbConstraints);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return new InstantCommand();
+    }
   }
 
   /**
