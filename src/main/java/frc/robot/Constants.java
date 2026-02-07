@@ -115,6 +115,8 @@ public final class Constants {
                                                                  // launch point
     public static final Time kBallAirTime = Seconds.of(0.5); // Estimated time for ball to reach target, used to
     // leadshots
+    public static final double kVelocityLowFrontRPM = 0;
+    public static final double kVelocityConversionFactor = 0;
   }
 
   public static final class DriveConstants {
@@ -247,8 +249,15 @@ public final class Constants {
     public static final double kClimberMotorRaiseSpeed = 0.67;
     public static final double kClimberMotorHookSpeed = 0.67;
 
+    public static final double kTicksToInchesConversion = 0.67;
+
     public static final double kMinClimberLength = -1;
     public static final double kMaxClimberLength = 33;
+
+    // TODO tune these
+    public static final double kP = 0.1;
+    public static final double kI = 0;
+    public static final double kD = 0;
 
   }
 

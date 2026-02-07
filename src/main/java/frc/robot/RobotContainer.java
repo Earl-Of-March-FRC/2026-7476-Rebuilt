@@ -67,11 +67,13 @@ public class RobotContainer {
     // Get profile from Elastic dashboard selector
     SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
     SwerveConfig.applyProfile(activeProfile);
-    // SwerveDriveProfile activeProfile = SwerveProfiles.COMP_BOT;
+    // src/main/java/frc/robot/util/swerve/SwerveConfig.java
+    // package frc.robot.util.swerve;
+
     // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
     // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
 
-    if (Robot.isReal()) {
+    if (Robot.isReal()) { // This is if the Robot is
       gyro = new GyroNavX();
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently

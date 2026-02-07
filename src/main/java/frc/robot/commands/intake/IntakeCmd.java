@@ -4,23 +4,23 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 
 public class IntakeCmd extends Command {
-  private final IntakeSubsystem m_intake;
-  private final double m_speed;
+  private final IntakeSubsystem intake;
+  private final double speed;
 
   public IntakeCmd(IntakeSubsystem subsystem, double speed) {
-    m_intake = subsystem;
-    m_speed = speed;
+    this.intake = subsystem;
+    this.speed = speed;
 
     // IMPORTANT: This tells the robot that no other command can use the intake
     // while this one is running.
-    addRequirements(m_intake);
+    addRequirements(this.intake);
   }
 
   // Initialize the stuff
   @Override
   public void initialize() {
     System.out.println("Intake CMD started.");
-    m_intake.setVelocity(m_speed);
+    intake.setVelocity(speed);
   }
 
   // Excecute the stuff
@@ -33,7 +33,7 @@ public class IntakeCmd extends Command {
   public void end(boolean interrupted) {
     System.out.println("Intake CMD ended.");
     // Safety: Always stop the motor when the command ends!
-    m_intake.stopIntake();
+    intake.stopIntake();
   }
 
   @Override

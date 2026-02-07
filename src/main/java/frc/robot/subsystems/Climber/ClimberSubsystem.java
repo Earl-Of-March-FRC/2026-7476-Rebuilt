@@ -2,7 +2,9 @@ package frc.robot.subsystems.Climber;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkClosedLoopController; // The PID "Brain"
 import com.revrobotics.spark.SparkMax;
@@ -24,14 +26,19 @@ public class ClimberSubsystem extends SubsystemBase {
 
     climberPIDController = climberSpark.getClosedLoopController();
 
-    climberSparkMaxConfig.closedLoop
-        .p(0.0)
-        .i(0.0)
-        .d(0.0)
-        .outputRange(ClimberConstants.kMinClimberLength, ClimberConstants.kMaxClimberLength);
+    climberSparkMaxConfig.smartCurrentLimit(40);
 
-    // Apply your climber-specific configs (Current limits should be high here!)
-    // climberSpark.configure(ClimberConfigs.climberConfig,
+    climberSparkMaxConfig.encoder.positionConversionFactor(ClimberConstants.kTicksToInchesConversion);
+
+    climberSparkMaxConfig.closedLoop
+        .p(ClimberConstants.kP)
+        .i(ClimberConstants.kI)
+        .d(ClimberConstants.kD)
+        .outputRange(-1, 1); // -1, 1 as in -1 full speed backwards, and 1 full speed forwards (Motor maximum
+                             // speeds)
+
+    // Don't reset the safe parameters, don't persist parameters Whatever this means
+    climberSpark.configure(climberSparkMaxConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
     // ResetMode.kNoResetSafeParameters,
     // PersistMode.kNoPersistParameters);
   }
@@ -44,7 +51,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
   public void setTarget(double inches) {
     Logger.recordOutput("Climber/Setpoint/TargetInches", inches);
-
+    // TODO ask hardware about gearbox rotations
     climberPIDController.setSetpoint(inches, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 
