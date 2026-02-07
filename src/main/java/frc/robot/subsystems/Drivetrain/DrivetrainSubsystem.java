@@ -136,10 +136,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     // Setup cameras to see april tags. Wow! That makes me really happy.
     for (int i = 0; i < PhotonConstants.numCameras; i++) {
-      cameras[i] = new PhotonCamera(PhotonConstants.kCameras[i]);
+      cameras[i] = new PhotonCamera(PhotonConstants.kCameras[i].name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
           PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PhotonConstants.kRobotToCams[i]);
+          PhotonConstants.kCameras[i].getRobotToCameraTransform());
     }
 
     // Initialize Controllers
@@ -803,7 +803,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     for (int i = 0; i < PhotonConstants.numCameras; i++) {
       // Get all poses from camera
       List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
-          PhotonConstants.kRobotToCams[i],
+          PhotonConstants.kCameras[i].getRobotToCameraTransform(),
           robotPose);
 
       List<Integer> fiducialIds = new ArrayList<>();
@@ -831,7 +831,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
         // Calculate dynamic standard deviations based on measurement quality
         Vector<N3> stdDevs = VisionStdDevCalculator.calculateStdDevs(
             visionPose,
-            PhotonConstants.kCameraStandardDeviations.get(i));
+            PhotonConstants.kCameras[i].standardDeviation());
 
         // Add vision measurement with dynamic standard deviations
         poseEstimator.addVisionMeasurement(
@@ -872,6 +872,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     double vxPrev = vxFilter.lastValue();
     double vyPrev = vyFilter.lastValue();
+
     double omegaPrev = omegaFilter.lastValue();
     double vx = vxFilter.calculate(speedsRaw.vxMetersPerSecond);
     double vy = vyFilter.calculate(speedsRaw.vyMetersPerSecond);

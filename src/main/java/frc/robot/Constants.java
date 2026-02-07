@@ -191,6 +191,20 @@ public final class Constants {
     // leadshots
   }
 
+  public static final class GameModelConstants {
+    /** Match time thresholds for phase transitions */
+    public static final int AUTO_END = 140;
+    public static final int TRANSITION_END = 130;
+    public static final int SHIFT_1_END = 105;
+    public static final int SHIFT_2_END = 80;
+    public static final int SHIFT_3_END = 55;
+    public static final int SHIFT_4_END = 30;
+
+    /** Grace window duration after hub deactivates (seconds) */
+    public static final double GRACE_DURATION = 3.0;
+
+  }
+
   public static final class SimulationConstants {
     public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro(); // Simulated instance of our
     // gyro
@@ -245,24 +259,9 @@ public final class Constants {
 
     public static final int kAprilTagPipeline = 0;
 
-    public static final String kCamera1 = "Arducam_1";
-    public static final String kCamera2 = "Arducam_2";
-    public static final String kCamera3 = "Arducam_3";
-
-    public static final String[] kCameras = { kCamera1, kCamera2, kCamera3 };
-
-    public static final List<Vector<N3>> kCameraStandardDeviations = List.of(
-        kCamera1Profile.standardDeviation(),
-        kCamera2Profile.standardDeviation(),
-        kCamera3Profile.standardDeviation());
+    public static final CameraProfile[] kCameras = { kCamera1Profile, kCamera2Profile, kCamera3Profile };
 
     public static final int numCameras = kCameras.length;
-
-    public static final Transform3d[] kRobotToCams = {
-        kCamera1Profile.getRobotToCameraTransform(), // Camera 1 Transform3d
-        kCamera2Profile.getRobotToCameraTransform(), // Camera 2 Transform3d
-        kCamera3Profile.getRobotToCameraTransform() // Camera 3 Transform3d
-    };
 
     public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
