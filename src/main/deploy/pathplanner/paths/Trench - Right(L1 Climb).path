@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.137204545454545,
-        "y": 0.6955909090909096
+        "x": 3.137,
+        "y": 0.696
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.642335665091495,
-        "y": 1.1806300908549345
+        "x": 2.6421288235249225,
+        "y": 1.1810368391083985
       },
       "isLocked": false,
       "linkedName": null
@@ -45,7 +45,7 @@
     "rotation": 0.0
   },
   "reversed": false,
-  "folder": "L1 CLimb - Path",
+  "folder": null,
   "idealStartingState": {
     "velocity": 0,
     "rotation": 0.0

@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -302,13 +303,15 @@ public class PathGenerator {
    * If loading fails the method returns an InstantCommand so callers can
    * schedule it without null checks.
    */
-  public static Command loadL1ClimbCommand(String L1PathFile) {
+  public static Command loadL1ClimbCommand() {
+
     try {
       // Load the path we want to pathfind to and follow
-      PathPlannerPath path = PathPlannerPath.fromPathFile(L1PathFile);
+      PathPlannerPath nearestClimbPath = AutoConstants.climbPaths[nearestTranslation2dIndex(
+          AutoConstants.climbPathWaypoints)];
 
       // Since AutoBuilder is configured, we can use it to build pathfinding commands
-      return AutoBuilder.pathfindThenFollowPath(path, DriveConstants.L1ClimbConstraints);
+      return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, DriveConstants.L1ClimbConstraints);
     } catch (Exception e) {
       e.printStackTrace();
       return new InstantCommand();

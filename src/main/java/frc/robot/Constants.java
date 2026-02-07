@@ -22,6 +22,8 @@ import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.PathPoint;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -42,6 +44,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
 
@@ -383,4 +386,33 @@ public final class Constants {
             kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Red Outpost
     };
   }
+
+  public static class AutoConstants {
+    public static PathPlannerPath bumpLeftClimbPath;
+    public static PathPlannerPath bumpRightClimbPath;
+    public static PathPlannerPath trenchLeftClimbPath;
+    public static PathPlannerPath trenchRightClimbPath;
+
+    static {
+      try {
+        bumpLeftClimbPath = PathPlannerPath.fromPathFile("Bump - Left(L1 Climb)");
+        bumpRightClimbPath = PathPlannerPath.fromPathFile("Bump - Right(L1 Climb)");
+        trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
+        trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
+    public static final PathPlannerPath[] climbPaths = { bumpLeftClimbPath, bumpRightClimbPath, trenchLeftClimbPath,
+        trenchRightClimbPath };
+
+    public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
+        bumpLeftClimbPath != null ? bumpLeftClimbPath.getAllPathPoints().get(0).position : new Translation2d(),
+        bumpRightClimbPath != null ? bumpRightClimbPath.getAllPathPoints().get(0).position : new Translation2d(),
+        trenchLeftClimbPath != null ? trenchLeftClimbPath.getAllPathPoints().get(0).position : new Translation2d(),
+        trenchRightClimbPath != null ? trenchRightClimbPath.getAllPathPoints().get(0).position : new Translation2d()
+    };
+  }
+
 }

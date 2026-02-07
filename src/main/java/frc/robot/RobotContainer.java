@@ -219,7 +219,7 @@ public class RobotContainer {
     autoChooser.addOption("TrenchRightL1", new PathPlannerAuto("TrenchRightL1"));
     autoChooser.addOption("TrenchLeftL1", new PathPlannerAuto("TrenchLeftL1"));
 
-    autoChooser.addOption("BumpRightL2", PathGenerator.loadL1ClimbCommand("Bump - Left(L1 Climb)"));
+    autoChooser.addOption("Closest Path", PathGenerator.loadL1ClimbCommand());
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
