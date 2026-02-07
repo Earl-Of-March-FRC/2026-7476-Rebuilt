@@ -279,7 +279,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void runVelocity(ChassisSpeeds speeds) {
     runVelocity(speeds, this.isFieldRelativeReal, true);
-    runVelocity(speeds, this.isFieldRelativeReal, true);
   }
 
   /**
