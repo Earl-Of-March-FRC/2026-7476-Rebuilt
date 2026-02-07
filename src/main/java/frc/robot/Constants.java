@@ -26,6 +26,7 @@ import com.pathplanner.lib.path.PathConstraints;
 import com.studica.frc.AHRS.NavXComType;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.ClosedLoopSlot;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -115,8 +116,17 @@ public final class Constants {
                                                                  // launch point
     public static final Time kBallAirTime = Seconds.of(0.5); // Estimated time for ball to reach target, used to
     // leadshots
-    public static final double kVelocityLowFrontRPM = 0;
+    public static final double kVelocityLowRPM = 0;
     public static final double kVelocityConversionFactor = 0;
+
+    /*
+    
+    
+    */
+    // High velocity threshold
+
+    public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
+    public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot0;
   }
 
   public static final class DriveConstants {

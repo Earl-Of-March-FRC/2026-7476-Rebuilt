@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
@@ -54,15 +55,15 @@ public class LauncherSubsystem extends SubsystemBase {
 
     launcherSpark.configure(launcherSparkMaxConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
-    SmartDashboard.putNumber("LauncherLowFrontVelocity",
-        LauncherConstants.kVelocityLowFrontRPM * LauncherConstants.kVelocityConversionFactor);
+    SmartDashboard.putNumber("LauncherLowVelocity",
+        LauncherConstants.kVelocityLowRPM * LauncherConstants.kVelocityConversionFactor);
 
   }
 
   @Override
   public void periodic() { // Will be used for logging for now.
     // This method will be called once per scheduler run
-    SmartDashboard.putNumber("FrontVel", launcherEncoder.getVelocity());
+    SmartDashboard.putNumber("Vel", launcherEncoder.getVelocity());
   }
 
   public double getVelocity() {
@@ -74,8 +75,37 @@ public class LauncherSubsystem extends SubsystemBase {
     launcherSpark.set(percent);
   }
 
+  public void setReferenceVelocityOffset(double offsetRPM) {
+    velocityOffsetRPM = offsetRPM;
+    Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffsetRPM);
+    Logger.recordOutput("Launcher/VelocityOffsetRadPerSec",
+        velocityOffsetRPM * LauncherConstants.kVelocityConversionFactor);
+  }
+
+  public void setUseHighVelocities(boolean use) {
+    useHighVelocities = use;
+    Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
+  }
+
+  /**
+   * Sets the reference velocity for the launcher closed loop controller.
+   *
+   * @param referenceVelocity The reference velocity, in RPM.
+   */
   public void setReferenceVelocity(double referenceVelocity) {
-    setReferenceVelocity(referenceVelocity, referenceVelocity);
+    double referenceVelocityWithOffset = referenceVelocity;
+    Logger.recordOutput("Launcher/Setpoint/Velocity", referenceVelocity);
+    Logger.recordOutput("Launcher/Setpoint/VelocityWithOffset", referenceVelocityWithOffset);
+
+    // Converts RPM to radians per second
+    launcherClosedLoopController.setSetpoint(
+        (referenceVelocity == 0 ? referenceVelocity : referenceVelocityWithOffset)
+            * LauncherConstants.kVelocityConversionFactor,
+        ControlType.kVelocity, useHighVelocities ? LauncherConstants.kSlotHigh : LauncherConstants.kSlotLow);
+  }
+
+  public boolean isUsingHighVelocities() {
+    return useHighVelocities;
   }
 
 }
