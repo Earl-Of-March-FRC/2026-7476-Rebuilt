@@ -8,7 +8,6 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
-import java.io.IOException;
 import edu.wpi.first.math.Vector;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,6 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
-import org.photonvision.simulation.VisionTargetSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -32,7 +30,6 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
-import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.math.MathUtil;
 
 import edu.wpi.first.math.VecBuilder;
@@ -989,11 +986,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     if (this.simulatedSwerveDrive != null) {
-      Logger.recordOutput("FieldSimulation/PhysicalRobotPose",
-          this.simulatedSwerveDrive.getSimulatedDriveTrainPose());
+      Pose2d simulatedPose = simulatedSwerveDrive.getSimulatedDriveTrainPose();
+      if (this.simulatedVision != null) {
+        this.simulatedVision.update(simulatedPose);
+      }
+      Logger.recordOutput("FieldSimulation/PhysicalRobotPose", simulatedPose);
     }
-    if (this.simulatedVision != null) {
-      this.simulatedVision.update(getPose());
-    }
+
   }
 }
