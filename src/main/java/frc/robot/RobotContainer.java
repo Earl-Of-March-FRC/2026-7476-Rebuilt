@@ -214,11 +214,6 @@ public class RobotContainer {
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
 
-    autoChooser.addOption("BumpRightL1", new PathPlannerAuto("BumpRightL1"));
-    autoChooser.addOption("BumpLeftL1", new PathPlannerAuto("BumpLeftL1"));
-    autoChooser.addOption("TrenchRightL1", new PathPlannerAuto("TrenchRightL1"));
-    autoChooser.addOption("TrenchLeftL1", new PathPlannerAuto("TrenchLeftL1"));
-
     autoChooser.addOption("Closest Path", PathGenerator.loadL1ClimbCommand());
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());

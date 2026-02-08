@@ -183,10 +183,6 @@ public final class Constants {
     public static final Angle kBackLeftChassisAngularOffset = Radians.of(Math.PI);
     public static final Angle kBackRightChassisAngularOffset = Radians.of(Math.PI / 2);
 
-    public static final PathConstraints L1ClimbConstraints = new PathConstraints(
-        3.0, 4.0,
-        3 * Math.PI, 4 * Math.PI);
-
   }
 
   public static final class LauncherConstants {
@@ -388,6 +384,11 @@ public final class Constants {
   }
 
   public static class AutoConstants {
+
+    public static final PathConstraints L1ClimbConstraints = new PathConstraints(
+        3.0, 4.0,
+        3 * Math.PI, 4 * Math.PI);
+
     public static PathPlannerPath bumpLeftClimbPath;
     public static PathPlannerPath bumpRightClimbPath;
     public static PathPlannerPath trenchLeftClimbPath;

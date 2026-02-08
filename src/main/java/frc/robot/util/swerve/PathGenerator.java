@@ -311,7 +311,7 @@ public class PathGenerator {
           AutoConstants.climbPathWaypoints)];
 
       // Since AutoBuilder is configured, we can use it to build pathfinding commands
-      return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, DriveConstants.L1ClimbConstraints);
+      return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, AutoConstants.L1ClimbConstraints);
     } catch (Exception e) {
       e.printStackTrace();
       return new InstantCommand();
