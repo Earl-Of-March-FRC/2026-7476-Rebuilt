@@ -19,6 +19,9 @@ import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -54,12 +57,14 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Robot;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.util.vision.CameraProfile;
 import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
 
@@ -79,12 +84,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private final LinearFilter omegaFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
 
   // Pose estimation with vision fusion capability
-  // public final SwerveDrivePoseEstimator poseEstimator;
-  // public final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator visionlessPoseEstimator;
   private final PhotonCamera[] cameras = new PhotonCamera[PhotonConstants.numCameras];
   private final PhotonPoseEstimator[] photonPoseEstimators = new PhotonPoseEstimator[PhotonConstants.numCameras];
+  private final VisionSystemSim simulatedVision;
 
   // Current pose of the robot
   private Pose2d robotPose = new Pose2d();
@@ -134,12 +138,46 @@ public class DrivetrainSubsystem extends SubsystemBase {
         getModulePositions(),
         new Pose2d());
 
+    if (Robot.isSimulation()) {
+      simulatedVision = new VisionSystemSim("main");
+      simulatedVision.addAprilTags(FieldConstants.kfieldLayout);
+    } else {
+      simulatedVision = null;
+    }
+
     // Setup cameras to see april tags. Wow! That makes me really happy.
     for (int i = 0; i < PhotonConstants.numCameras; i++) {
-      cameras[i] = new PhotonCamera(PhotonConstants.kCameras[i].name());
+      CameraProfile currentProfile = PhotonConstants.kCameras[i];
+      cameras[i] = new PhotonCamera(currentProfile.name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
           PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PhotonConstants.kCameras[i].getRobotToCameraTransform());
+          currentProfile.getRobotToCameraTransform());
+
+      if (Robot.isSimulation()) {
+        if (simulatedVision == null) {
+          throw new IllegalStateException(
+              "simulatedVision is null... Please ensure the VisionSystemSim is initialized when simulating the robot.");
+        }
+        // try {
+        System.out.println(currentProfile.calibrationFile().getPath());
+        // SimCameraProperties simulatedProperties = new
+        // SimCameraProperties(currentProfile.calibrationFile().getPath(),
+        // currentProfile.resolution()[0], currentProfile.resolution()[1]);
+        SimCameraProperties simulatedProperties = new SimCameraProperties();
+        simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+            Rotation2d.fromDegrees(70));
+        simulatedProperties.setFPS(30);
+        simulatedProperties.setAvgLatencyMs(35);
+        simulatedProperties.setLatencyStdDevMs(5);
+        PhotonCameraSim simulatedCamera = new PhotonCameraSim(cameras[i], simulatedProperties);
+        simulatedVision.addCamera(simulatedCamera, currentProfile.getRobotToCameraTransform());
+        // } catch (IOException e) {
+        // System.err.println(
+        // "Could not read camera configuration file to simulate camera " + i + ": " +
+        // e.getMessage());
+        // }
+      }
+
     }
 
     // Initialize Controllers
@@ -943,8 +981,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     if (this.simulatedSwerveDrive != null) {
-      Logger.recordOutput("FieldSimulation/PhysicalRobotPose",
-          this.simulatedSwerveDrive.getSimulatedDriveTrainPose());
+      Pose2d simulatedPose = simulatedSwerveDrive.getSimulatedDriveTrainPose();
+      if (this.simulatedVision != null) {
+        this.simulatedVision.update(simulatedPose);
+      }
+      Logger.recordOutput("FieldSimulation/PhysicalRobotPose", simulatedPose);
     }
+
   }
 }

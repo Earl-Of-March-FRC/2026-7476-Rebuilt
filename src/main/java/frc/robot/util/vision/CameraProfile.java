@@ -1,7 +1,6 @@
 package frc.robot.util.vision;
 
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Radians;
+import java.io.File;
 
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -34,7 +33,9 @@ public record CameraProfile(
     Distance x,
     Distance y,
     Distance z,
-    Vector<N3> standardDeviation) {
+    Vector<N3> standardDeviation,
+    File calibrationFile,
+    int[] resolution) {
 
   /**
    * Creates a Transform3d representing the robot-to-camera transformation.
