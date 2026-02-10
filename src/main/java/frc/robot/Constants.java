@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
@@ -237,9 +238,14 @@ public final class Constants {
         Meters.of(0.307), // x
         Meters.of(0.180), // y
         Meters.of(0.750), // z
-        VecBuilder.fill(0.3, 0.3, 0.3), // standard deviation
-        kCalibrationFile,
-        new int[] { 1280, 720 });
+        VecBuilder.fill(0.3, 0.3, 0.3), // standard deviation);
+        kCalibrationFile, // Calibration file
+        30, // FPS
+        Milliseconds.of(20), // Latency
+        Milliseconds.of(5), // Latency deviation
+        Degrees.of(70), // FOV
+        new int[] { 1280, 720 } // Resolution
+    );
 
     public static final CameraProfile kCamera2Profile = new CameraProfile(
         "Arducam_2",
@@ -250,8 +256,13 @@ public final class Constants {
         Meters.of(-0.294), // y
         Meters.of(0.625), // z
         VecBuilder.fill(0.9, 0.9, 0.9), // standard deviation
-        kCalibrationFile,
-        new int[] { 1280, 720 });
+        kCalibrationFile, // Calibration file
+        30, // FPS
+        Milliseconds.of(20), // Latency
+        Milliseconds.of(5), // Latency deviation
+        Degrees.of(70), // FOV
+        new int[] { 1280, 720 } // Resolution
+    );
 
     public static final CameraProfile kCamera3Profile = new CameraProfile(
         "Arducam_3",
@@ -262,8 +273,13 @@ public final class Constants {
         Meters.of(0.0), // y
         Meters.of(0.3708), // z
         VecBuilder.fill(0.5, 0.5, 0.5), // standard deviation
-        kCalibrationFile,
-        new int[] { 1280, 720 });
+        kCalibrationFile, // Calibration file
+        30, // FPS
+        Milliseconds.of(40), // Latency
+        Milliseconds.of(5), // Latency deviation
+        Degrees.of(70), // FOV
+        new int[] { 1280, 720 } // Resolution
+    );
 
     public static final int kAprilTagPipeline = 0;
 
