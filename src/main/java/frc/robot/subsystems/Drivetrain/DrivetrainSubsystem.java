@@ -6,9 +6,12 @@ package frc.robot.subsystems.Drivetrain;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.Vector;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -158,24 +161,40 @@ public class DrivetrainSubsystem extends SubsystemBase {
           throw new IllegalStateException(
               "simulatedVision is null... Please ensure the VisionSystemSim is initialized when simulating the robot.");
         }
-        // try {
-        System.out.println(currentProfile.calibrationFile().getPath());
-        // SimCameraProperties simulatedProperties = new
-        // SimCameraProperties(currentProfile.calibrationFile().getPath(),
-        // currentProfile.resolution()[0], currentProfile.resolution()[1]);
-        SimCameraProperties simulatedProperties = new SimCameraProperties();
-        simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
-            Rotation2d.fromDegrees(70));
-        simulatedProperties.setFPS(30);
-        simulatedProperties.setAvgLatencyMs(35);
-        simulatedProperties.setLatencyStdDevMs(5);
+
+        SimCameraProperties simulatedProperties;
+        try {
+          if (currentProfile.configFile() == null || !currentProfile.configFile().exists()) {
+            throw new IOException("No calibration file specified in camera profile or file does not exist.");
+          }
+          simulatedProperties = new SimCameraProperties(currentProfile.configFile().getPath(),
+              currentProfile.resolution()[0], currentProfile.resolution()[1]);
+
+        } catch (IOException e) {
+          System.err.println(
+              "Could not read camera configuration file to simulate camera " + i
+                  + ", falling back to setting set by camera profile. Error: " +
+                  e.getMessage());
+          simulatedProperties = new SimCameraProperties();
+          if (currentProfile.camIntrinsics() == null || currentProfile.distCoeffs() == null) {
+            System.out.println("Could not find camera matrices for camera profile " + i + ", reverting to set FOV.");
+            simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+                new Rotation2d(currentProfile.fieldOfView()));
+          } else {
+            simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+                currentProfile.camIntrinsics(),
+                currentProfile.distCoeffs());
+          }
+          simulatedProperties.setFPS(currentProfile.fps());
+          simulatedProperties.setAvgLatencyMs(currentProfile.avgLatency().in(Milliseconds));
+          simulatedProperties.setLatencyStdDevMs(currentProfile.avgLatencyDeviation().in(Milliseconds));
+        }
+
         PhotonCameraSim simulatedCamera = new PhotonCameraSim(cameras[i], simulatedProperties);
+        simulatedCamera.enableRawStream(true);
+        simulatedCamera.enableProcessedStream(true);
+        simulatedCamera.enableDrawWireframe(currentProfile.simulationWireframeEnabled());
         simulatedVision.addCamera(simulatedCamera, currentProfile.getRobotToCameraTransform());
-        // } catch (IOException e) {
-        // System.err.println(
-        // "Could not read camera configuration file to simulate camera " + i + ": " +
-        // e.getMessage());
-        // }
       }
 
     }
@@ -983,7 +1002,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     if (this.simulatedSwerveDrive != null) {
       Pose2d simulatedPose = simulatedSwerveDrive.getSimulatedDriveTrainPose();
       if (this.simulatedVision != null) {
-        this.simulatedVision.update(simulatedPose);
+        simulatedVision.update(simulatedPose);
       }
       Logger.recordOutput("FieldSimulation/PhysicalRobotPose", simulatedPose);
     }
