@@ -54,6 +54,8 @@ import frc.robot.Constants.SimulationConstants;
  * @param simulationWireframeEnabled [OPTIONAL] Simulate wireframe, usually
  *                                   false due
  *                                   to being extremely resource-heavy
+ * @apiNote +x is in front of the robot, +y is to the left of the robot, +z is
+ *          up
  */
 public record CameraProfile(
     String name,
