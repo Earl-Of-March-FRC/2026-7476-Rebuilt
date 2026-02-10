@@ -164,10 +164,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
         SimCameraProperties simulatedProperties;
         try {
-          if (currentProfile.calibrationFile() == null) {
-            throw new IOException("No calibration file specified in camera profile.");
+          if (currentProfile.configFile() == null || !currentProfile.configFile().exists()) {
+            throw new IOException("No calibration file specified in camera profile or file does not exist.");
           }
-          simulatedProperties = new SimCameraProperties(currentProfile.calibrationFile().getPath(),
+          simulatedProperties = new SimCameraProperties(currentProfile.configFile().getPath(),
               currentProfile.resolution()[0], currentProfile.resolution()[1]);
 
         } catch (IOException e) {
@@ -176,14 +176,24 @@ public class DrivetrainSubsystem extends SubsystemBase {
                   + ", falling back to setting set by camera profile. Error: " +
                   e.getMessage());
           simulatedProperties = new SimCameraProperties();
-          simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
-              new Rotation2d(currentProfile.fieldOfView()));
+          if (currentProfile.camIntrinsics() == null || currentProfile.distCoeffs() == null) {
+            System.out.println("Could not find camera matrices for camera profile " + i + ", reverting to set FOV.");
+            simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+                new Rotation2d(currentProfile.fieldOfView()));
+          } else {
+            simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+                currentProfile.camIntrinsics(),
+                currentProfile.distCoeffs());
+          }
           simulatedProperties.setFPS(currentProfile.fps());
           simulatedProperties.setAvgLatencyMs(currentProfile.avgLatency().in(Milliseconds));
           simulatedProperties.setLatencyStdDevMs(currentProfile.avgLatencyDeviation().in(Milliseconds));
         }
 
         PhotonCameraSim simulatedCamera = new PhotonCameraSim(cameras[i], simulatedProperties);
+        simulatedCamera.enableRawStream(true);
+        simulatedCamera.enableProcessedStream(true);
+        simulatedCamera.enableDrawWireframe(currentProfile.simulationWireframeEnabled());
         simulatedVision.addCamera(simulatedCamera, currentProfile.getRobotToCameraTransform());
       }
 
@@ -992,7 +1002,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     if (this.simulatedSwerveDrive != null) {
       Pose2d simulatedPose = simulatedSwerveDrive.getSimulatedDriveTrainPose();
       if (this.simulatedVision != null) {
-        this.simulatedVision.update(simulatedPose);
+        simulatedVision.update(simulatedPose);
       }
       Logger.recordOutput("FieldSimulation/PhysicalRobotPose", simulatedPose);
     }

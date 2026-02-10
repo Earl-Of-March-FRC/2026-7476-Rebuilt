@@ -28,6 +28,8 @@ import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -36,7 +38,9 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -223,12 +227,34 @@ public final class Constants {
     // Maple sim provides 2d simulation, and cannot simulate the bump accurately,
     // it can be either a wall or non-existant
     public static final boolean kSimBumpCollision = false;
+
+    // Default vision properties
+    public static final File kSimVisionConfigurationFile = new File(Filesystem.getDeployDirectory().getPath(),
+        "simulated_camera_settings\\arducam_OV9281_calibration_1280x720.json");
+    public static final double kSimVisionFPS = 20;
+    public static final Time kSimVisionLatency = Milliseconds.of(40);
+    public static final Time kSimVisionLatencyDeviation = Milliseconds.of(5);
+    public static final Angle kSimVisionFOV = Degrees.of(70);
+    public static final int[] kSimVisionResolution = { 1280, 720 };
+    public static final Matrix<N3, N3> kSimVisionIntrinsics = MatBuilder.fill(N3.instance, N3.instance,
+        940.7360710926395,
+        0.0,
+        615.5884770322365,
+        0.0,
+        939.9932393907364,
+        328.53938300868,
+        0.0,
+        0.0,
+        1.0);
+    public static final Matrix<N8, N1> kSimVisionDistCoeffs = MatBuilder.fill(N8.instance, N1.instance,
+        0.054834081023049625,
+        -0.15994111706817074,
+        -0.0017587106009926158,
+        -0.0014671022483263552,
+        0.049742166267499596, 0, 0, 0);
   }
 
   public static final class PhotonConstants {
-    public static final File kCalibrationFile = new File(Filesystem.getDeployDirectory().getPath(),
-        "simulated_camera_settings\\arducam_OV9281_calibration_1280x720.json");
-
     // Camera profiles - each camera's configuration in one place
     public static final CameraProfile kCamera1Profile = new CameraProfile(
         "Arducam_1",
@@ -238,14 +264,7 @@ public final class Constants {
         Meters.of(0.307), // x
         Meters.of(0.180), // y
         Meters.of(0.750), // z
-        VecBuilder.fill(0.3, 0.3, 0.3), // standard deviation);
-        kCalibrationFile, // Calibration file
-        30, // FPS
-        Milliseconds.of(20), // Latency
-        Milliseconds.of(5), // Latency deviation
-        Degrees.of(70), // FOV
-        new int[] { 1280, 720 } // Resolution
-    );
+        VecBuilder.fill(0.3, 0.3, 0.3));
 
     public static final CameraProfile kCamera2Profile = new CameraProfile(
         "Arducam_2",
@@ -255,14 +274,7 @@ public final class Constants {
         Meters.of(0.238), // x
         Meters.of(-0.294), // y
         Meters.of(0.625), // z
-        VecBuilder.fill(0.9, 0.9, 0.9), // standard deviation
-        kCalibrationFile, // Calibration file
-        30, // FPS
-        Milliseconds.of(20), // Latency
-        Milliseconds.of(5), // Latency deviation
-        Degrees.of(70), // FOV
-        new int[] { 1280, 720 } // Resolution
-    );
+        VecBuilder.fill(0.9, 0.9, 0.9));
 
     public static final CameraProfile kCamera3Profile = new CameraProfile(
         "Arducam_3",
@@ -272,14 +284,7 @@ public final class Constants {
         Meters.of(-0.3327), // x
         Meters.of(0.0), // y
         Meters.of(0.3708), // z
-        VecBuilder.fill(0.5, 0.5, 0.5), // standard deviation
-        kCalibrationFile, // Calibration file
-        30, // FPS
-        Milliseconds.of(40), // Latency
-        Milliseconds.of(5), // Latency deviation
-        Degrees.of(70), // FOV
-        new int[] { 1280, 720 } // Resolution
-    );
+        VecBuilder.fill(0.5, 0.5, 0.5));
 
     public static final int kAprilTagPipeline = 0;
 
