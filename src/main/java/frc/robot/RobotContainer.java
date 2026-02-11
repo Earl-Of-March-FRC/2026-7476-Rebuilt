@@ -7,7 +7,6 @@ package frc.robot;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
-import frc.robot.subsystems.Drivetrain.GyroADXRS450;
 import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
@@ -17,12 +16,19 @@ import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
 
-import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
+import java.util.Set;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
+import java.util.Set;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -36,13 +42,20 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.LauncherConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
-import frc.robot.commands.drivetrain.RestrictedDriveCmd;
+import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.util.PoseHelpers;
+import frc.robot.util.swerve.FieldZones;
+import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
+import frc.robot.util.swerve.FieldZones;
+import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.commands.intake.IntakeCmd;
@@ -57,6 +70,7 @@ public class RobotContainer {
   public final LauncherSubsystem launcherSub;
   public final IndexerSubsystem indexerSub;
   public final ClimberSubsystem ClimberSub;
+
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -72,14 +86,15 @@ public class RobotContainer {
 
     // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
     // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
-
+    // see ye
     if (Robot.isReal()) { // This is if the Robot is
-      gyro = new GyroNavX();
+      gyro = SwerveConfig.gyro;
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
       launcherSub = new LauncherSubsystem(null); // set when we have more information
       indexerSub = new IndexerSubsystem(null);
       ClimberSub = new ClimberSubsystem(null);
+
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               SwerveConfig.kFrontLeftDrivingCanId,
@@ -109,21 +124,28 @@ public class RobotContainer {
       launcherSub = new LauncherSubsystem(new SparkMax(0, null));
       indexerSub = new IndexerSubsystem(new SparkMax(0, null));
       ClimberSub = new ClimberSubsystem(new SparkMax(0, null));
+      // Override bump collision (on by default)
+      SimulatedArena.overrideInstance(
+          new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(
+              SimulationConstants.kSimBumpCollision));
+
       driveSub = new DrivetrainSubsystem(new SwerveModule[] {
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[0]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[1]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[2]),
           new SimulatedSwerveModule(simulatedSwerveDrive.getModules()[3]) }, gyro, simulatedSwerveDrive);
-
       SimulatedArena.getInstance().addDriveTrainSimulation(simulatedSwerveDrive);
     }
+
+    PathGenerator.setDrivetrain(driveSub);
 
     configureBindings();
     configureAutos();
   }
 
   private void configureBindings() {
-    driveSub.setDefaultCommand(new DriveCmd(
+
+    DriveCmd driveCmd = new DriveCmd(
         driveSub,
         () -> MathUtil.applyDeadband(
             -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
@@ -133,31 +155,34 @@ public class RobotContainer {
             OIConstants.kDriveDeadband),
         () -> MathUtil.applyDeadband(
             -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis),
-            OIConstants.kDriveDeadband)));
+            OIConstants.kDriveDeadband));
 
-    driverController.a().toggleOnTrue(
-        new RestrictedDriveCmd(
-            driveSub,
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-                OIConstants.kDriveDeadband),
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-                OIConstants.kDriveDeadband),
-            new Rotation2d(DriveConstants.kHeadingRestriction)));
+    DriveAtLaunchingRangeCmd driveAtLaunchingRangeCmd = new DriveAtLaunchingRangeCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
+            OIConstants.kDriveDeadband),
+        Constants.LauncherConstants.kLaunchRadius,
+        true);
+
+    driveSub.setDefaultCommand(driveCmd);
+
+    driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
+            OIConstants.kDriveDeadband),
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
 
     // Only schedule when in Launching zone
-    driverController.x().and(driveSub::isBotInLaunchingZone).toggleOnTrue(
-        new DriveAtLaunchingRangeCmd(
-            driveSub,
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-                OIConstants.kDriveDeadband),
-            () -> MathUtil.applyDeadband(
-                -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-                OIConstants.kDriveDeadband),
-            Constants.LauncherConstants.kLaunchRadius,
-            true));
+    driverController.x().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(driveAtLaunchingRangeCmd);
 
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
@@ -169,26 +194,45 @@ public class RobotContainer {
     // Binding for Intake (Button 6 is usually Right Bumper)
     driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
 
-    // driverController.y().onTrue(new IndexToBeamBreakCmd(indexerSub, () -> 0.75));
-    // driverController.leftBumper().whileTrue(
-    // new IndexerSetVelocityManualCmd(indexerSub, () -> -0.75));
-    // driverController.rightBumper().whileTrue(
-    // new IndexerSetVelocityManualCmd(indexerSub, () -> 1));
+    driverController.rightBumper().onTrue(Commands.defer(
+        () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
+        Set.of(driveSub)));
 
-    // // Launcher commands
-    // driverController.leftTrigger().whileTrue(
-    // new LauncherSetVelocityPIDCmd(launcherSub, () ->
-    // -launcherSub.getPreferredFrontVelocity(),
-    // () -> -launcherSub.getPreferredBackVelocity()));
-    // driverController.rightTrigger().toggleOnTrue(
-    // new LauncherSetVelocityPIDCmd(launcherSub, () ->
-    // launcherSub.getPreferredFrontVelocity(),
-    // () -> launcherSub.getPreferredBackVelocity()));
-    // driverController.povDown().toggleOnTrue(
-    // new LauncherSetVelocityPIDCmd(launcherSub, () ->
-    // LauncherConstants.kVelocityYeetForward,
-    // () -> LauncherConstants.kVelocityYeetBack));
+    driverController.leftBumper().onTrue(Commands.defer(
+        () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
+        Set.of(driveSub)));
 
+    // Lock Y coordinate to the nearest bump and align heading
+    driverController.povRight().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> PoseHelpers.nearestBumpY(driveSub.getPose()),
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
+
+    // Lock Y coordinate to the nearest trench and align heading
+    driverController.povLeft().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+        driveSub,
+        () -> MathUtil.applyDeadband(
+            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
+            OIConstants.kDriveDeadband),
+        () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
+        new Rotation2d(DriveConstants.kTrenchHeadingRestriction)));
+
+    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
+        Commands.defer(
+            () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
+            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+
+    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
+        Commands.defer(
+            () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
+            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+
+    // Cancel all driveSub commands, returning manual control
+    driverController.button(7).onTrue(
+        Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
   }
 
   public Gyro getGyro() {
@@ -215,6 +259,7 @@ public class RobotContainer {
     Command selectedAuto = autoChooser.get();
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
+
   }
 
 }

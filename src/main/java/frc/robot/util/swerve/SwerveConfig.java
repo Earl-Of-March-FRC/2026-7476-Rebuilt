@@ -7,6 +7,8 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import java.util.logging.Logger;
+
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathConstraints;
@@ -20,8 +22,13 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
+import frc.robot.subsystems.Drivetrain.Gyro;
+import frc.robot.subsystems.Drivetrain.GyroADXRS450;
+import frc.robot.subsystems.Drivetrain.GyroNavX;
+import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.util.swerve.SwerveDriveProfile.SwerveDriveProfileID;
 
 public final class SwerveConfig {
@@ -30,7 +37,7 @@ public final class SwerveConfig {
   // the robot, rather the allowed maximum speeds
   public static SwerveDriveProfileID profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
 
-  public static NavXComType kGyroComType;
+  public static Gyro gyro;
 
   public static RobotConfig kRobotConfig;
 
@@ -78,7 +85,12 @@ public final class SwerveConfig {
     SwerveConfig.profileId = profile.profileId();
 
     // Apply new Gyro
-    SwerveConfig.kGyroComType = profile.gyroComType();
+    SwerveConfig.gyro = switch (profile.gyro()) {
+      case ADXRS450 -> new GyroADXRS450();
+      case NavX_MXP_SPI -> new GyroNavX(NavXComType.kMXP_SPI);
+      case NavX_USB1 -> new GyroNavX(NavXComType.kUSB1);
+      default -> new GyroNavX(NavXComType.kMXP_SPI);
+    };
 
     // Apply speed and dimension constants
     SwerveConfig.kMaxSpeed = profile.maxSpeedMps();

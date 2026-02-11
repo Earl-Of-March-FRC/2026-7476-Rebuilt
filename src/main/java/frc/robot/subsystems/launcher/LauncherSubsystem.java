@@ -76,6 +76,10 @@ public class LauncherSubsystem extends SubsystemBase {
   }
 
   public void setReferenceVelocityOffset(double offsetRPM) {
+    // Yes interface what will it be called
+    // It will be LauncherPIDCmd.java, and it implements whatever. You go research
+    // it and shi
+    // IT's gonna be in the launcher, II will commit the code
     velocityOffsetRPM = offsetRPM;
     Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffsetRPM);
     Logger.recordOutput("Launcher/VelocityOffsetRadPerSec",

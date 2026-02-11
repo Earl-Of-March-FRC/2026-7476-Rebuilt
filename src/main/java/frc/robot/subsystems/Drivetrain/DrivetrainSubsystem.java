@@ -8,7 +8,8 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
-import java.util.GregorianCalendar;
+import edu.wpi.first.math.Vector;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -16,7 +17,14 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -24,17 +32,23 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.MathUtil;
+
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.units.measure.Distance;
@@ -44,12 +58,18 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Robot;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.Constants.FieldConstants;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.util.vision.CameraProfile;
+import frc.robot.util.vision.VisionStdDevCalculator;
+import frc.robot.util.swerve.FieldZones;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
@@ -63,9 +83,21 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private final double kMetersFromHubHigh = 0;
   private final double kMetersFromHubLow = 0;
 
+  // Low pas filters for velocity logging
+  private final LinearFilter vxFilter = LinearFilter.singlePoleIIR(0.15, 0.02);
+  private final LinearFilter vyFilter = LinearFilter.singlePoleIIR(0.15, 0.02);
+  private final LinearFilter omegaFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
+
   // Pose estimation with vision fusion capability
-  // public final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator poseEstimator;
+  private final SwerveDrivePoseEstimator visionlessPoseEstimator;
+  private final PhotonCamera[] cameras = new PhotonCamera[PhotonConstants.numCameras];
+  private final PhotonPoseEstimator[] photonPoseEstimators = new PhotonPoseEstimator[PhotonConstants.numCameras];
+  private final VisionSystemSim simulatedVision;
+
+  // Current pose of the robot
+  private Pose2d robotPose = new Pose2d();
+  private Pose2d visionlessPose = new Pose2d();
 
   public Supplier<Boolean> isUsingHighVelocities = () -> true;
 
@@ -81,6 +113,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
   // Controller for radial distance from hub
   private final PIDController radialController;
+
+  // X and Y translation controllers
+  private final PIDController xController, yController;
 
   /**
    * Creates a new DrivetrainSubsystem.
@@ -104,8 +139,55 @@ public class DrivetrainSubsystem extends SubsystemBase {
         new Pose2d(),
         VecBuilder.fill(0.1, 0.1, 0.1), // Odometry standard deviations
         VecBuilder.fill(0.4, 0.4, 0.4)); // Vision standard deviations
+    visionlessPoseEstimator = new SwerveDrivePoseEstimator(
+        kinematics,
+        gyro.getRotation2d(),
+        getModulePositions(),
+        new Pose2d());
 
-    // Initialize heading controller for auto-rotation in restricted mode
+    if (Robot.isSimulation()) {
+      simulatedVision = new VisionSystemSim("main");
+      simulatedVision.addAprilTags(FieldConstants.kfieldLayout);
+    } else {
+      simulatedVision = null;
+    }
+
+    // Setup cameras to see april tags. Wow! That makes me really happy.
+    for (int i = 0; i < PhotonConstants.numCameras; i++) {
+      CameraProfile currentProfile = PhotonConstants.kCameras[i];
+      cameras[i] = new PhotonCamera(currentProfile.name());
+      photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          currentProfile.getRobotToCameraTransform());
+
+      if (Robot.isSimulation()) {
+        if (simulatedVision == null) {
+          throw new IllegalStateException(
+              "simulatedVision is null... Please ensure the VisionSystemSim is initialized when simulating the robot.");
+        }
+        // try {
+        System.out.println(currentProfile.calibrationFile().getPath());
+        // SimCameraProperties simulatedProperties = new
+        // SimCameraProperties(currentProfile.calibrationFile().getPath(),
+        // currentProfile.resolution()[0], currentProfile.resolution()[1]);
+        SimCameraProperties simulatedProperties = new SimCameraProperties();
+        simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+            Rotation2d.fromDegrees(70));
+        simulatedProperties.setFPS(30);
+        simulatedProperties.setAvgLatencyMs(35);
+        simulatedProperties.setLatencyStdDevMs(5);
+        PhotonCameraSim simulatedCamera = new PhotonCameraSim(cameras[i], simulatedProperties);
+        simulatedVision.addCamera(simulatedCamera, currentProfile.getRobotToCameraTransform());
+        // } catch (IOException e) {
+        // System.err.println(
+        // "Could not read camera configuration file to simulate camera " + i + ": " +
+        // e.getMessage());
+        // }
+      }
+
+    }
+
+    // Initialize Controllers
     headingController = new PIDController(
         Constants.DriveConstants.kPIDHeadingControllerP,
         Constants.DriveConstants.kPIDHeadingControllerI,
@@ -119,14 +201,25 @@ public class DrivetrainSubsystem extends SubsystemBase {
         DriveConstants.kPIDRadialControllerD);
     radialController.setTolerance(DriveConstants.kPIDRadialControllerTolerance.in(Meters));
 
+    xController = new PIDController(
+        DriveConstants.kPIDXControllerP,
+        DriveConstants.kPIDXControllerI,
+        DriveConstants.kPIDXControllerD);
+    xController.setTolerance(DriveConstants.kPIDXControllerTolerance.in(Meters));
+
+    yController = new PIDController(
+        DriveConstants.kPIDYControllerP,
+        DriveConstants.kPIDYControllerI,
+        DriveConstants.kPIDYControllerD);
+    yController.setTolerance(DriveConstants.kPIDYControllerTolerance.in(Meters));
+
     // Debug feature to teleport bot odometry
-    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
-    SmartDashboard.putNumber("New Sim Pose X", SimulationConstants.kStartingPose.getX());
-    SmartDashboard.putNumber("New Sim Pose Y", SimulationConstants.kStartingPose.getY());
-    SmartDashboard.putNumber("New Sim Pose θ (Deg)", SimulationConstants.kStartingPose.getRotation().getDegrees());
+    SmartDashboard.putNumber("New Pose X", getPose().getX());
+    SmartDashboard.putNumber("New Pose Y", getPose().getY());
+    SmartDashboard.putNumber("New Pose θ (Deg)", getPose().getRotation().getDegrees());
     // Display this value as a toggle button or toggle switch in Elastic to use it
     // as a button
-    SmartDashboard.putBoolean("Apply Sim Pose", true);
+    SmartDashboard.putBoolean("Apply Pose", true);
 
     // Do not use the auto generated robot config to allow for muiltiple profiles
     RobotConfig config = SwerveConfig.kRobotConfig;
@@ -160,6 +253,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public DrivetrainSubsystem(SwerveModule[] modules, Gyro gyro, SwerveDriveSimulation simulatedSwerveDrive) {
     this(modules, gyro);
     this.simulatedSwerveDrive = simulatedSwerveDrive;
+    SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
     resetPose(SimulationConstants.kStartingPose);
   }
 
@@ -185,16 +279,28 @@ public class DrivetrainSubsystem extends SubsystemBase {
    *                        applied for red alliance)
    */
   public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualControl) {
+    runVelocity(speeds, isFieldRelative, isManualControl, isManualControl);
+  }
+
+  /**
+   * Runs the drivetrain at specified velocities.
+   * 
+   * @param speeds          Desired chassis speeds
+   * @param isFieldRelative Whether speeds are field-relative
+   * @param isManualX       Whether the x velocity is manually controlled (should
+   *                        an inversion be applied for red alliance)
+   * @param isManualY       Whether the y velocity is manually controlled (should
+   *                        an inversion be applied for red alliance)
+   */
+  public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualX, boolean isManualY) {
     if (isFieldRelative) {
       Optional<Alliance> alliance = DriverStation.getAlliance();
       boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-          speeds.vxMetersPerSecond,
-          speeds.vyMetersPerSecond,
+          speeds.vxMetersPerSecond * (isRedAlliance && isManualX ? -1 : 1),
+          speeds.vyMetersPerSecond * (isRedAlliance && isManualY ? -1 : 1),
           speeds.omegaRadiansPerSecond,
-          isRedAlliance && isManualControl
-              ? getPose().getRotation().plus(Rotation2d.fromDegrees(180))
-              : getPose().getRotation());
+          getPose().getRotation());
     }
     SwerveModuleState[] states = SwerveConfig.kDriveKinematics.toSwerveModuleStates(speeds);
 
@@ -209,6 +315,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
+   * Runs the drivetrain using the current field-relative setting. With manual
+   * control.
    * Runs the drivetrain using the current field-relative setting. With manual
    * control.
    * 
@@ -280,12 +388,23 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Gets the robot-relative chassis speeds.
+   * Set the X setpoint in field relative coordinates (Blue origin, regardless of
+   * alliance)
    * 
-   * @return Robot-relative chassis speeds
+   * @param setpoint The desired X coordinate
    */
-  public ChassisSpeeds getRobotRelativeSpeeds() {
-    return kinematics.toChassisSpeeds(getModuleStates());
+  public void setXSetpoint(Distance setpoint) {
+    xController.setSetpoint(setpoint.in(Meters));
+  }
+
+  /**
+   * Set the Y setpoint in field relative coordinates (Blue origin, regardless of
+   * alliance)
+   * 
+   * @param setpoint The desired X coordinate
+   */
+  public void setYSetpoint(Distance setpoint) {
+    yController.setSetpoint(setpoint.in(Meters));
   }
 
   /**
@@ -298,6 +417,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
     this.targetHeading = heading;
   }
 
+  public Rotation2d getTargetHeading() {
+    return this.targetHeading;
+  }
+
   /**
    * Clears the target heading.
    */
@@ -306,11 +429,69 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
+   * Calculates the nearest acceptable bot heading from a desired locked angle.
+   * 
+   * For example, if locked angle is 45 degrees and force off is true, the
+   * returned angle will be the
+   * nearest heading among the following options:
+   * 45, -45, 135, or -135
+   * 
+   * @param lockedAngle The heading the bot should be locked at
+   * @param forceOdd    Whether the returned heading must be an odd multiple
+   * @return The nearest acceptable heading
+   */
+  public Rotation2d getNearestTargetAngle(Rotation2d lockedAngle, boolean forceOdd) {
+    // Get current robot heading in radians
+    double currentAngleRadians = getPose().getRotation().getRadians();
+
+    // Calculate nearest ODD multiple of the locked angle
+    double angleIncrement = lockedAngle.getRadians();
+
+    // Divide by increment, round to nearest integer, then make it odd
+    int multiple = (int) Math.round(currentAngleRadians / angleIncrement);
+
+    // Force to nearest odd number: if even, add 1
+    if (forceOdd && multiple % 2 == 0) {
+      multiple += (currentAngleRadians > 0) ? 1 : -1;
+    }
+
+    double nearestAngle = multiple * angleIncrement;
+
+    return Rotation2d.fromRadians(nearestAngle);
+  }
+
+  /**
    * Resets the heading and radial controllers.
    */
   public void resetControllers() {
     headingController.reset();
     radialController.reset();
+    xController.reset();
+    yController.reset();
+  }
+
+  /**
+   * Gets the vx correction to maintain the x setpoint, if using both x and y
+   * controllers, call getChassisSpeedsCorrection() and get the components instead
+   * to ensure max speed is correct
+   * 
+   * @param maxSpeed The maximum allowed speed
+   * @return The x velocity to maintain the current setpoint
+   */
+  public LinearVelocity getXCorrectionMetersPerSecond(LinearVelocity maxSpeed) {
+    return maxSpeed.times(xController.calculate(getPose().getX()));
+  }
+
+  /**
+   * Gets the vx correction to maintain the x setpoint, if using both x and y
+   * controllers, call getChassisSpeedsCorrection() and get the components instead
+   * to ensure max speed is correct
+   * 
+   * @param maxSpeed The maximum allowed speed
+   * @return The x velocity to maintain the current setpoint
+   */
+  public LinearVelocity getYCorrectionMetersPerSecond(LinearVelocity maxSpeed) {
+    return maxSpeed.times(yController.calculate(getPose().getY()));
   }
 
   /**
@@ -323,6 +504,26 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Rotation2d currentHeading = getPose().getRotation();
     return RadiansPerSecond.of(
         headingController.calculate(currentHeading.getRadians(), desiredHeading.getRadians()));
+  }
+
+  /**
+   * Returns a ChassisSpeeds object to maintaint the desired x and y setpoints, as
+   * well as the desired heading, while respecting a maxSpeed
+   * 
+   * @param desired  The desired heading to maintain
+   * @param maxSpeed The maximum allowed speed
+   * @return
+   */
+  public ChassisSpeeds getChassisSpeedsCorrection(Rotation2d desired, LinearVelocity maxSpeed) {
+    Translation2d velocity = new Translation2d(
+        maxSpeed.times(xController.calculate(getPose().getX())).in(MetersPerSecond),
+        maxSpeed.times(yController.calculate(getPose().getY())).in(MetersPerSecond));
+
+    if (velocity.getNorm() > maxSpeed.in(MetersPerSecond)) {
+      velocity.div(velocity.getNorm()).times(maxSpeed.in(MetersPerSecond));
+    }
+
+    return new ChassisSpeeds(velocity.getX(), velocity.getY(), getHeadingCorrectionOmega(desired).in(RadiansPerSecond));
   }
 
   /**
@@ -384,38 +585,50 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Checks if the robot is within the accepted launching zone.
-   * 
-   * @return True if in launching zone, false otherwise
-   */
-  public boolean isBotInLaunchingZone() {
-    Pose2d pose = getPose();
-    return isInLaunchingZone(pose);
-  }
-
-  /**
-   * Checks if the given pose is within the accepted launching zone.
+   * Calculate what zone of the field a pose is in
    * 
    * @param pose The pose to check
-   * @return True if in launching zone, false otherwise
+   * @return The zone the pose is in
    */
-  public boolean isInLaunchingZone(Pose2d pose) {
+  public FieldZones getPoseZone(Pose2d pose) {
     Optional<Alliance> alliance = DriverStation.getAlliance();
     boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
     if (alliance.isPresent()) {
-      SmartDashboard.putString("Drivetrain/Alliance",
+      Logger.recordOutput("Drivetrain/Alliance",
           isBlueAlliance ? "Blue" : "Red");
     } else {
-      SmartDashboard.putString("Drivetrain/Alliance",
+      Logger.recordOutput("Drivetrain/Alliance",
           "Unknown");
     }
 
-    if (isBlueAlliance) {
-      return pose.getX() < FieldConstants.kAcceptedLaunchingZone.in(Meters);
-    } else {
-      return pose.getX() > (FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedLaunchingZone).in(Meters));
+    if (pose.getX() > FieldConstants.kAllianceZoneXLength.in(Meters)
+        && pose.getX() < FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength).in(Meters)) {
+      return FieldZones.Neutral;
     }
+
+    if ((pose.getX() < FieldConstants.kAcceptedLaunchingZone.in(Meters) && isBlueAlliance) ||
+        (pose.getX() > FieldConstants.kFieldLengthX.minus(FieldConstants.kAcceptedLaunchingZone).in(Meters)
+            && !isBlueAlliance)) {
+      return FieldZones.Launch;
+    }
+
+    if ((pose.getX() < FieldConstants.kAllianceZoneXLength.in(Meters) && isBlueAlliance) ||
+        (pose.getX() > FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength).in(Meters)
+            && !isBlueAlliance)) {
+      return FieldZones.Alliance;
+    }
+
+    return FieldZones.Enemy;
+  }
+
+  /**
+   * Calculate what zone of the field the bot is in
+   * 
+   * @return The current zone the bot is in
+   */
+  public FieldZones getCurrentBotZone() {
+    return getPoseZone(getPose());
   }
 
   /**
@@ -434,10 +647,171 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * in the pose estimator,
    * use getPose().getRotation() instead
    * 
+   * Do not use this to get the robot heading, as the gyro offset is applied later
+   * in the pose estimator,
+   * use getPose().getRotation() instead
+   * 
    * @return Gyro object
    */
   public Gyro getGyro() {
     return gyro;
+  }
+
+  /**
+   * Get an estimate of the robot's pose using vision data from PhotonVisision.
+   * This method will filter out invalid and unprobable results.
+   * 
+   * @param poseEstimator          The PhotonPoseEstimator object to use for
+   *                               estimating the robot's pose
+   * @param camera                 The PhotonCamera object to use for getting
+   *                               vision data
+   * @param robotToCam             The Transform3d object representing the
+   *                               transformation
+   *                               from the robot to the camera
+   * @param prevEstimatedRobotPose The previous estimated pose object
+   */
+  public List<EstimatedRobotPose> getEstimatedGlobalPose(PhotonPoseEstimator poseEstimator, PhotonCamera camera,
+      Transform3d robotToCam,
+      Pose2d prevEstimatedRobotPose) {
+    poseEstimator.setReferencePose(prevEstimatedRobotPose);
+
+    List<EstimatedRobotPose> results = new ArrayList<>();
+    List<PhotonPipelineResult> camResults = camera.getAllUnreadResults();
+
+    for (PhotonPipelineResult camResult : camResults) {
+      if (!camResult.hasTargets()) {
+        continue;
+      }
+
+      // check if the built in pose estimator pose is reasonable
+      Optional<EstimatedRobotPose> optionalEstimation = poseEstimator.update(camResult);
+      if (optionalEstimation.isPresent()) {
+        EstimatedRobotPose estimation = optionalEstimation.get();
+
+        Logger.recordOutput("Vision/" + camera.getName() + "/RawEstimatedPose", estimation.estimatedPose);
+
+        if (PoseHelpers.isInField(estimation.estimatedPose)
+            && PoseHelpers.isOnGround(estimation.estimatedPose, PhotonConstants.kHeightTolerance)) {
+
+          // ignore the result if it only has one tag and the tag is too small
+          if (camResult.getTargets().size() == 1
+              && camResult.getTargets().get(0).area <= PhotonConstants.kMinSingleTagArea) {
+            continue;
+          }
+
+          results.add(estimation);
+          continue;
+        }
+      }
+
+      double timestamp = camResult.getTimestampSeconds();
+      List<PhotonTrackedTarget> targetsUsed = new ArrayList<>();
+
+      // if the built in pose estimator is not reasonable, compute it ourselves
+      if (camResult.hasTargets()) {
+        List<PhotonTrackedTarget> targets = camResult.getTargets();
+        List<Pose3d> validPoses = new ArrayList<>();
+        for (PhotonTrackedTarget target : targets) {
+
+          // ignore targets with high pose ambiguity
+          if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityDiscardThreshold) {
+            continue;
+          }
+
+          int targetId = target.fiducialId;
+          Optional<Pose3d> optionalTagPose = FieldConstants.kfieldLayout.getTagPose(targetId);
+          // it should never be empty, but just in case
+          if (optionalTagPose.isEmpty()) {
+            continue;
+          }
+          Pose3d tagPose = optionalTagPose.get();
+
+          // if the ambiguity is high, only use the pose that is reasonable
+          if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityThreshold) {
+            Transform3d bestCamToTarget = target.getBestCameraToTarget();
+            Transform3d altCamToTarget = target.getAlternateCameraToTarget();
+
+            // robotTransform = tagTransform - camToTarget - robotToCam
+            Pose3d bestRobotPose = tagPose.transformBy(bestCamToTarget.inverse())
+                .transformBy(robotToCam.inverse());
+            Pose3d altRobotPose = tagPose.transformBy(altCamToTarget.inverse()).transformBy(robotToCam.inverse());
+
+            Logger.recordOutput("Vision/" + camera.getName() + "/FallbackBestPose", bestRobotPose);
+            Logger.recordOutput("Vision/" + camera.getName() + "/FallbackAltPose", altRobotPose);
+
+            // check if they are reasonable
+            boolean isBestPoseValid = PoseHelpers.isInField(bestRobotPose) &&
+                PoseHelpers.isOnGround(bestRobotPose, PhotonConstants.kHeightTolerance);
+            boolean isAltPoseValid = PoseHelpers.isInField(altRobotPose)
+                && PoseHelpers.isOnGround(altRobotPose, PhotonConstants.kHeightTolerance);
+            if (isBestPoseValid && isAltPoseValid) {
+              targetsUsed.add(target);
+              // if both are valid, use the one that is closer to the previous estimation
+              double bestDistance = PoseHelpers.distanceBetween(bestRobotPose, new Pose3d(prevEstimatedRobotPose));
+              double altDistance = PoseHelpers.distanceBetween(altRobotPose, new Pose3d(prevEstimatedRobotPose));
+              if (bestDistance < altDistance) {
+                validPoses.add(bestRobotPose);
+              } else {
+                validPoses.add(altRobotPose);
+              }
+            } else if (isBestPoseValid) {
+              targetsUsed.add(target);
+              validPoses.add(bestRobotPose);
+            } else if (isAltPoseValid) {
+              targetsUsed.add(target);
+              validPoses.add(altRobotPose);
+            }
+            continue;
+          }
+
+          // if the ambiguity is low, use the pose directly
+          Transform3d camToTarget = target.getBestCameraToTarget();
+          // robotTransform = tagTransform - camToTarget - robotToCam
+          Pose3d robotPose = tagPose.transformBy(camToTarget.inverse()).transformBy(robotToCam.inverse());
+          // check if the pose is reasonable
+          if (PoseHelpers.isInField(robotPose) && PoseHelpers.isOnGround(robotPose, PhotonConstants.kHeightTolerance)) {
+            validPoses.add(robotPose);
+            targetsUsed.add(target);
+          }
+        }
+
+        // if there are no valid poses, ignore this frame
+        if (validPoses.isEmpty()) {
+          continue;
+        }
+
+        double totalX = 0;
+        double totalY = 0;
+        double totalZRot = 0;
+
+        for (Pose3d pose : validPoses) {
+          totalX += pose.getX();
+          totalY += pose.getY();
+
+          totalZRot += pose.getRotation().getZ();
+        }
+
+        final int count = validPoses.size();
+        Pose3d averagePose = new Pose3d(
+            totalX / count, // X average
+            totalY / count, // Y average
+            0, // Z forced to 0 (validated by isOnGround)
+            new Rotation3d(0, 0, totalZRot / count) // Average Z rotation
+        );
+
+        Logger.recordOutput("Vision/" + camera.getName() + "/FallbackPose", averagePose);
+
+        // ignore the result if it only has one tag and the tag is too small
+        if (camResult.getTargets().size() == 1
+            && camResult.getTargets().get(0).area <= PhotonConstants.kMinSingleTagArea) {
+          continue;
+        }
+        results
+            .add(new EstimatedRobotPose(averagePose, timestamp, targetsUsed,
+                PoseStrategy.CLOSEST_TO_REFERENCE_POSE));
+      }
+    }
+    return results;
   }
 
   /**
@@ -456,63 +830,155 @@ public class DrivetrainSubsystem extends SubsystemBase {
       gyroDisconnected = false;
     }
 
+    // Get current states
+    SwerveModuleState[] states = getModuleStates();
+    SwerveModulePosition[] positions = getModulePositions();
+
     // Update drive mode based on desired setting and gyro status
     isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
 
     // Update pose estimator with odometry
     if (!gyroDisconnected) {
-      poseEstimator.update(gyro.getRotation2d(), getModulePositions());
+      robotPose = poseEstimator.update(gyro.getRotation2d(), positions);
+      visionlessPose = visionlessPoseEstimator.update(gyro.getRotation2d(), positions);
     }
 
-    // Get current states and pose
-    SwerveModuleState[] states = getModuleStates();
-    SwerveModulePosition[] positions = getModulePositions();
-    Pose2d currentPose = getPose();
+    // Iterate through each camera
+    for (int i = 0; i < PhotonConstants.numCameras; i++) {
+      // Get all poses from camera
+      List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
+          PhotonConstants.kCameras[i].getRobotToCameraTransform(),
+          robotPose);
+
+      List<Integer> fiducialIds = new ArrayList<>();
+      List<Pose3d> fiducialIdPoses = new ArrayList<>();
+      List<Double> tagAreas = new ArrayList<>();
+      List<Double> tagAmbiguities = new ArrayList<>();
+      List<Double> stdDevsX = new ArrayList<>();
+      List<Double> stdDevsY = new ArrayList<>();
+      List<Double> stdDevsTheta = new ArrayList<>();
+
+      // Iterate through each pose to check for ambiguity
+      for (EstimatedRobotPose visionPose : visionPoses) {
+        // Iterate through the targets used to estimate the pose
+        for (PhotonTrackedTarget target : visionPose.targetsUsed) {
+          fiducialIds.add(target.fiducialId);
+          if (FieldConstants.kfieldLayout.getTagPose(target.fiducialId).isPresent()) {
+            fiducialIdPoses.add(FieldConstants.kfieldLayout.getTagPose(target.fiducialId).get());
+          }
+          tagAreas.add(target.area);
+          tagAmbiguities.add(target.poseAmbiguity);
+        }
+
+        Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
+
+        // Calculate dynamic standard deviations based on measurement quality
+        Vector<N3> stdDevs = VisionStdDevCalculator.calculateStdDevs(
+            visionPose,
+            PhotonConstants.kCameras[i].standardDeviation());
+
+        // Add vision measurement with dynamic standard deviations
+        poseEstimator.addVisionMeasurement(
+            estimatedPose,
+            visionPose.timestampSeconds,
+            stdDevs);
+
+        // Store std devs for logging
+        stdDevsX.add(stdDevs.get(0));
+        stdDevsY.add(stdDevs.get(1));
+        stdDevsTheta.add(stdDevs.get(2));
+
+        // Log vision poses and standard deviations
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StandardDeviation",
+            new double[] { stdDevs.get(0), stdDevs.get(1), stdDevs.get(2) });
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
+      }
+
+      // Log targets estimated from robot
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetIds",
+          fiducialIds.stream().mapToInt(n -> n).toArray());
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetPoses",
+          fiducialIdPoses.toArray(new Pose3d[fiducialIdPoses.size()]));
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAreas",
+          tagAreas.stream().mapToDouble(n -> n).toArray());
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAmbiguities",
+          tagAmbiguities.stream().mapToDouble(n -> n).toArray());
+
+      // Log dynamic standard deviations for tuning
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/NumTargets",
+          visionPoses.stream().mapToInt(p -> p.targetsUsed.size()).toArray());
+    }
+
+    // Calculate velocity and acceleration
+    ChassisSpeeds speedsRaw = getChassisSpeedsRobotRelative();
+    double dt = 0.02;
+
+    double vxPrev = vxFilter.lastValue();
+    double vyPrev = vyFilter.lastValue();
+
+    double omegaPrev = omegaFilter.lastValue();
+    double vx = vxFilter.calculate(speedsRaw.vxMetersPerSecond);
+    double vy = vyFilter.calculate(speedsRaw.vyMetersPerSecond);
+    double omega = omegaFilter.calculate(speedsRaw.omegaRadiansPerSecond);
+
+    ChassisSpeeds speedsFiltered = new ChassisSpeeds(vx, vy, omega);
+
+    double velocityNormRaw = Math
+        .sqrt(Math.pow(speedsRaw.vxMetersPerSecond, 2) + Math.pow(speedsRaw.vyMetersPerSecond, 2));
+    double velocityNormFiltered = Math
+        .sqrt(Math.pow(speedsFiltered.vxMetersPerSecond, 2) + Math.pow(speedsFiltered.vyMetersPerSecond, 2));
+
+    // use a chassis speed object to represent translational and angular
+    // acceleration, this means that the units in the attribute names are
+    // innacurate, (m/s -> m/s2, Rad/s -> rad/s2)
+    // (do not log raw acceleration as it is too noisy)
+    ChassisSpeeds acceleration = new ChassisSpeeds((vx - vxPrev) / dt, (vy - vyPrev) / dt, (omega - omegaPrev) / dt);
+    double accelerationNorm = Math
+        .sqrt(Math.pow(acceleration.vxMetersPerSecond, 2) + Math.pow(acceleration.vyMetersPerSecond, 2));
 
     // Log everything
     Logger.recordOutput("Drivetrain/GyroDisconnected", gyroDisconnected);
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
-    Logger.recordOutput("Drivetrain/Pose", currentPose);
-    Logger.recordOutput("Drivetrain/Rotation", gyro.getRotation2d().getDegrees());
+    Logger.recordOutput("Drivetrain/Pose", getPose());
+    Logger.recordOutput("Drivetrain/VisionlessPose", visionlessPose);
+    Logger.recordOutput("Drivetrain/Zone", getCurrentBotZone().name());
+    Logger.recordOutput("Drivetrain/GyroRotation", gyro.getRotation2d().getDegrees());
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityRaw", speedsRaw);
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityNormRaw", velocityNormRaw);
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityFiltered", speedsFiltered);
+    Logger.recordOutput("Drivetrain/Kinematics/VelocityNormFiltered", velocityNormFiltered);
+    Logger.recordOutput("Drivetrain/Kinematics/Accelerations", acceleration);
+    Logger.recordOutput("Drivetrain/Kinematics/AccelerationNorm", accelerationNorm);
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
-
-    boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Sim Pose", true);
 
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
       accurateSimOdometry = SmartDashboard.getBoolean("Accurate Sim Odometry", accurateSimOdometry);
-
-      // Apply new sim pose if requested, then reset the trigger
-      if (applyNewSimPose) {
-        SmartDashboard.putBoolean("Apply Sim Pose", true);
-        double x = SmartDashboard.getNumber("New Sim Pose X", simulatedSwerveDrive.getSimulatedDriveTrainPose().getX());
-        double y = SmartDashboard.getNumber("New Sim Pose Y", simulatedSwerveDrive.getSimulatedDriveTrainPose().getY());
-        double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-            simulatedSwerveDrive.getSimulatedDriveTrainPose().getRotation().getDegrees());
-        Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
-        simulatedSwerveDrive.setSimulationWorldPose(newPose);
-        resetPose(newPose);
-      }
     }
 
     // Apply new sim pose if requested, then reset the trigger
+    // Check if button has been pressed
+    boolean applyNewSimPose = !SmartDashboard.getBoolean("Apply Pose", true);
     if (applyNewSimPose) {
-      SmartDashboard.putBoolean("Apply Sim Pose", true);
-      double x = SmartDashboard.getNumber("New Sim Pose X", getPose().getX());
-      double y = SmartDashboard.getNumber("New Sim Pose Y", getPose().getY());
-      double theta = SmartDashboard.getNumber("New Sim Pose θ (Deg)",
-          getPose().getRotation().getDegrees());
+      SmartDashboard.putBoolean("Apply Pose", true);
+      double x = SmartDashboard.getNumber("New Pose X", getPose().getX());
+      double y = SmartDashboard.getNumber("New Pose Y", getPose().getY());
+      double theta = SmartDashboard.getNumber("New Pose θ (Deg)", getPose().getRotation().getDegrees());
       Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(theta));
       resetPose(newPose);
+      if (simulatedSwerveDrive != null) {
+        simulatedSwerveDrive.setSimulationWorldPose(newPose);
+      }
     }
 
     if (this.targetHeading != null) {
-      Logger.recordOutput("Drivetrain/TargetHeading", this.targetHeading.getDegrees());
+      Logger.recordOutput("Drivetrain/TargetHeading", this.getTargetHeading().getDegrees());
     }
 
-    field.setRobotPose(currentPose);
+    field.setRobotPose(getPose());
     SmartDashboard.putData("Field", field); // puts the field into SmartDashboard
     SmartDashboard.putBoolean("Gyro Connected", !gyroDisconnected);
     SmartDashboard.putBoolean("Is Field Relative Desired", isFieldRelativeDesired);
@@ -522,9 +988,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     if (this.simulatedSwerveDrive != null) {
-      Logger.recordOutput("FieldSimulation/PhysicalRobotPose",
-          this.simulatedSwerveDrive.getSimulatedDriveTrainPose());
+      Pose2d simulatedPose = simulatedSwerveDrive.getSimulatedDriveTrainPose();
+      if (this.simulatedVision != null) {
+        this.simulatedVision.update(simulatedPose);
+      }
+      Logger.recordOutput("FieldSimulation/PhysicalRobotPose", simulatedPose);
     }
+
   }
 
   public Pose2d getHubTargetPose(double targetAngle) {

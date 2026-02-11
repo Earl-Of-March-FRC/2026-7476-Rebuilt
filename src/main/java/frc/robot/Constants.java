@@ -15,15 +15,15 @@ import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.io.File;
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
+import org.photonvision.estimation.TargetModel;
 
-import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathConstraints;
-import com.studica.frc.AHRS.NavXComType;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.ClosedLoopSlot;
@@ -38,7 +38,6 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -51,7 +50,9 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.units.measure.Velocity;
+import edu.wpi.first.wpilibj.Filesystem;
+import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.util.vision.CameraProfile;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -66,13 +67,13 @@ import edu.wpi.first.units.measure.Velocity;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
-
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
-    public static final double kDriveDeadband = 0.05;
+    public static final double kDriveDeadband = 0.2;
     public static final int kDriverControllerXAxis = 0;
     public static final int kDriverControllerYAxis = 1;
     public static final int kDriverControllerRotAxis = 4;
+    public static final File kDeployDirectory = Filesystem.getDeployDirectory();
   }
 
   public static final class ModuleConstants {
@@ -132,9 +133,9 @@ public final class Constants {
   public static final class DriveConstants {
 
     // Ratios between robot limits in teleop vs auto
-    public static final double kSpeedPathfindingRatio = 0.625;
-    public static final double kAngularSpeedPathfindingRatio = 0.5;
-    public static final double kAccelerationPathfindingRatio = 1.0 / 3.0;
+    public static final double kSpeedPathfindingRatio = 0.8;
+    public static final double kAngularSpeedPathfindingRatio = 0.8;
+    public static final double kAccelerationPathfindingRatio = 0.8;
 
     // Angular acceleration is only limited in pathfinding mode
     public static AngularAcceleration kMaxAngularAccelerationPathfinding = RadiansPerSecondPerSecond.of(Math.PI);
@@ -147,7 +148,8 @@ public final class Constants {
     public static final double kPIDHeadingControllerI = 0.0;
     public static final double kPIDHeadingControllerD = 0.1;
     public static final double kPIDHeadingControllerTolerance = 2.0;
-    public static final Angle kHeadingRestriction = Degrees.of(45);
+    public static final Angle kBumpHeadingRestriction = Degrees.of(45);
+    public static final Angle kTrenchHeadingRestriction = Degrees.of(180);
     public static final Angle kRecalibrateThreshold = Degrees.of(30);
 
     // Parameteres for restricted mode radial controller
@@ -155,6 +157,42 @@ public final class Constants {
     public static final double kPIDRadialControllerI = 0.01;
     public static final double kPIDRadialControllerD = 0.0;
     public static final Distance kPIDRadialControllerTolerance = Meters.of(0.05);
+
+    // Parameters for X and Y controllers (gains should be identical if possible,
+    // but controllers shold be decoupled)
+    public static final double kPIDXControllerP = 0.5;
+    public static final double kPIDXControllerI = 0.01;
+    public static final double kPIDXControllerD = 0.0;
+    public static final Distance kPIDXControllerTolerance = Meters.of(0.05);
+
+    public static final double kPIDYControllerP = kPIDXControllerP;
+    public static final double kPIDYControllerI = kPIDXControllerI;
+    public static final double kPIDYControllerD = kPIDXControllerD;
+    public static final Distance kPIDYControllerTolerance = kPIDXControllerTolerance;
+
+    // Define seperate constraints for the bump and trench, Independant of the
+    // swerve profile
+    public static final LinearVelocity kBumpLinearVelocity = MetersPerSecond.of(3);
+    public static final LinearAcceleration kBumpLinearAcceleration = MetersPerSecondPerSecond.of(1.5);
+    public static final AngularVelocity kBumpAngularVelocity = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kBumpAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
+
+    public static final PathConstraints kBumpConstraints = new PathConstraints(
+        kBumpLinearVelocity,
+        kBumpLinearAcceleration,
+        kBumpAngularVelocity,
+        kBumpAngularAcceleration);
+
+    public static final LinearVelocity kTrenchLinearVelocity = MetersPerSecond.of(3);
+    public static final LinearAcceleration kTrenchLinearAcceleration = MetersPerSecondPerSecond.of(1.5);
+    public static final AngularVelocity kTrenchAngularVelocity = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kTrenchAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
+
+    public static final PathConstraints kTrenchConstraints = new PathConstraints(
+        kTrenchLinearVelocity,
+        kTrenchLinearAcceleration,
+        kTrenchAngularVelocity,
+        kTrenchAngularAcceleration);
 
     // To be used by PathPlanner
     public static final double kPTranslationController = 1.5;
@@ -271,6 +309,20 @@ public final class Constants {
 
   }
 
+  public static final class GameModelConstants {
+    /** Match time thresholds for phase transitions */
+    public static final int AUTO_END = 140;
+    public static final int TRANSITION_END = 130;
+    public static final int SHIFT_1_END = 105;
+    public static final int SHIFT_2_END = 80;
+    public static final int SHIFT_3_END = 55;
+    public static final int SHIFT_4_END = 30;
+
+    /** Grace window duration after hub deactivates (seconds) */
+    public static final double GRACE_DURATION = 3.0;
+
+  }
+
   public static final class SimulationConstants {
     public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro(); // Simulated instance of our
     // gyro
@@ -279,65 +331,80 @@ public final class Constants {
     public static final double kSimulatedCoefficentOfFriction = COTS.WHEELS.COLSONS.cof;
     public static final int kGearRatioLevel = 2;
 
-    public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromDegrees(180));
+    public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromRotations(Math.PI));
+
+    // Whether the bump should have defined collision
+    // Maple sim provides 2d simulation, and cannot simulate the bump accurately,
+    // it can be either a wall or non-existant
+    public static final boolean kSimBumpCollision = false;
   }
 
   public static final class PhotonConstants {
-    // Camera offsets. Rotations are in radians. Translations are in meters.
-    // +x is in front of the robot, +y is to the left of the robot, +z is up
-    public static final double camera1Roll = 0.0;
-    public static final double camera1Pitch = 0.1301;
-    public static final double camera1Yaw = 0.0;
-    public static final double camera1X = 0.307;
-    public static final double camera1Y = 0.180;
-    public static final double camera1Z = 0.750;
-    public static final Vector<N3> kCamera1StandardDeviation = VecBuilder.fill(0.3, 0.3, 0.3);
+    public static final File kCalibrationFile = new File(Filesystem.getDeployDirectory().getPath(),
+        "simulated_camera_settings\\arducam_OV9281_calibration_1280x720.json");
 
-    public static final double camera2Roll = 0;
-    public static final double camera2Pitch = 0;
-    public static final double camera2Yaw = Math.PI;
-    public static final double camera2X = -0.3327;
-    public static final double camera2Y = 0;
-    public static final double camera2Z = 0.3708;
-    public static final Vector<N3> kCamera2StandardDeviation = VecBuilder.fill(0.9, 0.9, 0.9);
+    // Camera profiles - each camera's configuration in one place
+    public static final CameraProfile kCamera1Profile = new CameraProfile(
+        "Arducam_1",
+        Radians.of(0.0), // roll
+        Radians.of(0.1301), // pitch
+        Radians.of(0.0), // yaw
+        Meters.of(0.307), // x
+        Meters.of(0.180), // y
+        Meters.of(0.750), // z
+        VecBuilder.fill(0.3, 0.3, 0.3), // standard deviation
+        kCalibrationFile,
+        new int[] { 1280, 720 });
 
-    public static final double camera3Roll = 0.0;
-    public static final double camera3Pitch = 0.0;
-    public static final double camera3Yaw = 0.7069;
-    public static final double camera3X = 0.238;
-    public static final double camera3Y = -0.294;
-    public static final double camera3Z = 0.625;
-    public static final Vector<N3> kCamera3StandardDeviation = VecBuilder.fill(0.5, 0.5, 0.5);
+    public static final CameraProfile kCamera2Profile = new CameraProfile(
+        "Arducam_2",
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(0.7069), // yaws
+        Meters.of(0.238), // x
+        Meters.of(-0.294), // y
+        Meters.of(0.625), // z
+        VecBuilder.fill(0.9, 0.9, 0.9), // standard deviation
+        kCalibrationFile,
+        new int[] { 1280, 720 });
 
-    public static final int kAlgaePipeline = 1;
+    public static final CameraProfile kCamera3Profile = new CameraProfile(
+        "Arducam_3",
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(Math.PI), // yaw
+        Meters.of(-0.3327), // x
+        Meters.of(0.0), // y
+        Meters.of(0.3708), // z
+        VecBuilder.fill(0.5, 0.5, 0.5), // standard deviation
+        kCalibrationFile,
+        new int[] { 1280, 720 });
+
     public static final int kAprilTagPipeline = 0;
 
-    public static final String kCamera1 = "camera1";
-    public static final String kCamera2 = "camera2";
-    public static final String kCamera3 = "camera3";
-    public static final String[] kCameras = { kCamera1, kCamera2, kCamera3 };
-    public static final List<Vector<N3>> kCameraStandardDeviations = List.of(
-        kCamera1StandardDeviation,
-        kCamera2StandardDeviation,
-        kCamera3StandardDeviation);
+    public static final CameraProfile[] kCameras = { kCamera1Profile, kCamera2Profile, kCamera3Profile };
 
     public static final int numCameras = kCameras.length;
 
-    public static final Transform3d kRobotToCam1 = new Transform3d(
-        new Translation3d(PhotonConstants.camera1X, PhotonConstants.camera1Y, PhotonConstants.camera1Z),
-        new Rotation3d(PhotonConstants.camera1Roll, PhotonConstants.camera1Pitch, PhotonConstants.camera1Yaw));
-    public static final Transform3d kRobotToCam2 = new Transform3d(
-        new Translation3d(PhotonConstants.camera2X, PhotonConstants.camera2Y, PhotonConstants.camera2Z),
-        new Rotation3d(PhotonConstants.camera2Roll, PhotonConstants.camera2Pitch, PhotonConstants.camera2Yaw));
-    public static final Transform3d kRobotToCam3 = new Transform3d(
-        new Translation3d(PhotonConstants.camera3X, PhotonConstants.camera3Y, PhotonConstants.camera3Z),
-        new Rotation3d(PhotonConstants.camera3Roll, PhotonConstants.camera3Pitch, PhotonConstants.camera3Yaw));
-    public static final Transform3d[] kRobotToCams = { kRobotToCam1, kRobotToCam2, kRobotToCam3 };
-
-    public static final double kHeightTolerance = 0.5; // meters above and below ground
+    public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
+    public static final TargetModel kTargetModel = TargetModel.kAprilTag36h11;
+
+    public static final Distance kVisionBaseXYStdDev = Meters.of(0.3);
+    public static final Angle kVisionBaseThetaStdDev = Radians.of(0.3);
+
+    public static final double kVisionMaxStdDev = 5.0;
+
+    public static final Distance kVisionCloseDistance = Meters.of(2.0); // "Close" threshold
+    public static final Distance kVisionFarDistance = Meters.of(6.0); // "Far" threshold
+
+    public static final double kVisionDistanceScaleFactor = 0.5;
+
+    public static final double kVisionHighAmbiguityThreshold = 0.2;
+
+    public static final double kVisionHighAmbiguityMultiplier = 1.5;
   }
 
   public static class FieldConstants {
@@ -350,20 +417,26 @@ public final class Constants {
     // Mesurements source:
     // https://firstfrc.blob.core.windows.net/frc2026/FieldAssets/2026-field-dimension-dwgs.pdf
 
-    // From driverstation wall to center of hub
-    public static final Distance kAllianceZoneLength = Inches.of(182.11);
+    public static final Distance kAllianceWallToHubCenter = Inches.of(182.11);
+    // From driverstation to coloured line
+    public static final Distance kAllianceZoneXLength = Inches.of(156.61);
     // Defines a zone starting from our driverstation where launching commands are
     // accepted (needs testing)
-    public static final Distance kAcceptedLaunchingZone = kAllianceZoneLength.minus(Meters.of(1.0));
+    public static final Distance kAcceptedLaunchingZone = kAllianceZoneXLength.minus(Meters.of(1.0));
     // From drivestation wall to drivestation wall
     public static final Distance kFieldLengthX = Meter.of(kfieldLayout.getFieldLength());
     // Parallel distance from edge to edge
     public static final Distance kFieldWidthY = Meter.of(kfieldLayout.getFieldWidth());
+
+    public static final Distance kEdgeToTrenchCenter = Inches.of(26.22);
+    public static final Distance kEdgeToBumpCenter = Inches.of(104.34);
+    public static final Distance kBumpWidth = Inches.of(47.00);
+
     // Distance from field edge to middle of hub
     public static final Distance kHubY = kFieldWidthY.div(2.0);
     // Distance from blue driverstation wall to middle of hub
-    public static final Distance kHubXBlue = kAllianceZoneLength;
-    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceZoneLength);
+    public static final Distance kHubXBlue = kAllianceZoneXLength;
+    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceZoneXLength);
 
     public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
     public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
@@ -372,5 +445,52 @@ public final class Constants {
     // public static final Translation2d kRedHubPose = new Translation2d(11.915394,
     // 4.034663);
 
+
+    public static final Distance kCrossAllianceWaypointX = kAllianceZoneXLength
+        .minus(SwerveConfig.kBumperWidth.div(2.0));
+    public static final Distance kCrossNeutralWaypointX = kAllianceZoneXLength
+        .plus(SwerveConfig.kBumperWidth.div(2.0)).plus(kBumpWidth);
+
+    // Desired positions on either side of the 4 trenches, used for path finding
+    // kTrenchPathWaypoints[i] and kTrenchPathWaypoints[i + 4] are always opposite
+    public static final Translation2d[] kTrenchPathWaypoints = new Translation2d[] {
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Blue Depot
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Red Outpost
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Neutral Blue Depot
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Neutral Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kEdgeToTrenchCenter.in(Meters)), // Neutral Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToTrenchCenter).in(Meters)), // Neutral Red Outpost
+    };
+
+    // Desired positions on either side of the 4 bumps, used for path finding
+    // kBumpPathWaypoints[i] and kBumpPathWaypoints[i + 4] are always opposite
+    public static final Translation2d[] kBumpPathWaypoints = new Translation2d[] {
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Blue Depot
+        new Translation2d(kCrossAllianceWaypointX.in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Red Outpost
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Blue Depot
+        new Translation2d(kCrossNeutralWaypointX.in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Neutral Blue Outpost
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kEdgeToBumpCenter.in(Meters)), // Neutral Red Depot
+        new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
+            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Red Outpost
+    };
   }
 }
