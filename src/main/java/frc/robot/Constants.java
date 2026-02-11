@@ -256,41 +256,8 @@ public final class Constants {
 
   public static final class PhotonConstants {
     // Camera profiles - each camera's configuration in one place
-    public static final CameraProfile kCamera1Profile = new CameraProfile(
-        "Arducam_1",
-        Radians.of(0.0), // roll
-        Radians.of(0.1301), // pitch
-        Radians.of(0.0), // yaw
-        Meters.of(0.307), // x
-        Meters.of(0.180), // y
-        Meters.of(0.750), // z
-        VecBuilder.fill(0.3, 0.3, 0.3));
-
-    public static final CameraProfile kCamera2Profile = new CameraProfile(
-        "Arducam_2",
-        Radians.of(0.0), // roll
-        Radians.of(0.0), // pitch
-        Radians.of(0.7069), // yaws
-        Meters.of(0.238), // x
-        Meters.of(-0.294), // y
-        Meters.of(0.625), // z
-        VecBuilder.fill(0.9, 0.9, 0.9));
-
-    public static final CameraProfile kCamera3Profile = new CameraProfile(
-        "Arducam_3",
-        Radians.of(0.0), // roll
-        Radians.of(0.0), // pitch
-        Radians.of(Math.PI), // yaw
-        Meters.of(-0.3327), // x
-        Meters.of(0.0), // y
-        Meters.of(0.3708), // z
-        VecBuilder.fill(0.5, 0.5, 0.5));
 
     public static final int kAprilTagPipeline = 0;
-
-    public static final CameraProfile[] kCameras = { kCamera1Profile, kCamera2Profile, kCamera3Profile };
-
-    public static final int numCameras = kCameras.length;
 
     public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value

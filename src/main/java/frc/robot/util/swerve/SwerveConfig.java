@@ -28,8 +28,8 @@ import frc.robot.Constants.ModuleConstants;
 import frc.robot.subsystems.Drivetrain.Gyro;
 import frc.robot.subsystems.Drivetrain.GyroADXRS450;
 import frc.robot.subsystems.Drivetrain.GyroNavX;
-import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.util.swerve.SwerveDriveProfile.SwerveDriveProfileID;
+import frc.robot.util.vision.CameraProfile;
 
 public final class SwerveConfig {
 
@@ -72,11 +72,15 @@ public final class SwerveConfig {
   public static int kBackLeftTurningCanId;
   public static int kBackRightTurningCanId;
 
+  // Camera configuration - populated from the profile
+  public static CameraProfile[] kCameraProfiles;
+  public static int kNumCameras;
+
   /**
    * Applies the given swerve drive profile to the robot's drive and module
    * constants.
    * This updates all relevant static fields in DriveConstants and
-   * ModuleConstants.
+   * ModuleConstants, including camera profiles.
    * 
    * @param profile The swerve drive profile to apply
    */
@@ -154,6 +158,10 @@ public final class SwerveConfig {
 
     // Calculate driving feed-forward for simulation
     ModuleConstants.kDrivingFFSim = 1.0 / ModuleConstants.kDriveWheelFreeSpeed.in(RotationsPerSecond);
+
+    // Apply camera profiles from the swerve profile
+    SwerveConfig.kCameraProfiles = profile.cameraProfiles();
+    SwerveConfig.kNumCameras = profile.getNumCameras();
 
     // Create path planner robot config
     DCMotor gearbox = DCMotor.getNEO(1).withReduction(profile.driveReduction());

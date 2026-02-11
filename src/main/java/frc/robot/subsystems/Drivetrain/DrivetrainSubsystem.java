@@ -89,8 +89,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   // Pose estimation with vision fusion capability
   private final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator visionlessPoseEstimator;
-  private final PhotonCamera[] cameras = new PhotonCamera[PhotonConstants.numCameras];
-  private final PhotonPoseEstimator[] photonPoseEstimators = new PhotonPoseEstimator[PhotonConstants.numCameras];
+  private final PhotonCamera[] cameras;
+  private final PhotonPoseEstimator[] photonPoseEstimators;
   private final VisionSystemSim simulatedVision;
 
   // Current pose of the robot
@@ -148,9 +148,16 @@ public class DrivetrainSubsystem extends SubsystemBase {
       simulatedVision = null;
     }
 
+    // Get camera profiles from the applied swerve profile
+    CameraProfile[] cameraProfiles = SwerveConfig.kCameraProfiles;
+
+    // Initialize camera arrays with the correct size
+    cameras = new PhotonCamera[SwerveConfig.kNumCameras];
+    photonPoseEstimators = new PhotonPoseEstimator[SwerveConfig.kNumCameras];
+
     // Setup cameras to see april tags. Wow! That makes me really happy.
-    for (int i = 0; i < PhotonConstants.numCameras; i++) {
-      CameraProfile currentProfile = PhotonConstants.kCameras[i];
+    for (int i = 0; i < SwerveConfig.kNumCameras; i++) {
+      CameraProfile currentProfile = cameraProfiles[i];
       cameras[i] = new PhotonCamera(currentProfile.name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
           PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
@@ -327,8 +334,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Runs the drivetrain using the current field-relative setting. With manual
-   * control.
    * Runs the drivetrain using the current field-relative setting. With manual
    * control.
    * 
@@ -659,10 +664,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * in the pose estimator,
    * use getPose().getRotation() instead
    * 
-   * Do not use this to get the robot heading, as the gyro offset is applied later
-   * in the pose estimator,
-   * use getPose().getRotation() instead
-   * 
    * @return Gyro object
    */
   public Gyro getGyro() {
@@ -856,10 +857,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
     }
 
     // Iterate through each camera
-    for (int i = 0; i < PhotonConstants.numCameras; i++) {
+    for (int i = 0; i < SwerveConfig.kNumCameras; i++) {
       // Get all poses from camera
       List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
-          PhotonConstants.kCameras[i].getRobotToCameraTransform(),
+          SwerveConfig.kCameraProfiles[i].getRobotToCameraTransform(),
           robotPose);
 
       List<Integer> fiducialIds = new ArrayList<>();
@@ -887,7 +888,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
         // Calculate dynamic standard deviations based on measurement quality
         Vector<N3> stdDevs = VisionStdDevCalculator.calculateStdDevs(
             visionPose,
-            PhotonConstants.kCameras[i].standardDeviation());
+            SwerveConfig.kCameraProfiles[i].standardDeviation());
 
         // Add vision measurement with dynamic standard deviations
         poseEstimator.addVisionMeasurement(
