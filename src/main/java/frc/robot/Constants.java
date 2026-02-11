@@ -120,6 +120,12 @@ public final class Constants {
     public static final double kVelocityLowRPM = 0;
     public static final double kVelocityConversionFactor = 0;
 
+    public static final int kLauncherSmartCurrentLimit = 40; // in Amps
+
+    public static final double kLauncherP = 0;
+    public static final double kLauncherI = 0;
+    public static final double kLauncherD = 0;
+
     /*
     
     
@@ -444,7 +450,6 @@ public final class Constants {
     // kHubY.in(Meters));
     // public static final Translation2d kRedHubPose = new Translation2d(11.915394,
     // 4.034663);
-
 
     public static final Distance kCrossAllianceWaypointX = kAllianceZoneXLength
         .minus(SwerveConfig.kBumperWidth.div(2.0));

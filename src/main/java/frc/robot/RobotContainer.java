@@ -14,7 +14,8 @@ import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
-import frc.robot.subsystems.launcher.LauncherSubsystem;
+import frc.robot.subsystems.launcher.SparkLauncherSubsystem;
+import frc.robot.subsystems.launcher.TalonFXLauncherSubsystem;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -30,10 +31,12 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt.*;
 
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -60,6 +63,7 @@ import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.commands.intake.IntakeCmd;
 import frc.robot.commands.intake.PlowCmd;
+import frc.robot.commands.launcher.LauncherPIDCmd;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -67,10 +71,10 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
   public final IntakeSubsystem intakeSub;
-  public final LauncherSubsystem launcherSub;
+  public final SparkLauncherSubsystem sparkLauncherSub;
+  public final TalonFXLauncherSubsystem talonFXLauncherSub;
   public final IndexerSubsystem indexerSub;
   public final ClimberSubsystem ClimberSub;
-
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -91,9 +95,14 @@ public class RobotContainer {
       gyro = SwerveConfig.gyro;
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
-      launcherSub = new LauncherSubsystem(null); // set when we have more information
+      sparkLauncherSub = new SparkLauncherSubsystem(null); // set when we have more information
+      talonFXLauncherSub = new TalonFXLauncherSubsystem(null); // set when we have more information
+
       indexerSub = new IndexerSubsystem(null);
       ClimberSub = new ClimberSubsystem(null);
+
+      new LauncherPIDCmd(sparkLauncherSub, () -> SmartDashboard.getNumber("RPM", 0));
+      // launcher pid interface
 
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
@@ -121,7 +130,9 @@ public class RobotContainer {
 
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless));
-      launcherSub = new LauncherSubsystem(new SparkMax(0, null));
+      sparkLauncherSub = new SparkLauncherSubsystem(new SparkMax(0, null));
+
+      talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(0));
       indexerSub = new IndexerSubsystem(new SparkMax(0, null));
       ClimberSub = new ClimberSubsystem(new SparkMax(0, null));
       // Override bump collision (on by default)
