@@ -214,7 +214,10 @@ public class RobotContainer {
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
 
-    autoChooser.addOption("Closest Path", PathGenerator.loadL1ClimbCommand());
+    autoChooser.addOption("Closest Path",
+        Commands.defer(
+            () -> PathGenerator.loadL1ClimbCommand(),
+            Set.of(driveSub)));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
