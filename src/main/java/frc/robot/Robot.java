@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.function.Supplier;
+
 import org.ironmaple.simulation.SimulatedArena;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -17,6 +19,7 @@ import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.swerve.ProfileSelector;
 
@@ -82,6 +85,11 @@ public class Robot extends LoggedRobot {
 
     SmartDashboard.putBoolean("Auto?", isAutonomous());
     SmartDashboard.putData("Commands", CommandScheduler.getInstance());
+
+    SmartDashboard.putString("bump left: ", AutoConstants.climbPathWaypoints[0].toString());
+    SmartDashboard.putString("bump right: ", AutoConstants.climbPathWaypoints[1].toString());
+    SmartDashboard.putString("trench left: ", AutoConstants.climbPathWaypoints[2].toString());
+    SmartDashboard.putString("trench right: ", AutoConstants.climbPathWaypoints[3].toString());
   }
 
   @Override

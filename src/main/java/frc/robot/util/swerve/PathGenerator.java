@@ -26,6 +26,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import java.util.Arrays;
 
 /**
  * Helper class to generate paths on the fly
@@ -304,18 +305,24 @@ public class PathGenerator {
    * schedule it without null checks.
    */
   public static Command loadL1ClimbCommand() {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
-    try {
-      // Load the path we want to pathfind to and follow
-      PathPlannerPath nearestClimbPath = AutoConstants.climbPaths[nearestTranslation2dIndex(
-          AutoConstants.climbPathWaypoints)];
+    int nearestPathIndex;
 
-      // Since AutoBuilder is configured, we can use it to build pathfinding commands
-      return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, AutoConstants.L1ClimbConstraints);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return new InstantCommand();
+    // Load the path we want to pathfind to and follow
+    if (isBlueAlliance) {
+      nearestPathIndex = nearestTranslation2dIndex(
+          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 0, 4));
+    } else {
+      nearestPathIndex = nearestTranslation2dIndex(
+          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 4, 8));
     }
+
+    PathPlannerPath nearestClimbPath = AutoConstants.climbPaths[nearestPathIndex % 4];
+
+    // Since AutoBuilder is configured, we can use it to build pathfinding commands
+    return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, AutoConstants.L1ClimbConstraints);
   }
 
   /**

@@ -6,9 +6,12 @@ package frc.robot.subsystems.Drivetrain;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.Vector;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +22,9 @@ import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -54,12 +60,14 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Robot;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.util.vision.CameraProfile;
 import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
 
@@ -79,12 +87,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private final LinearFilter omegaFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
 
   // Pose estimation with vision fusion capability
-  // public final SwerveDrivePoseEstimator poseEstimator;
-  // public final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator poseEstimator;
   private final SwerveDrivePoseEstimator visionlessPoseEstimator;
   private final PhotonCamera[] cameras = new PhotonCamera[PhotonConstants.numCameras];
   private final PhotonPoseEstimator[] photonPoseEstimators = new PhotonPoseEstimator[PhotonConstants.numCameras];
+  private final VisionSystemSim simulatedVision;
 
   // Current pose of the robot
   private Pose2d robotPose = new Pose2d();
@@ -134,12 +141,62 @@ public class DrivetrainSubsystem extends SubsystemBase {
         getModulePositions(),
         new Pose2d());
 
+    if (Robot.isSimulation()) {
+      simulatedVision = new VisionSystemSim("main");
+      simulatedVision.addAprilTags(FieldConstants.kfieldLayout);
+    } else {
+      simulatedVision = null;
+    }
+
     // Setup cameras to see april tags. Wow! That makes me really happy.
     for (int i = 0; i < PhotonConstants.numCameras; i++) {
-      cameras[i] = new PhotonCamera(PhotonConstants.kCameras[i]);
+      CameraProfile currentProfile = PhotonConstants.kCameras[i];
+      cameras[i] = new PhotonCamera(currentProfile.name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
           PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PhotonConstants.kRobotToCams[i]);
+          currentProfile.getRobotToCameraTransform());
+
+      if (Robot.isSimulation()) {
+        if (simulatedVision == null) {
+          throw new IllegalStateException(
+              "simulatedVision is null... Please ensure the VisionSystemSim is initialized when simulating the robot.");
+        }
+
+        SimCameraProperties simulatedProperties;
+        try {
+          if (currentProfile.configFile() == null || !currentProfile.configFile().exists()) {
+            throw new IOException("No calibration file specified in camera profile or file does not exist.");
+          }
+          simulatedProperties = new SimCameraProperties(currentProfile.configFile().getPath(),
+              currentProfile.resolution()[0], currentProfile.resolution()[1]);
+
+        } catch (IOException e) {
+          System.err.println(
+              "Could not read camera configuration file to simulate camera " + i
+                  + ", falling back to setting set by camera profile. Error: " +
+                  e.getMessage());
+          simulatedProperties = new SimCameraProperties();
+          if (currentProfile.camIntrinsics() == null || currentProfile.distCoeffs() == null) {
+            System.out.println("Could not find camera matrices for camera profile " + i + ", reverting to set FOV.");
+            simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+                new Rotation2d(currentProfile.fieldOfView()));
+          } else {
+            simulatedProperties.setCalibration(currentProfile.resolution()[0], currentProfile.resolution()[1],
+                currentProfile.camIntrinsics(),
+                currentProfile.distCoeffs());
+          }
+          simulatedProperties.setFPS(currentProfile.fps());
+          simulatedProperties.setAvgLatencyMs(currentProfile.avgLatency().in(Milliseconds));
+          simulatedProperties.setLatencyStdDevMs(currentProfile.avgLatencyDeviation().in(Milliseconds));
+        }
+
+        PhotonCameraSim simulatedCamera = new PhotonCameraSim(cameras[i], simulatedProperties);
+        simulatedCamera.enableRawStream(true);
+        simulatedCamera.enableProcessedStream(true);
+        simulatedCamera.enableDrawWireframe(currentProfile.simulationWireframeEnabled());
+        simulatedVision.addCamera(simulatedCamera, currentProfile.getRobotToCameraTransform());
+      }
+
     }
 
     // Initialize Controllers
@@ -278,7 +335,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @param speeds Desired chassis speeds
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    runVelocity(speeds, this.isFieldRelativeReal, true);
     runVelocity(speeds, this.isFieldRelativeReal, true);
   }
 
@@ -803,7 +859,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     for (int i = 0; i < PhotonConstants.numCameras; i++) {
       // Get all poses from camera
       List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
-          PhotonConstants.kRobotToCams[i],
+          PhotonConstants.kCameras[i].getRobotToCameraTransform(),
           robotPose);
 
       List<Integer> fiducialIds = new ArrayList<>();
@@ -831,7 +887,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
         // Calculate dynamic standard deviations based on measurement quality
         Vector<N3> stdDevs = VisionStdDevCalculator.calculateStdDevs(
             visionPose,
-            PhotonConstants.kCameraStandardDeviations.get(i));
+            PhotonConstants.kCameras[i].standardDeviation());
 
         // Add vision measurement with dynamic standard deviations
         poseEstimator.addVisionMeasurement(
@@ -845,6 +901,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
         stdDevsTheta.add(stdDevs.get(2));
 
         // Log vision poses and standard deviations
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StandardDeviation",
+            new double[] { stdDevs.get(0), stdDevs.get(1), stdDevs.get(2) });
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
       }
@@ -860,12 +918,6 @@ public class DrivetrainSubsystem extends SubsystemBase {
           tagAmbiguities.stream().mapToDouble(n -> n).toArray());
 
       // Log dynamic standard deviations for tuning
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsX",
-          stdDevsX.stream().mapToDouble(n -> n).toArray());
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsY",
-          stdDevsY.stream().mapToDouble(n -> n).toArray());
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StdDevsTheta",
-          stdDevsTheta.stream().mapToDouble(n -> n).toArray());
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/NumTargets",
           visionPoses.stream().mapToInt(p -> p.targetsUsed.size()).toArray());
     }
@@ -876,6 +928,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     double vxPrev = vxFilter.lastValue();
     double vyPrev = vyFilter.lastValue();
+
     double omegaPrev = omegaFilter.lastValue();
     double vx = vxFilter.calculate(speedsRaw.vxMetersPerSecond);
     double vy = vyFilter.calculate(speedsRaw.vyMetersPerSecond);
@@ -947,8 +1000,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     if (this.simulatedSwerveDrive != null) {
-      Logger.recordOutput("FieldSimulation/PhysicalRobotPose",
-          this.simulatedSwerveDrive.getSimulatedDriveTrainPose());
+      Pose2d simulatedPose = simulatedSwerveDrive.getSimulatedDriveTrainPose();
+      if (this.simulatedVision != null) {
+        simulatedVision.update(simulatedPose);
+      }
+      Logger.recordOutput("FieldSimulation/PhysicalRobotPose", simulatedPose);
     }
+
   }
 }
