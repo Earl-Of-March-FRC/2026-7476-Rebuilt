@@ -8,9 +8,11 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Radians;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
@@ -21,10 +23,12 @@ import edu.wpi.first.units.measure.MomentOfInertia;
 import frc.robot.subsystems.Drivetrain.Gyro;
 import frc.robot.subsystems.Drivetrain.GyroADXRS450;
 import frc.robot.subsystems.Drivetrain.GyroNavX;
+import frc.robot.util.vision.CameraProfile;
 
 /**
  * Record class representing a swerve drive configuration profile.
- * Contains all the necessary parameters to configure a swerve drive system.
+ * Contains all the necessary parameters to configure a swerve drive system,
+ * including camera configurations for vision.
  */
 public record SwerveDriveProfile(
     int[] driveCanIds,
@@ -43,6 +47,7 @@ public record SwerveDriveProfile(
     Mass robotMass,
     MomentOfInertia robotMOI,
     GyroType gyro,
+    CameraProfile[] cameraProfiles,
     SwerveDriveProfileID profileId) {
 
   public static enum SwerveDriveProfileID {
@@ -62,7 +67,7 @@ public record SwerveDriveProfile(
   }
 
   /**
-   * SpongeBot swerve drive configuration.
+   * CompBot swerve drive configuration with 3 cameras.
    */
   public static final SwerveDriveProfile COMP_BOT = new SwerveDriveProfile(
       new int[] { 6, 4, 8, 2 },
@@ -83,8 +88,12 @@ public record SwerveDriveProfile(
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.NavX_MXP_SPI,
+      new CameraProfile[] {},
       SwerveDriveProfileID.COMP_BOT);
 
+  /**
+   * SpongeBot swerve drive configuration with 3 cameras.
+   */
   public static final SwerveDriveProfile SPONGE_BOT = new SwerveDriveProfile(
       new int[] { 1, 3, 5, 7 },
       new int[] { 2, 4, 6, 8 },
@@ -104,10 +113,39 @@ public record SwerveDriveProfile(
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.NavX_USB1,
+      new CameraProfile[] {
+          new CameraProfile(
+              "Arducam_1",
+              Radians.of(0.0), // roll
+              Radians.of(0.1301), // pitch
+              Radians.of(0.0), // yaw
+              Meters.of(0.307), // x
+              Meters.of(0.180), // y
+              Meters.of(0.750), // z
+              VecBuilder.fill(0.3, 0.3, 0.3)),
+          new CameraProfile(
+              "Arducam_2",
+              Radians.of(0.0), // roll
+              Radians.of(0.0), // pitch
+              Radians.of(0.7069), // yaw
+              Meters.of(0.238), // x
+              Meters.of(-0.294), // y
+              Meters.of(0.625), // z
+              VecBuilder.fill(0.9, 0.9, 0.9)),
+          new CameraProfile(
+              "Arducam_3",
+              Radians.of(0.0), // roll
+              Radians.of(0.0), // pitch
+              Radians.of(Math.PI), // yaw
+              Meters.of(-0.3327), // x
+              Meters.of(0.0), // y
+              Meters.of(0.3708), // z
+              VecBuilder.fill(0.5, 0.5, 0.5))
+      },
       SwerveDriveProfileID.SPONGE_BOT);
 
   /**
-   * Off-season swerve drive configuration.
+   * Off-season swerve drive configuration with 0 camera.
    */
   public static final SwerveDriveProfile OFF_SEASON_SWERVE = new SwerveDriveProfile(
       new int[] { 5, 8, 6, 7 },
@@ -126,6 +164,7 @@ public record SwerveDriveProfile(
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.ADXRS450,
+      new CameraProfile[] {},
       SwerveDriveProfileID.OFF_SEASON_SWERVE);
 
   public String getName() {
@@ -135,5 +174,14 @@ public record SwerveDriveProfile(
       case OFF_SEASON_SWERVE -> "OffSeasonSwerve";
       default -> "CompBot";
     };
+  }
+
+  /**
+   * Gets the number of cameras in this profile.
+   * 
+   * @return Number of cameras configured
+   */
+  public int getNumCameras() {
+    return cameraProfiles == null ? 0 : cameraProfiles.length;
   }
 }
