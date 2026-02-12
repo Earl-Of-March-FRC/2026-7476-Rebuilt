@@ -30,8 +30,6 @@ import com.pathplanner.lib.path.PathPoint;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.MatBuilder;
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -51,8 +49,6 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
 
@@ -267,33 +263,51 @@ public final class Constants {
         Meters.of(0.307), // x
         Meters.of(0.180), // y
         Meters.of(0.750), // z
-        VecBuilder.fill(0.3, 0.3, 0.3));
+        VecBuilder.fill(0.3, 0.3, 0.3) // standard deviation
+    );
 
     public static final CameraProfile kCamera2Profile = new CameraProfile(
         "Arducam_2",
-        Radians.of(0.0), // roll
-        Radians.of(0.0), // pitch
-        Radians.of(0.7069), // yaws
-        Meters.of(0.238), // x
-        Meters.of(-0.294), // y
-        Meters.of(0.625), // z
-        VecBuilder.fill(0.9, 0.9, 0.9));
-
-    public static final CameraProfile kCamera3Profile = new CameraProfile(
-        "Arducam_3",
         Radians.of(0.0), // roll
         Radians.of(0.0), // pitch
         Radians.of(Math.PI), // yaw
         Meters.of(-0.3327), // x
         Meters.of(0.0), // y
         Meters.of(0.3708), // z
-        VecBuilder.fill(0.5, 0.5, 0.5));
+        VecBuilder.fill(0.9, 0.9, 0.9) // standard deviation
+    );
+
+    public static final CameraProfile kCamera3Profile = new CameraProfile(
+        "Arducam_3",
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(0.7069), // yaw
+        Meters.of(0.238), // x
+        Meters.of(-0.294), // y
+        Meters.of(0.625), // z
+        VecBuilder.fill(0.5, 0.5, 0.5) // standard deviation
+    );
 
     public static final int kAprilTagPipeline = 0;
 
-    public static final CameraProfile[] kCameras = { kCamera1Profile, kCamera2Profile, kCamera3Profile };
+    public static final String kCamera1 = "Arducam_1";
+    public static final String kCamera2 = "Arducam_2";
+    public static final String kCamera3 = "Arducam_3";
+
+    public static final String[] kCameras = { kCamera1, kCamera2, kCamera3 };
+
+    public static final List<Vector<N3>> kCameraStandardDeviations = List.of(
+        kCamera1Profile.standardDeviation(),
+        kCamera2Profile.standardDeviation(),
+        kCamera3Profile.standardDeviation());
 
     public static final int numCameras = kCameras.length;
+
+    public static final Transform3d[] kRobotToCams = {
+        kCamera1Profile.getRobotToCameraTransform(), // Camera 1 Transform3d
+        kCamera2Profile.getRobotToCameraTransform(), // Camera 2 Transform3d
+        kCamera3Profile.getRobotToCameraTransform() // Camera 3 Transform3d
+    };
 
     public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
