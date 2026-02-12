@@ -86,10 +86,6 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putBoolean("Auto?", isAutonomous());
     SmartDashboard.putData("Commands", CommandScheduler.getInstance());
 
-    SmartDashboard.putString("bump left: ", AutoConstants.climbPathWaypoints[0].toString());
-    SmartDashboard.putString("bump right: ", AutoConstants.climbPathWaypoints[1].toString());
-    SmartDashboard.putString("trench left: ", AutoConstants.climbPathWaypoints[2].toString());
-    SmartDashboard.putString("trench right: ", AutoConstants.climbPathWaypoints[3].toString());
   }
 
   @Override
@@ -111,6 +107,9 @@ public class Robot extends LoggedRobot {
     PortForwarder.add(1184, "photonvision.local", 1184);
     PortForwarder.add(1185, "photonvision.local", 1185);
     PortForwarder.add(1186, "photonvision.local", 1186);
+
+    SmartDashboard.putBoolean("is Neutral Zone", false);
+
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

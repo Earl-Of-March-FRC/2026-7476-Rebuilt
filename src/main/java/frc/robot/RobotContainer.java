@@ -36,6 +36,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
@@ -216,7 +217,7 @@ public class RobotContainer {
 
     autoChooser.addOption("Closest Path",
         Commands.defer(
-            () -> PathGenerator.loadL1ClimbCommand(),
+            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Trench"),
             Set.of(driveSub)));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());

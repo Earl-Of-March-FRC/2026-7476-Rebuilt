@@ -404,6 +404,8 @@ public final class Constants {
         3.0, 4.0,
         3 * Math.PI, 4 * Math.PI);
 
+    public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
+
     public static PathPlannerPath bumpLeftClimbPath;
     public static PathPlannerPath bumpRightClimbPath;
     public static PathPlannerPath trenchLeftClimbPath;
