@@ -46,13 +46,9 @@ public class ClimberSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Log climber position or current so you can see if it's straining
-    
+
     Logger.recordOutput("Climber/AppliedOutput", climberSpark.getAppliedOutput());
   }
-  
-  // Im tryna merge with develop rn
-  /// I just switched branches dw
-  // I do it myself
 
   public void setTarget(double inches) {
     Logger.recordOutput("Climber/Setpoint/TargetInches", inches);

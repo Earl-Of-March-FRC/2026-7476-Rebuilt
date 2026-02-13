@@ -7,7 +7,8 @@ import frc.robot.subsystems.launcher.LauncherPIDInterface;
 
 public class LauncherPIDCmd extends Command {
 
-  private final LauncherPIDInterface launcher; // This is an interface, but you can still
+  private final LauncherPIDInterface launcher; // This is an interface, but you can still access methods in the class
+                                               // that implements it.
   private final DoubleSupplier targetRPM;
 
   public LauncherPIDCmd(LauncherPIDInterface launcher, DoubleSupplier targetRPM) {
@@ -15,7 +16,8 @@ public class LauncherPIDCmd extends Command {
     this.targetRPM = targetRPM;
 
     if (launcher instanceof edu.wpi.first.wpilibj2.command.Subsystem) {
-      addRequirements((edu.wpi.first.wpilibj2.command.Subsystem) launcher);
+      addRequirements((edu.wpi.first.wpilibj2.command.Subsystem) launcher); // Cast the type and set the launcher motor
+                                                                            // as a dependency
     }
   }
 
