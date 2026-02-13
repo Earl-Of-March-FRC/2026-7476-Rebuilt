@@ -119,24 +119,14 @@ public class RobotContainer {
 
     DriveCmd driveCmd = new DriveCmd(
         driveSub,
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-            OIConstants.kDriveDeadband),
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-            OIConstants.kDriveDeadband),
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis),
-            OIConstants.kDriveDeadband));
+        this::getDriverVx,
+        this::getDriverVy,
+        this::getDriverOmega);
 
     DriveAtLaunchingRangeCmd driveAtLaunchingRangeCmd = new DriveAtLaunchingRangeCmd(
         driveSub,
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-            OIConstants.kDriveDeadband),
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-            OIConstants.kDriveDeadband),
+        this::getDriverVx,
+        this::getDriverVy,
         Constants.LauncherConstants.kLaunchRadius,
         true);
 
@@ -144,12 +134,8 @@ public class RobotContainer {
 
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-            OIConstants.kDriveDeadband),
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerXAxis),
-            OIConstants.kDriveDeadband),
+        this::getDriverVx,
+        this::getDriverVy,
         new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
 
     // Only schedule when in Launching zone
@@ -171,18 +157,14 @@ public class RobotContainer {
     // Lock Y coordinate to the nearest bump and align heading
     driverController.povRight().toggleOnTrue(new DriveLockedHeadingAndYCmd(
         driveSub,
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-            OIConstants.kDriveDeadband),
+        this::getDriverVx,
         () -> PoseHelpers.nearestBumpY(driveSub.getPose()),
         new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
 
     // Lock Y coordinate to the nearest trench and align heading
     driverController.povLeft().toggleOnTrue(new DriveLockedHeadingAndYCmd(
         driveSub,
-        () -> MathUtil.applyDeadband(
-            -driverController.getRawAxis(OIConstants.kDriverControllerYAxis),
-            OIConstants.kDriveDeadband),
+        this::getDriverVx,
         () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
         new Rotation2d(DriveConstants.kTrenchHeadingRestriction)));
 
@@ -199,6 +181,31 @@ public class RobotContainer {
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(
         Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
+  }
+
+  // Helper methods to reduce repetition
+  private double getDriverVx() {
+    // Apply slow-mode when left stick is pushed down
+    return MathUtil.applyDeadband(
+        -driverController.getRawAxis(OIConstants.kDriverControllerYAxis)
+            * (driverController.leftStick().getAsBoolean() ? OIConstants.kDriverSlowModeMultiplier : 1),
+        OIConstants.kDriveDeadband);
+  }
+
+  private double getDriverVy() {
+    // Apply slow-mode when left stick is pushed down
+    return MathUtil.applyDeadband(
+        -driverController.getRawAxis(OIConstants.kDriverControllerXAxis)
+            * (driverController.leftStick().getAsBoolean() ? OIConstants.kDriverSlowModeMultiplier : 1),
+        OIConstants.kDriveDeadband);
+  }
+
+  private double getDriverOmega() {
+    // Use low sensitivity by default, and use max speed when right stick is pushed
+    return MathUtil.applyDeadband(
+        -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis)
+            * (driverController.rightStick().getAsBoolean() ? 1 : OIConstants.kDriverTurnSensitivity),
+        OIConstants.kDriveDeadband);
   }
 
   public Gyro getGyro() {
