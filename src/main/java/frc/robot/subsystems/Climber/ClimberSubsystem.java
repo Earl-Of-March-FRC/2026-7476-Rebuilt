@@ -14,63 +14,63 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 // import frc.robot.Configs.ClimberConfigs;
 import frc.robot.Constants.ClimberConstants;
 
-public class ClimberSubsystem extends SubsystemBase {
+public class ClimberSubsystem extends SubsystemBase implements ClimberSubsystemInterface {
   private final SparkMax climberSpark;
   private final RelativeEncoder climberEncoder;
   private final SparkClosedLoopController climberPIDController;
-  private final SparkMaxConfig climberSparkMaxConfig = new SparkMaxConfig();
 
   public ClimberSubsystem(SparkMax motor) {
     climberSpark = motor;
-    climberEncoder = climberSpark.getEncoder();
+    climberEncoder = motor.getEncoder();
 
-    climberPIDController = climberSpark.getClosedLoopController();
+    climberPIDController = motor.getClosedLoopController();
 
-    climberSparkMaxConfig.smartCurrentLimit(40);
+    SparkMaxConfig climberConfig = new SparkMaxConfig();
 
-    climberSparkMaxConfig.encoder.positionConversionFactor(ClimberConstants.kTicksToInchesConversion);
+    climberConfig.smartCurrentLimit(40);
 
-    climberSparkMaxConfig.closedLoop
+    climberConfig.encoder.positionConversionFactor(ClimberConstants.kTicksToInchesConversion);
+
+    climberConfig.closedLoop
         .p(ClimberConstants.kP)
         .i(ClimberConstants.kI)
         .d(ClimberConstants.kD)
         .outputRange(-1, 1); // -1, 1 as in -1 full speed backwards, and 1 full speed forwards (Motor maximum
                              // speeds)
+                             // It's like duty cycles
 
-    // Don't reset the safe parameters, don't persist parameters Whatever this means
-    climberSpark.configure(climberSparkMaxConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-    // ResetMode.kNoResetSafeParameters,
-    // PersistMode.kNoPersistParameters);
+    // Reset the safe parameters, don't persist parameters
+    climberSpark.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+
   }
 
   @Override
   public void periodic() {
     // Log climber position or current so you can see if it's straining
 
+    Logger.recordOutput("Climber/PositionInches", climberEncoder.getPosition());
+    Logger.recordOutput("Climber/VelocityInchesPerSec", climberEncoder.getVelocity());
     Logger.recordOutput("Climber/AppliedOutput", climberSpark.getAppliedOutput());
+    Logger.recordOutput("Climber/CurrentAmps", climberSpark.getOutputCurrent());
   }
 
-  public void setTarget(double inches) {
+  public void setPercentSpeed(double percent) {
+    Logger.recordOutput("Climber/Setpoint/PercentVelocity", percent);
+    climberSpark.set(percent);
+  }
+
+  public void setTargetPosition(double inches) {
     Logger.recordOutput("Climber/Setpoint/TargetInches", inches);
     // TODO ask hardware about gearbox rotations
     climberPIDController.setSetpoint(inches, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 
-  public void setVelocity(double percent) {
-    Logger.recordOutput("Climber/Setpoint/PercentVelocity", percent);
-    climberSpark.set(percent);
+  public void stop() {
+    setPercentSpeed(0);
   }
 
   public double getVelocity() {
     return climberEncoder.getVelocity();
-  }
-
-  public void stopClimbing() {
-    setVelocity(0);
-  }
-
-  public void setClimberSpeed(double speed) {
-
   }
 
 }

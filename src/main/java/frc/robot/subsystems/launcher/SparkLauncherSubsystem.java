@@ -108,14 +108,11 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
 
   @Override
   public void setReferenceVelocity(double rpm) {
-    double referenceVelocityWithOffset = rpm;
     Logger.recordOutput("Launcher/Setpoint/Velocity", rpm);
-    Logger.recordOutput("Launcher/Setpoint/VelocityWithOffset", referenceVelocityWithOffset);
 
     // Converts RPM to radians per second
     launcherClosedLoopController.setSetpoint(
-        (rpm == 0 ? rpm : referenceVelocityWithOffset)
-            * LauncherConstants.kVelocityConversionFactor,
+        rpm * LauncherConstants.kVelocityConversionFactor,
         ControlType.kVelocity, useHighVelocities ? LauncherConstants.kSlotHigh : LauncherConstants.kSlotLow);
   }
 
