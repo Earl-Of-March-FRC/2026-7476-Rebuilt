@@ -217,7 +217,7 @@ public class RobotContainer {
 
     autoChooser.addOption("Closest Path",
         Commands.defer(
-            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Trench"),
+            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
             Set.of(driveSub)));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());

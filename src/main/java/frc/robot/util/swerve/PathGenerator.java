@@ -65,13 +65,13 @@ public class PathGenerator {
     PathPlannerPath trenchPath = crossTrenchPath(endVelocity,
         nearestTranslation2dIndex(FieldConstants.kTrenchPathWaypoints));
 
-    // return AutoBuilder.pathfindThenFollowPath(trenchPath,
+    // return pathfindThenFollowPathNoFlip(trenchPath,
     // DriveConstants.kPathfindingConstraints).until(() -> (drive()
     // .getCurrentBotZone() == drive()
     // .getPoseZone(trenchPath.getPathPoses().get(trenchPath.getPathPoses().size() -
     // 1))));
 
-    return AutoBuilder.pathfindThenFollowPath(trenchPath, SwerveConfig.kPathfindingConstraints);
+    return pathfindThenFollowPathNoFlip(trenchPath, SwerveConfig.kPathfindingConstraints);
   }
 
   /**
@@ -117,13 +117,13 @@ public class PathGenerator {
   public static Command crossNearestBump(LinearVelocity endVelocity) {
     PathPlannerPath bumpPath = crossBumpPath(endVelocity, nearestTranslation2dIndex(FieldConstants.kBumpPathWaypoints));
 
-    // return AutoBuilder.pathfindThenFollowPath(bumpPath,
+    // return pathfindThenFollowPathNoFlip(bumpPath,
     // DriveConstants.kPathfindingConstraints).until(() -> (drive()
     // .getCurrentBotZone() ==
     // drive().getPoseZone(bumpPath.getPathPoses().get(bumpPath.getPathPoses().size()
     // - 1))));
 
-    return AutoBuilder.pathfindThenFollowPath(bumpPath, SwerveConfig.kPathfindingConstraints);
+    return pathfindThenFollowPathNoFlip(bumpPath, SwerveConfig.kPathfindingConstraints);
   }
 
   /**
@@ -215,7 +215,7 @@ public class PathGenerator {
         new IdealStartingState(DriveConstants.kBumpLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
-    return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
+    return pathfindThenFollowPathNoFlip(path, SwerveConfig.kPathfindingConstraints)
         .until(() -> (drive().getCurrentBotZone() == FieldZones.Launch));
   }
 
@@ -275,7 +275,7 @@ public class PathGenerator {
         new IdealStartingState(DriveConstants.kTrenchLinearVelocity, targetHeading),
         new GoalEndState(endVelocity, targetHeading));
 
-    return AutoBuilder.pathfindThenFollowPath(path, SwerveConfig.kPathfindingConstraints)
+    return pathfindThenFollowPathNoFlip(path, SwerveConfig.kPathfindingConstraints)
         .until(() -> (drive().getCurrentBotZone() == FieldZones.Launch));
   }
 
@@ -322,7 +322,7 @@ public class PathGenerator {
     }
 
     // Load the path we want to pathfind to and follow
-    PathPlannerPath nearestClimbPath = AutoConstants.climbPaths[nearestPathIndex % 4];
+    PathPlannerPath nearestClimbPath = AutoConstants.climbPaths[nearestPathIndex];
 
     // Since AutoBuilder is configured, we can use it to build pathfinding commands
     return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, AutoConstants.L1ClimbConstraints);
@@ -365,7 +365,7 @@ public class PathGenerator {
       crossingPath = crossTrenchPath(endVelocity, neutralZoneWaypointId + nearestTrenchInNeutralZone);
     }
 
-    return AutoBuilder.pathfindThenFollowPath(crossingPath, SwerveConfig.kPathfindingConstraints);
+    return pathfindThenFollowPathNoFlip(crossingPath, SwerveConfig.kPathfindingConstraints);
   }
 
   /**
@@ -393,5 +393,25 @@ public class PathGenerator {
    */
   private static Translation2d nearestTranslation2d(Translation2d[] poseTranslation2ds) {
     return poseTranslation2ds[nearestTranslation2dIndex(poseTranslation2ds)];
+  }
+
+  /**
+   * Autobuilder pathfinding will always apply the shouldFlip supplier when using
+   * pathfindThenFollowPath(), even if the path.preventFlipping = true. The only
+   * way to circumvent this is to manually compose pathfindToPose() and followPath
+   * 
+   * @param path        The path to pathfind to, and then follow
+   * @param constraints The pathfinding constraints
+   * @return The command that will pathfind and then follow path
+   */
+  private static Command pathfindThenFollowPathNoFlip(PathPlannerPath path, PathConstraints constraints) {
+    Pose2d pathStartPose = path.getPathPoses().get(0);
+    LinearVelocity pathStartVelocity = path.getIdealStartingState().velocity();
+
+    path.preventFlipping = true;
+
+    return AutoBuilder.pathfindToPose(pathStartPose, constraints, pathStartVelocity)
+        .andThen(AutoBuilder.followPath(path));
+
   }
 }
