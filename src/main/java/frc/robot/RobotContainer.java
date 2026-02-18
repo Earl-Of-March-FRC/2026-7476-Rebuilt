@@ -136,7 +136,8 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         this::getDriverVy,
-        new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction),
+        DriveConstants.kBumpLinearVelocity));
 
     // Only schedule when in Launching zone
     driverController.x().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
@@ -159,14 +160,16 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         () -> PoseHelpers.nearestBumpY(driveSub.getPose()),
-        new Rotation2d(DriveConstants.kBumpHeadingRestriction)));
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction),
+        DriveConstants.kBumpLinearVelocity));
 
     // Lock Y coordinate to the nearest trench and align heading
     driverController.povLeft().toggleOnTrue(new DriveLockedHeadingAndYCmd(
         driveSub,
         this::getDriverVx,
         () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
-        new Rotation2d(DriveConstants.kTrenchHeadingRestriction)));
+        new Rotation2d(DriveConstants.kTrenchHeadingRestriction),
+        DriveConstants.kTrenchLinearVelocity));
 
     driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
         Commands.defer(
