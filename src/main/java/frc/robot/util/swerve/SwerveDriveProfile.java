@@ -119,7 +119,7 @@ public record SwerveDriveProfile(
           new CameraProfile(
               "Arducam_1",
               Radians.of(0.0), // roll
-              Radians.of(0.1301), // pitch
+              Radians.of(0.1301), // pitchs
               Radians.of(0.0), // yaw
               Meters.of(0.307), // x
               Meters.of(0.180), // y
