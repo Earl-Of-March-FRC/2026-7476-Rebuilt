@@ -1,0 +1,22 @@
+{
+  "name": "7476 Rebuilt",
+  "isFTC": false,
+  "disableSimplification": false,
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "y",
+      "degrees": 0
+    },
+    {
+      "axis": "z",
+      "degrees": -90
+    }
+  ],
+  "position": [-0.1100, 0.1651, 0.1205],
+  "cameras": [],
+  "components": []
+}
