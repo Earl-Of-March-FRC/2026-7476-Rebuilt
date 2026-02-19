@@ -2,7 +2,7 @@
   {
     "name": "/Preferences/SelectedProfile",
     "type": "string",
-    "value": "OffSeasonSwerve",
+    "value": "SpongeBot",
     "properties": {
       "persistent": true
     }
