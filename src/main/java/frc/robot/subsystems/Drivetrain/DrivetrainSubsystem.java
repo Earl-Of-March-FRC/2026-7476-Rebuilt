@@ -917,8 +917,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
       }
 
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraGlobalPose",
-          PoseHelpers.calculateGlobalCameraPose(new Pose3d(getPose()), currentCameraProfile));
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/FieldRelative;",
+          new Pose3d(getPose()).transformBy(robotToCamera));
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/RobotRelative",
+          robotToCamera);
 
       // Log targets estimated from robot
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetIds",

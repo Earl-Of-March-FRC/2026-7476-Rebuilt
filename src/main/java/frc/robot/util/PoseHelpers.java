@@ -150,16 +150,4 @@ public class PoseHelpers {
       return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToBumpCenter);
     }
   }
-
-  /**
-   * Calculate a camera's global position (its position relative to the field)
-   * 
-   * @param globalBotPose Current robot field-relative position
-   * @param cameraProfile Selected camera profile
-   * @return Field-relative camera pose
-   */
-  public static Pose3d calculateGlobalCameraPose(Pose3d globalBotPose, CameraProfile cameraProfile) {
-    return globalBotPose.transformBy(
-        cameraProfile.getRobotToCameraTransform());
-  }
 }
