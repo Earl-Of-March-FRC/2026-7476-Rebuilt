@@ -1,25 +1,25 @@
 package frc.robot.commands.climber;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystemInterface;
 
 public class RaiseClimberCmd extends Command {
-  private final ClimberSubsystem climber;
-  private final double speed;
+  private final ClimberSubsystemInterface climber;
+  private final double target;
 
-  public RaiseClimberCmd(ClimberSubsystem climber, double speed) {
+  public RaiseClimberCmd(ClimberSubsystemInterface climber, double target) {
     this.climber = climber;
-    this.speed = speed;
-    addRequirements(this.climber);
+    this.target = target;
+    addRequirements((edu.wpi.first.wpilibj2.command.Subsystem) climber);
   }
 
   @Override
   public void initialize() { // Go up and
-    this.climber.setClimberSpeed(this.speed);
+    this.climber.setTargetPosition(target);
   }
 
   @Override
   public void end(boolean interrupted) {
-    this.climber.stopClimbing();
+    // this.climber.stopClimbing();
   }
 }
