@@ -48,6 +48,7 @@ public record SwerveDriveProfile(
     MomentOfInertia robotMOI,
     GyroType gyro,
     CameraProfile[] cameraProfiles,
+    boolean visionUsesDynamicStandardDeviations,
     SwerveDriveProfileID profileId) {
 
   public static enum SwerveDriveProfileID {
@@ -89,6 +90,7 @@ public record SwerveDriveProfile(
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.NavX_MXP_SPI,
       new CameraProfile[] {},
+      false,
       SwerveDriveProfileID.COMP_BOT);
 
   /**
@@ -142,6 +144,7 @@ public record SwerveDriveProfile(
               Meters.of(0.3708), // z
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
+      false,
       SwerveDriveProfileID.SPONGE_BOT);
 
   /**
@@ -165,6 +168,7 @@ public record SwerveDriveProfile(
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.ADXRS450,
       new CameraProfile[] {},
+      true,
       SwerveDriveProfileID.OFF_SEASON_SWERVE);
 
   public String getName() {

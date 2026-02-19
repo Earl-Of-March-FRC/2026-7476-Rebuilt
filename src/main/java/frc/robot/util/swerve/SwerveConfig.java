@@ -76,6 +76,8 @@ public final class SwerveConfig {
   public static CameraProfile[] kCameraProfiles;
   public static int kNumCameras;
 
+  public static boolean kUseDynamicStandardDeviations;
+
   /**
    * Applies the given swerve drive profile to the robot's drive and module
    * constants.
@@ -162,6 +164,8 @@ public final class SwerveConfig {
     // Apply camera profiles from the swerve profile
     SwerveConfig.kCameraProfiles = profile.cameraProfiles();
     SwerveConfig.kNumCameras = profile.getNumCameras();
+
+    SwerveConfig.kUseDynamicStandardDeviations = profile.visionUsesDynamicStandardDeviations();
 
     // Create path planner robot config
     DCMotor gearbox = DCMotor.getNEO(1).withReduction(profile.driveReduction());
