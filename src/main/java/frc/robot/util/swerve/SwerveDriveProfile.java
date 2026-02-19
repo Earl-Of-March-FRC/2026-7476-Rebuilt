@@ -90,7 +90,7 @@ public record SwerveDriveProfile(
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.NavX_MXP_SPI,
       new CameraProfile[] {},
-      false,
+      true,
       SwerveDriveProfileID.COMP_BOT);
 
   /**
@@ -144,7 +144,7 @@ public record SwerveDriveProfile(
               Meters.of(0.3708), // z
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
-      false,
+      true,
       SwerveDriveProfileID.SPONGE_BOT);
 
   /**
