@@ -62,5 +62,8 @@
   "editor.formatOnSave": true,
   "editor.indentSize": 2,
   "editor.detectIndentation": false,
-  "java.dependency.enableDependencyCheckup": false
+"java.dependency.enableDependencyCheckup": false,
+"[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+}
 }
