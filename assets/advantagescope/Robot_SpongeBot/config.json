@@ -1,0 +1,103 @@
+{
+  "name": "Spongebot Squareframe",
+  "sourceUrl": "https://github.com/Earl-Of-March-FRC/2025-7476-Reefscape/tree/main/advantagescope/assets/Robot",
+  "disableSimplification": false,
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "y",
+      "degrees": 0
+    },
+    {
+      "axis": "z",
+      "degrees": 180
+    }
+  ],
+  "position": [
+    -0.082952,
+    0.495129,
+    -0.309479
+  ],
+  "cameras": [
+    {
+      "name": "camera1",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": 10
+        },
+        {
+          "axis": "z",
+          "degrees": 0
+        }
+      ],
+      "position": [
+        0.2921,
+        0.127,
+        0.4699
+      ],
+      "resolution": [
+        1280,
+        720
+      ],
+      "fov": 49
+    },
+    {
+      "name": "camera2",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 180
+        }
+      ],
+      "position": [
+        -0.2921,
+        0,
+        0.3175
+      ],
+      "resolution": [
+        1280,
+        720
+      ],
+      "fov": 59
+    }
+  ],
+  "components": [
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 180
+        }
+      ],
+      "zeroedPosition": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -48,6 +48,7 @@ public record SwerveDriveProfile(
     MomentOfInertia robotMOI,
     GyroType gyro,
     CameraProfile[] cameraProfiles,
+    boolean visionUsesDynamicStandardDeviations,
     SwerveDriveProfileID profileId) {
 
   public static enum SwerveDriveProfileID {
@@ -89,6 +90,7 @@ public record SwerveDriveProfile(
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.NavX_MXP_SPI,
       new CameraProfile[] {},
+      true,
       SwerveDriveProfileID.COMP_BOT);
 
   /**
@@ -117,7 +119,7 @@ public record SwerveDriveProfile(
           new CameraProfile(
               "Arducam_1",
               Radians.of(0.0), // roll
-              Radians.of(0.1301), // pitch
+              Radians.of(0.1301), // pitchs
               Radians.of(0.0), // yaw
               Meters.of(0.307), // x
               Meters.of(0.180), // y
@@ -142,6 +144,7 @@ public record SwerveDriveProfile(
               Meters.of(0.3708), // z
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
+      true,
       SwerveDriveProfileID.SPONGE_BOT);
 
   /**
@@ -155,8 +158,8 @@ public record SwerveDriveProfile(
       1, // placeholder wheel COF
       Amps.of(60), // Safe current limit for NEOs
       MetersPerSecond.of(4.8),
-      RadiansPerSecond.of(2 * Math.PI),
-      MetersPerSecondPerSecond.of(3),
+      RadiansPerSecond.of(4 * Math.PI),
+      MetersPerSecondPerSecond.of(4.8),
       Inches.of(24),
       Inches.of(24),
       Meters.of(0.75),
@@ -165,6 +168,7 @@ public record SwerveDriveProfile(
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.ADXRS450,
       new CameraProfile[] {},
+      true,
       SwerveDriveProfileID.OFF_SEASON_SWERVE);
 
   public String getName() {
