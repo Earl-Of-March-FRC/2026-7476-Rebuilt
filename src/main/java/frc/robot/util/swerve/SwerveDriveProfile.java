@@ -1,6 +1,7 @@
 package frc.robot.util.swerve;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Kilograms;
@@ -89,7 +90,35 @@ public record SwerveDriveProfile(
       Kilograms.of(74.088), // PathPlanner default, not accurate
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.NavX_MXP_SPI,
-      new CameraProfile[] {},
+      new CameraProfile[] {
+          new CameraProfile(
+              "Launcher",
+              Degrees.of(0.0), // roll
+              Degrees.of(17), // pitchs
+              Degrees.of(180.0), // yaw
+              Meters.of(-0.0006337554), // x
+              Meters.of(-0.2712041566), // y
+              Meters.of(0.4480096958), // z
+              VecBuilder.fill(0.3, 0.3, 0.3)),
+          new CameraProfile(
+              "Intake_Trench",
+              Degrees.of(0.0), // roll
+              Degrees.of(20), // pitch
+              Degrees.of(0), // yaw
+              Meters.of(0.3003719164), // x
+              Meters.of(0.2467180994), // y
+              Meters.of(0.4930501188), // z
+              VecBuilder.fill(0.9, 0.9, 0.9)),
+          new CameraProfile(
+              "Intake_Ground",
+              Degrees.of(0.0), // roll
+              Degrees.of(-2), // pitch
+              Degrees.of(0), // yaw
+              Meters.of(-0.300912657), // x
+              Meters.of(0.2467181248), // y
+              Meters.of(0.4930501188), // z
+              VecBuilder.fill(0.5, 0.5, 0.5))
+      },
       true,
       SwerveDriveProfileID.COMP_BOT);
 
