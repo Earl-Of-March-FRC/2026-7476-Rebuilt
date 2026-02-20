@@ -136,19 +136,32 @@ public class DriveLockedHeadingAndYCmd extends Command {
   }
 
   /**
-   * Calculates and updates the target heading to the nearest increment.
+   * Calculates and updates the target heading to the nearest acute angle
+   * relative to the current quadrant.
    */
   private void updateTargetHeading() {
     double currentAngleRadians = driveSub.getPose().getRotation().getRadians();
-    double nearestAngle = driveSub.getNearestTargetAngle(lockedAngle, true).getRadians();
+    double acuteAngleRadians = lockedAngle.getRadians();
 
-    // Create the target heading from the nearest angle
-    targetHeading = new Rotation2d(nearestAngle);
+    // Find which 90-degree quadrant we're in
+    int quadrant = (int) Math.floor((currentAngleRadians + Math.PI) / (Math.PI / 2));
+
+    // Calculate base angle for the quadrant (0, π/2, π, -π/2)
+    double baseAngle = (quadrant * Math.PI / 2) - Math.PI;
+
+    // Apply acute angle: alternate between adding and subtracting based on quadrant
+    double targetAngleRadians = baseAngle
+        + ((quadrant % 2 == 0) ? acuteAngleRadians : (Math.PI / 2 - acuteAngleRadians));
+
+    // Create the target heading from the calculated angle
+    targetHeading = new Rotation2d(targetAngleRadians);
 
     // Set the target heading for the robot to maintain
     driveSub.setTargetHeading(targetHeading);
+
     Logger.recordOutput("Drivetrain/RestrictedMode/CurrentAngle", Math.toDegrees(currentAngleRadians));
-    Logger.recordOutput("Drivetrain/RestrictedMode/TargetAngle", Math.toDegrees(nearestAngle));
+    Logger.recordOutput("Drivetrain/RestrictedMode/TargetAngle", Math.toDegrees(targetAngleRadians));
+    Logger.recordOutput("Drivetrain/RestrictedMode/Quadrant", quadrant);
   }
 
   @Override

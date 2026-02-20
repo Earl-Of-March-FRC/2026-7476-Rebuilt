@@ -163,7 +163,7 @@ public final class Constants {
     public static final double kPIDHeadingControllerD = 0.15;
     public static final double kPIDHeadingControllerTolerance = 2.0;
     public static final Angle kBumpHeadingRestriction = Degrees.of(45);
-    public static final Angle kTrenchHeadingRestriction = Degrees.of(180);
+    public static final Angle kTrenchHeadingRestriction = Degrees.of(0);
     public static final Angle kRecalibrateThreshold = Degrees.of(30);
 
     // Parameteres for restricted mode radial controller
@@ -427,6 +427,8 @@ public final class Constants {
 
     public static final Distance kEdgeToTrenchCenter = Inches.of(26.22);
     public static final Distance kEdgeToBumpCenter = Inches.of(104.34);
+    // Cross slightly offset from the center of the bump
+    public static final Distance kEdgeToBumpCrossLine = kEdgeToBumpCenter.minus(Inches.of(4));
     public static final Distance kBumpWidth = Inches.of(47.00);
 
     // Distance from field edge to middle of hub
@@ -472,21 +474,21 @@ public final class Constants {
     // kBumpPathWaypoints[i] and kBumpPathWaypoints[i + 4] are always opposite
     public static final Translation2d[] kBumpPathWaypoints = new Translation2d[] {
         new Translation2d(kCrossAllianceWaypointX.in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Blue Depot
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Blue Depot
         new Translation2d(kCrossAllianceWaypointX.in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Blue Outpost
+            kEdgeToBumpCrossLine.in(Meters)), // Blue Outpost
         new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Red Depot
+            kEdgeToBumpCrossLine.in(Meters)), // Red Depot
         new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Red Outpost
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Red Outpost
         new Translation2d(kCrossNeutralWaypointX.in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Blue Depot
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Neutral Blue Depot
         new Translation2d(kCrossNeutralWaypointX.in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Neutral Blue Outpost
+            kEdgeToBumpCrossLine.in(Meters)), // Neutral Blue Outpost
         new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Neutral Red Depot
+            kEdgeToBumpCrossLine.in(Meters)), // Neutral Red Depot
         new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Red Outpost
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Neutral Red Outpost
     };
   }
 }
