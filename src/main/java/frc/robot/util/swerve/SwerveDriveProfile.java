@@ -105,9 +105,9 @@ public record SwerveDriveProfile(
       (45.0 * 22) / (13 * 15),
       1, // placeholder wheel COF
       Amps.of(60), // Safe current limit for NEOs
-      MetersPerSecond.of(4.8),
+      MetersPerSecond.of(3),
       RadiansPerSecond.of(2 * Math.PI),
-      MetersPerSecondPerSecond.of(3),
+      MetersPerSecondPerSecond.of(2.5),
       Inches.of(24),
       Inches.of(24),
       Meters.of(0.75),
