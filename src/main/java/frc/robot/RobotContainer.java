@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
 import frc.robot.subsystems.Drivetrain.GyroNavX;
@@ -11,9 +12,14 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.indexer.IndexerSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.launcher.SparkLauncherSubsystem;
+import frc.robot.subsystems.launcher.TalonFXLauncherSubsystem;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -26,16 +32,20 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt.*;
 
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.IntakeConstants;
+import frc.robot.Constants.LauncherConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
@@ -52,9 +62,20 @@ import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.commands.intake.IntakeCmd;
+import frc.robot.commands.intake.PlowCmd;
+import frc.robot.commands.launcher.LauncherPIDCmd;
+
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
+  public final IntakeSubsystem intakeSub;
+  public final SparkLauncherSubsystem sparkLauncherSub;
+  public final TalonFXLauncherSubsystem talonFXLauncherSub;
+  public final IndexerSubsystem indexerSub;
+  public final ClimberSubsystem ClimberSub;
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -65,12 +86,24 @@ public class RobotContainer {
     // Get profile from Elastic dashboard selector
     SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
     SwerveConfig.applyProfile(activeProfile);
-    // SwerveDriveProfile activeProfile = SwerveProfiles.COMP_BOT;
+    // src/main/java/frc/robot/util/swerve/SwerveConfig.java
+    // package frc.robot.util.swerve;
+
     // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
     // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
-
-    if (Robot.isReal()) {
+    // see ye
+    if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
+      intakeSub = new IntakeSubsystem(
+          new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
+      sparkLauncherSub = new SparkLauncherSubsystem(null); // set when we have more information
+      talonFXLauncherSub = new TalonFXLauncherSubsystem(null); // set when we have more information
+
+      indexerSub = new IndexerSubsystem(null);
+      ClimberSub = new ClimberSubsystem(null);
+
+      new LauncherPIDCmd(sparkLauncherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
+      // launcher pid interface
 
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
@@ -90,12 +123,19 @@ public class RobotContainer {
               SwerveConfig.kBackRightTurningCanId,
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
-    } else {
+    } else { // If the robot is simulated, make simulated subs :P
       final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(Configs.Simulation.drivetrainConfig,
           SimulationConstants.kStartingPose);
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
+      intakeSub = new IntakeSubsystem(
+          new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless));
+      sparkLauncherSub = new SparkLauncherSubsystem(new SparkMax(0, null));
+
+      talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(0));
+      indexerSub = new IndexerSubsystem(new SparkMax(0, null));
+      ClimberSub = new ClimberSubsystem(new SparkMax(0, null));
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
           new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(
@@ -146,6 +186,12 @@ public class RobotContainer {
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
+
+    // Binding for Plow (Button 5 is usually Left Bumper)
+    driverController.button(5).whileTrue(new IntakeCmd(intakeSub, IntakeConstants.kPlowSpeed));
+
+    // Binding for Intake (Button 6 is usually Right Bumper)
+    driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
 
     driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
@@ -223,6 +269,7 @@ public class RobotContainer {
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
+
   }
 
   /**
@@ -234,5 +281,7 @@ public class RobotContainer {
     Command selectedAuto = autoChooser.get();
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
+
   }
+
 }

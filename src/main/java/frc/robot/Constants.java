@@ -3,6 +3,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meter;
@@ -10,6 +11,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Milliseconds;
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
@@ -25,6 +27,9 @@ import org.ironmaple.simulation.drivesims.GyroSimulation;
 import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
+
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.ClosedLoopSlot;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -42,9 +47,13 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -110,6 +119,27 @@ public final class Constants {
 
   public static final class NeoMotorConstants {
     public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(5676.0 / 60.0);
+  }
+
+  public static final class LauncherConstants {
+    public static final Distance kLaunchRadius = Meters.of(2.0);
+    public static final Time kBallAirTime = Seconds.of(0.5);
+
+    public static final AngularVelocity kVelocityLowRPM = RPM.of(0);
+    // TODO COME BACK TO THIS TO CHANGE THE MAX!
+    public static final AngularVelocity kVelocityHighRPM = RPM.of(0); // Fill in actual value
+
+    public static final Current kSmartCurrentLimit = Amps.of(40);
+
+    public static final double kPIDLauncherControllerP = 0;
+    public static final double kPIDLauncherControllerI = 0;
+    public static final double kPIDLauncherControllerD = 0;
+
+    public static final double kOutputRangeMin = -1.0;
+    public static final double kOutputRangeMax = 1.0;
+
+    public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
+    public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
   }
 
   public static final class DriveConstants {
@@ -193,13 +223,108 @@ public final class Constants {
 
   }
 
-  public static final class LauncherConstants {
+  public static final class AutoConstants {
+    public static final LinearVelocity kMaxSpeed = MetersPerSecond.of(2.0);
+    public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(2 * Math.PI);
 
-    public static final Distance kLaunchRadius = Meters.of(2.0); // TEST VALUE Distance from
-                                                                 // center of robot to
-                                                                 // launch point
-    public static final Time kBallAirTime = Seconds.of(0.5); // Estimated time for ball to reach target, used to
-    // leadshots
+    public static final double kMaxSpeedMetersPerSecond = kMaxSpeed.in(MetersPerSecond);
+    public static final double kMaxAccelerationMetersPerSecondSquared = 3.0;
+    public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI;
+    public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI;
+
+    public static final double kPTranslationController = 1.5;
+    public static final double kITranslationController = 0.75;
+    public static final double kDTranslationController = 0.25;
+
+    public static final double kPThetaController = 1.0;
+    public static final double kIThetaController = 0.0;
+    public static final double kDThetaController = 0.0;
+
+    // AlignTowerCmd tolerances
+    public static final Distance kAlignTranslationTolerance = Meters.of(0.05);
+    public static final Angle kAlignRotationTolerance = Radians.of(Math.toRadians(2.0));
+
+    // public static final class EncoderAutoDriveConstants {
+    // public static final double kLeaveZoneMeters = 0.5; // Distance to travel
+    // public static final double kLeaveZoneVelocity = 0.5; // Velocity (Meters/S)
+    // to leave zone at
+    // }
+
+    // // Constraint for the motion profiled robot angle controller
+    // public static final TrapezoidProfile.Constraints kThetaControllerConstraints
+    // = new TrapezoidProfile.Constraints(
+    // kMaxAngularSpeedRadiansPerSecond,
+    // kMaxAngularAccelerationRadiansPerSecondSquared);
+
+    // public static final Pose2d kLaunchPoseBlue = new Pose2d(new
+    // Translation2d(7.475, 5.37),
+    // Rotation2d.fromDegrees(180));
+    // public static final Pose2d kLaunchPoseRed = new Pose2d(new
+    // Translation2d(10.075, 2.68), new Rotation2d(0));
+
+  }
+
+  public static final class IntakeConstants {
+    public static final int kIntakeMotorCanId = 10;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    public static final double kMotorReduction = 1.0 / 10.0;
+
+    // Conversion factors (RPM → rad/s)
+    public static final double kPositionConversionFactor = 2 * Math.PI;
+    public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
+
+    public static final AngularVelocity kMaxVelocity = RPM.of(60);
+
+    public static final double kIntakeSpeed = 0.5;
+    public static final double kPlowSpeed = 0.7;
+  }
+
+  public static final class IndexerConstants {
+    public static final int kMotorCanId = 11;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    /**
+     * Multiplier at which decides whether + or - inputs move the algae towards the
+     * launcher.
+     */
+    public static final double kDirectionConstant = -1.0;
+
+    public static final double kMotorReduction = 1.0;
+    public static final double kWheelDiameterMeters = 0.17;
+
+    // // Ports for sensors. TBD
+    // public static final int kIntakeSensorChannel = 0;
+    // public static final int kLauncherSensorChannel = 1;
+  }
+
+  public static final class ClimberConstants {
+    public static final int kMotorId = 5;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    public static final Distance kStowPosition = Inches.of(0);
+    public static final Distance kClimbPosition = Inches.of(32);
+
+    public static final double kMotorRaiseSpeed = 0.67;
+    public static final double kMotorHookSpeed = 0.67;
+
+    public static final double kTicksToInchesConversion = 0.67;
+
+    public static final Distance kMinLength = Inches.of(-1);
+    public static final Distance kMaxLength = Inches.of(33);
+
+    public static final Current kSmartCurrentLimit = Amps.of(40);
+
+    public static final double kOutputRangeMin = -1.0;
+    public static final double kOutputRangeMax = 1.0;
+
+    // TalonFX-specific
+    public static final Current kStatorCurrentLimit = Amps.of(40);
+    public static final double kSensorToMechanismRatio = 1.0; // Update with real gear ratio
+
+    public static final double kPIDClimberControllerP = 0.1;
+    public static final double kPIDClimberControllerI = 0.0;
+    public static final double kPIDClimberControllerD = 0.0;
   }
 
   public static final class GameModelConstants {
@@ -318,6 +443,10 @@ public final class Constants {
 
     public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
     public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
+    // public static final Translation2d kBlueHubPose = new Translation2d(4.625594,
+    // kHubY.in(Meters));
+    // public static final Translation2d kRedHubPose = new Translation2d(11.915394,
+    // 4.034663);
 
     public static final Distance kCrossAllianceWaypointX = kAllianceZoneXLength
         .minus(SwerveConfig.kBumperWidth.div(2.0));
