@@ -125,26 +125,51 @@ public final class Constants {
 
   public static final class LauncherConstants {
 
-    public static final int kMotorCanSparkId = 20;
+    public static final int kLeaderCanSparkId = 9;
+    public static final int kFollowerCanSparkId = 10;
     public static final int kMotorCanTalonId = 21;
     public static final MotorType kMotorType = MotorType.kBrushless;
     public static final Distance kLaunchRadius = Meters.of(2.0);
     public static final Time kBallAirTime = Seconds.of(0.5);
+
+    public static final double kMotorReduction = 45.0 / 56.0;
 
     public static final AngularVelocity kVelocityLowRPM = RPM.of(0);
     public static final AngularVelocity kVelocityHighRPM = RPM.of(0); // Fill in actual value
 
     public static final Current kSmartCurrentLimit = Amps.of(40);
 
-    public static final double kPIDLauncherControllerP = 0;
+    // TODO: retune now that the motor reduction has changed
+    public static final double kPIDLauncherControllerP = 8e-5;
     public static final double kPIDLauncherControllerI = 0;
     public static final double kPIDLauncherControllerD = 0;
+    public static final double kPIDLauncherControllerFF = 7e-4;
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
+
+    public static final SparkMaxConfig kLeaderConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
+
+    static {
+      kLeaderConfig
+          .idleMode(IdleMode.kCoast)
+          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kLeaderConfig.encoder
+          // Use wheel RPM
+          .velocityConversionFactor(kMotorReduction);
+      kLeaderConfig.closedLoop
+          .pid(kPIDLauncherControllerP, kPIDLauncherControllerI,
+              kPIDLauncherControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax).feedForward
+          .kV(kPIDLauncherControllerFF);
+
+      kFollowerConfig.smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kFollowerConfig.follow(kLeaderCanSparkId, true);
+    }
   }
 
   public static final class DriveConstants {
@@ -270,7 +295,7 @@ public final class Constants {
   }
 
   public static final class IntakeConstants {
-    public static final int kIntakeMotorCanId = 10;
+    public static final int kIntakeMotorCanId = 12;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final double kMotorReduction = 1.0 / 10.0;
@@ -300,7 +325,7 @@ public final class Constants {
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     /**
-     * Multiplier that decides whether + or - inputs move the algae towards the
+     * Multiplier that decides whether + or - inputs move the fuel towards the
      * launcher.
      */
     public static final double kDirectionConstant = -1.0;

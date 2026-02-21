@@ -85,7 +85,9 @@ public class RobotContainer {
       gyro = SwerveConfig.gyro;
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
-      sparkLauncherSub = new SparkLauncherSubsystem(null); // set when we have more information
+      sparkLauncherSub = new SparkLauncherSubsystem(
+          new SparkMax(Constants.LauncherConstants.kLeaderCanSparkId, Constants.LauncherConstants.kMotorType),
+          new SparkMax(Constants.LauncherConstants.kFollowerCanSparkId, Constants.LauncherConstants.kMotorType));
       talonFXLauncherSub = new TalonFXLauncherSubsystem(null); // set when we have more information
 
       // set when we have more info
@@ -130,7 +132,8 @@ public class RobotContainer {
       talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(Constants.LauncherConstants.kMotorCanTalonId));
 
       sparkLauncherSub = new SparkLauncherSubsystem(
-          new SparkMax(Constants.LauncherConstants.kMotorCanSparkId, Constants.LauncherConstants.kMotorType));
+          new SparkMax(Constants.LauncherConstants.kLeaderCanSparkId, Constants.LauncherConstants.kMotorType),
+          new SparkMax(Constants.LauncherConstants.kFollowerCanSparkId, Constants.LauncherConstants.kMotorType));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kMotorCanId, Constants.IndexerConstants.kMotorType));
       climberSub = new ClimberSubsystem(

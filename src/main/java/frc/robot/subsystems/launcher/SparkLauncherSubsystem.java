@@ -19,7 +19,8 @@ import frc.robot.Constants.LauncherConstants;
 
 public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPIDInterface {
 
-  private final SparkMax launcherSpark;
+  private final SparkMax leaderSparkMax;
+  private final SparkMax followerSparkMax;
   private final RelativeEncoder launcherEncoder;
   private final SparkClosedLoopController launcherClosedLoopController;
 
@@ -28,20 +29,16 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
   private double velocityOffsetRPM = 0.0;
   private boolean useHighVelocities = true;
 
-  public SparkLauncherSubsystem(SparkMax launcherSpark) {
-    this.launcherSpark = launcherSpark;
-    this.launcherEncoder = launcherSpark.getEncoder();
-    this.launcherClosedLoopController = launcherSpark.getClosedLoopController();
+  public SparkLauncherSubsystem(SparkMax leaderSparkMax, SparkMax followerSparkMax) {
+    this.leaderSparkMax = leaderSparkMax;
+    this.followerSparkMax = followerSparkMax;
+    this.launcherEncoder = leaderSparkMax.getEncoder();
+    this.launcherClosedLoopController = leaderSparkMax.getClosedLoopController();
 
-    SparkMaxConfig config = new SparkMaxConfig();
-    config.smartCurrentLimit((int) LauncherConstants.kSmartCurrentLimit.magnitude());
-    config.closedLoop
-        .p(LauncherConstants.kPIDLauncherControllerP)
-        .i(LauncherConstants.kPIDLauncherControllerI)
-        .d(LauncherConstants.kPIDLauncherControllerD)
-        .outputRange(LauncherConstants.kOutputRangeMin, LauncherConstants.kOutputRangeMax);
-
-    launcherSpark.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    leaderSparkMax.configure(LauncherConstants.kLeaderConfig, ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters);
+    followerSparkMax.configure(LauncherConstants.kFollowerConfig, ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters);
   }
 
   @Override
@@ -51,8 +48,8 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
     Logger.recordOutput("Launcher/Measured/VelocityRadPerSec", measuredVelocity.in(RadiansPerSecond));
     Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffsetRPM);
     Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
-    Logger.recordOutput("Launcher/Measured/AppliedOutput", launcherSpark.getAppliedOutput());
-    Logger.recordOutput("Launcher/Measured/CurrentAmps", launcherSpark.getOutputCurrent());
+    Logger.recordOutput("Launcher/Measured/AppliedOutput", leaderSparkMax.getAppliedOutput());
+    Logger.recordOutput("Launcher/Measured/CurrentAmps", leaderSparkMax.getOutputCurrent());
   }
 
   /** @return Measured velocity in RPM. */
@@ -62,9 +59,9 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
   }
 
   /** Runs the launcher at a raw percent output. Use for open-loop only. */
-  public void setVelocity(double percent) {
+  public void setPercent(double percent) {
     Logger.recordOutput("Launcher/Setpoint/PercentOutput", percent);
-    launcherSpark.set(percent);
+    leaderSparkMax.set(percent);
   }
 
   /**
@@ -110,7 +107,7 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
 
   @Override
   public void stop() {
-    setVelocity(0);
+    setPercent(0);
   }
 
 }
