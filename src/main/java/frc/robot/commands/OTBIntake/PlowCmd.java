@@ -1,16 +1,16 @@
-package frc.robot.commands.intake;
+package frc.robot.commands.OTBIntake;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 
 public class PlowCmd extends Command {
 
-  private final IntakeSubsystem intake;
+  private final OTBIntakeSubsystem intake;
   private final double speed;
 
-  public PlowCmd(IntakeSubsystem intake, double speed) {
+  public PlowCmd(OTBIntakeSubsystem intake, double speed) {
     this.intake = intake;
     this.speed = speed;
     addRequirements(this.intake);
@@ -32,7 +32,7 @@ public class PlowCmd extends Command {
   public void end(boolean interrupted) {
     intake.stopIntake();
     Logger.recordOutput("PlowCmd/Status", interrupted ? "Interrupted" : "Completed");
-    
+
   }
 
   @Override

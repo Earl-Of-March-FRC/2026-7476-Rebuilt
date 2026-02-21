@@ -1,4 +1,4 @@
-package frc.robot.subsystems.launcher;
+package frc.robot.subsystems.launcherAndIntake;
 
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -17,7 +17,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LauncherConstants;
 
-public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPIDInterface {
+public class SparkLauncherAndIntakeSubsystem extends SubsystemBase implements LauncherPIDInterface {
 
   private final SparkMax leaderSparkMax;
   private final SparkMax followerSparkMax;
@@ -29,7 +29,7 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
   private double velocityOffsetRPM = 0.0;
   private boolean useHighVelocities = true;
 
-  public SparkLauncherSubsystem(SparkMax leaderSparkMax, SparkMax followerSparkMax) {
+  public SparkLauncherAndIntakeSubsystem(SparkMax leaderSparkMax, SparkMax followerSparkMax) {
     this.leaderSparkMax = leaderSparkMax;
     this.followerSparkMax = followerSparkMax;
     this.launcherEncoder = leaderSparkMax.getEncoder();
@@ -109,5 +109,4 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
   public void stop() {
     setPercent(0);
   }
-
 }

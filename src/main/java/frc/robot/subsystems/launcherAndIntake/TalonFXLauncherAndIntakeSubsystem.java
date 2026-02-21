@@ -1,4 +1,4 @@
-package frc.robot.subsystems.launcher;
+package frc.robot.subsystems.launcherAndIntake;
 
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -14,7 +14,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LauncherConstants;
 
-public class TalonFXLauncherSubsystem extends SubsystemBase implements LauncherPIDInterface {
+public class TalonFXLauncherAndIntakeSubsystem extends SubsystemBase implements LauncherPIDInterface {
 
   private final TalonFX launcherTalon;
   // Reusable control request object — avoids allocating a new one every loop
@@ -26,7 +26,7 @@ public class TalonFXLauncherSubsystem extends SubsystemBase implements LauncherP
 
   private boolean useHighVelocities = true;
 
-  public TalonFXLauncherSubsystem(TalonFX launcherTalon) {
+  public TalonFXLauncherAndIntakeSubsystem(TalonFX launcherTalon) {
     this.launcherTalon = launcherTalon;
 
     TalonFXConfiguration config = new TalonFXConfiguration();

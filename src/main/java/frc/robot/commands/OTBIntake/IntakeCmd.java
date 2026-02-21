@@ -1,16 +1,16 @@
-package frc.robot.commands.intake;
+package frc.robot.commands.OTBIntake;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 
 public class IntakeCmd extends Command {
 
-  private final IntakeSubsystem intake;
+  private final OTBIntakeSubsystem intake;
   private final double speed;
 
-  public IntakeCmd(IntakeSubsystem subsystem, double speed) {
+  public IntakeCmd(OTBIntakeSubsystem subsystem, double speed) {
     this.intake = subsystem;
     this.speed = speed;
     addRequirements(this.intake);

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intake;
+package frc.robot.subsystems.OTBIntake;
 
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -14,12 +14,12 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IntakeConstants;
 
-public class IntakeSubsystem extends SubsystemBase {
+public class OTBIntakeSubsystem extends SubsystemBase {
 
   private final SparkMax intakeSpark;
   private final RelativeEncoder intakeEncoder;
 
-  public IntakeSubsystem(SparkMax intakeSpark) {
+  public OTBIntakeSubsystem(SparkMax intakeSpark) {
     this.intakeSpark = intakeSpark;
     this.intakeEncoder = intakeSpark.getEncoder();
     intakeSpark.configure(IntakeConstants.kSparkMaxConfig,

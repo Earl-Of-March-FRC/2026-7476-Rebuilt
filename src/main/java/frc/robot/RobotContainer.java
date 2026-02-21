@@ -11,10 +11,10 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
-import frc.robot.subsystems.intake.IntakeSubsystem;
-import frc.robot.subsystems.launcher.SparkLauncherSubsystem;
-import frc.robot.subsystems.launcher.TalonFXLauncherSubsystem;
+import frc.robot.subsystems.launcherAndIntake.SparkLauncherAndIntakeSubsystem;
+import frc.robot.subsystems.launcherAndIntake.TalonFXLauncherAndIntakeSubsystem;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
@@ -44,6 +44,8 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.commands.OTBIntake.IntakeCmd;
+import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
@@ -56,18 +58,16 @@ import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
-import frc.robot.commands.intake.IntakeCmd;
-import frc.robot.commands.intake.PlowCmd;
-import frc.robot.commands.launcher.LauncherPIDCmd;
+import frc.robot.commands.launcherAndIntake.LauncherPIDCmd;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
-  public final IntakeSubsystem intakeSub;
-  public final SparkLauncherSubsystem sparkLauncherSub;
-  public final TalonFXLauncherSubsystem talonFXLauncherSub;
+  public final OTBIntakeSubsystem intakeSub;
+  public final SparkLauncherAndIntakeSubsystem sparkLauncherAndIntakeSub;
+  public final TalonFXLauncherAndIntakeSubsystem talonFXLauncherAndIntakeSub;
   public final IndexerSubsystem indexerSub;
   public final ClimberSubsystem climberSub;
   public final Gyro gyro;
@@ -83,18 +83,18 @@ public class RobotContainer {
 
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
-      intakeSub = new IntakeSubsystem(
+      intakeSub = new OTBIntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
-      sparkLauncherSub = new SparkLauncherSubsystem(
+      sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
           new SparkMax(Constants.LauncherConstants.kLeaderCanSparkId, Constants.LauncherConstants.kMotorType),
           new SparkMax(Constants.LauncherConstants.kFollowerCanSparkId, Constants.LauncherConstants.kMotorType));
-      talonFXLauncherSub = new TalonFXLauncherSubsystem(null); // set when we have more information
+      talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(null); // set when we have more information
 
       // set when we have more info
       indexerSub = new IndexerSubsystem(null);
       climberSub = new ClimberSubsystem(null);
 
-      new LauncherPIDCmd(sparkLauncherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
+      new LauncherPIDCmd(sparkLauncherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       // launcher pid interface
 
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
@@ -126,12 +126,13 @@ public class RobotContainer {
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
-      intakeSub = new IntakeSubsystem(
+      intakeSub = new OTBIntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, IntakeConstants.kMotorType));
 
-      talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(Constants.LauncherConstants.kMotorCanTalonId));
+      talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(
+          new TalonFX(Constants.LauncherConstants.kMotorCanTalonId));
 
-      sparkLauncherSub = new SparkLauncherSubsystem(
+      sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
           new SparkMax(Constants.LauncherConstants.kLeaderCanSparkId, Constants.LauncherConstants.kMotorType),
           new SparkMax(Constants.LauncherConstants.kFollowerCanSparkId, Constants.LauncherConstants.kMotorType));
       indexerSub = new IndexerSubsystem(
