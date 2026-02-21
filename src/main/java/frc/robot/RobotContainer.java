@@ -134,11 +134,11 @@ public class RobotContainer {
 
       intakeSub = new IntakeSubsystem(
           new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless));
-      sparkLauncherSub = new SparkLauncherSubsystem(new SparkMax(0, null));
+      sparkLauncherSub = new SparkLauncherSubsystem(new SparkMax(20, MotorType.kBrushless));
 
       talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(0));
-      indexerSub = new IndexerSubsystem(new SparkMax(0, null));
-      ClimberSub = new ClimberSubsystem(new SparkMax(0, null));
+      indexerSub = new IndexerSubsystem(new SparkMax(21, MotorType.kBrushless));
+      ClimberSub = new ClimberSubsystem(new SparkMax(22, MotorType.kBrushless));
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
           new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(
@@ -278,9 +278,6 @@ public class RobotContainer {
     autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
-
-    autoChooser.addOption("Full Auto", PathGenerator.fullAuto());
-    autoChooser.addOption("charles", AutoBuilder.followPath(AutoConstants.charles));
 
     autoChooser.addOption("Closest Path",
         Commands.defer(

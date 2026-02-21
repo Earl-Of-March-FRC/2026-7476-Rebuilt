@@ -415,10 +415,11 @@ public class PathGenerator {
 
   }
 
-  public static SequentialCommandGroup fullAuto() {
-    return new SequentialCommandGroup(
-        AutoBuilder.followPath(AutoConstants.trenchLeftAuto),
-        AutoBuilder.pathfindThenFollowPath(AutoConstants.trenchLeftClimbPath, AutoConstants.L1ClimbConstraints));
-  }
+  // public static SequentialCommandGroup fullAuto() {
+  // return new SequentialCommandGroup(
+  // AutoBuilder.followPath(AutoConstants.trenchLeftAuto),
+  // AutoBuilder.pathfindThenFollowPath(AutoConstants.trenchLeftClimbPath,
+  // AutoConstants.L1ClimbConstraints));
+  // }
 
 }
