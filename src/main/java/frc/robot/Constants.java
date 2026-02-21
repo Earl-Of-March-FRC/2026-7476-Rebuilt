@@ -24,11 +24,14 @@ import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
+import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.ClosedLoopSlot;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -126,7 +129,6 @@ public final class Constants {
     public static final Time kBallAirTime = Seconds.of(0.5);
 
     public static final AngularVelocity kVelocityLowRPM = RPM.of(0);
-    // TODO COME BACK TO THIS TO CHANGE THE MAX!
     public static final AngularVelocity kVelocityHighRPM = RPM.of(0); // Fill in actual value
 
     public static final Current kSmartCurrentLimit = Amps.of(40);
@@ -278,6 +280,16 @@ public final class Constants {
 
     public static final double kIntakeSpeed = 0.5;
     public static final double kPlowSpeed = 0.7;
+
+    public static final SparkMaxConfig kSparkMaxConfig = new SparkMaxConfig();
+    static {
+      kSparkMaxConfig
+          .idleMode(IdleMode.kCoast)
+          .smartCurrentLimit(30);
+      kSparkMaxConfig.encoder
+          .positionConversionFactor(kPositionConversionFactor * kMotorReduction)
+          .velocityConversionFactor(kVelocityConversionFactor * kMotorReduction);
+    }
   }
 
   public static final class IndexerConstants {
@@ -285,7 +297,7 @@ public final class Constants {
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     /**
-     * Multiplier at which decides whether + or - inputs move the algae towards the
+     * Multiplier that decides whether + or - inputs move the algae towards the
      * launcher.
      */
     public static final double kDirectionConstant = -1.0;
@@ -293,9 +305,13 @@ public final class Constants {
     public static final double kMotorReduction = 1.0;
     public static final double kWheelDiameterMeters = 0.17;
 
-    // // Ports for sensors. TBD
-    // public static final int kIntakeSensorChannel = 0;
-    // public static final int kLauncherSensorChannel = 1;
+    public static final SparkMaxConfig kSparkMaxConfig = new SparkMaxConfig();
+    static {
+      kSparkMaxConfig.idleMode(IdleMode.kBrake);
+      kSparkMaxConfig.smartCurrentLimit(40);
+      kSparkMaxConfig.encoder
+          .velocityConversionFactor(kWheelDiameterMeters * Math.PI / kMotorReduction / 60);
+    }
   }
 
   public static final class ClimberConstants {
@@ -342,8 +358,7 @@ public final class Constants {
   }
 
   public static final class SimulationConstants {
-    public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro(); // Simulated instance of our
-    // gyro
+    public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro();
     public static final DCMotor kSimulatedDrivingMotor = DCMotor.getNEO(1);
     public static final DCMotor kSimulatedTurningMotor = DCMotor.getNeo550(1);
     public static final double kSimulatedCoefficentOfFriction = COTS.WHEELS.COLSONS.cof;
@@ -352,11 +367,9 @@ public final class Constants {
     public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromRotations(Math.PI));
 
     // Whether the bump should have defined collision
-    // Maple sim provides 2d simulation, and cannot simulate the bump accurately,
-    // it can be either a wall or non-existant
     public static final boolean kSimBumpCollision = false;
 
-    // Default vision properties
+    // Simulation camera properties
     public static final File kSimVisionConfigurationFile = new File(Filesystem.getDeployDirectory().getPath(),
         "simulated_camera_settings\\arducam_OV9281_calibration_1280x720.json");
     public static final double kSimVisionFPS = 20;
@@ -380,6 +393,16 @@ public final class Constants {
         -0.0017587106009926158,
         -0.0014671022483263552,
         0.049742166267499596, 0, 0, 0);
+
+    // Drivetrain simulation configs (moved here from Configs.Simulation)
+    public static final SwerveModuleSimulationConfig kSwerveModuleSimConfig = COTS.ofMAXSwerve(
+        kSimulatedDrivingMotor,
+        kSimulatedTurningMotor,
+        kSimulatedCoefficentOfFriction,
+        kGearRatioLevel);
+
+    // NOTE: drivetrainConfig depends on SwerveConfig which is set at runtime,
+    // so it is built lazily in RobotContainer rather than here as a static final.
   }
 
   public static final class PhotonConstants {

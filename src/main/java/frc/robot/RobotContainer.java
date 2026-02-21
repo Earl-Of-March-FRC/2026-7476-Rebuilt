@@ -7,7 +7,6 @@ package frc.robot;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
-import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
@@ -17,27 +16,22 @@ import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.launcher.SparkLauncherSubsystem;
 import frc.robot.subsystems.launcher.TalonFXLauncherSubsystem;
 
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
-
-import java.util.Set;
-import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.Set;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt.*;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -86,12 +80,7 @@ public class RobotContainer {
     // Get profile from Elastic dashboard selector
     SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
     SwerveConfig.applyProfile(activeProfile);
-    // src/main/java/frc/robot/util/swerve/SwerveConfig.java
-    // package frc.robot.util.swerve;
 
-    // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
-    // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
-    // see ye
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
       intakeSub = new IntakeSubsystem(
@@ -124,7 +113,12 @@ public class RobotContainer {
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
     } else { // If the robot is simulated, make simulated subs :P
-      final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(Configs.Simulation.drivetrainConfig,
+      final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(
+          DriveTrainSimulationConfig.Default()
+              .withGyro(SimulationConstants.kSimulatedGyro)
+              .withSwerveModule(SimulationConstants.kSwerveModuleSimConfig)
+              .withTrackLengthTrackWidth(SwerveConfig.kWheelBase, SwerveConfig.kTrackWidth)
+              .withBumperSize(SwerveConfig.kBumperLength, SwerveConfig.kBumperWidth),
           SimulationConstants.kStartingPose);
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());

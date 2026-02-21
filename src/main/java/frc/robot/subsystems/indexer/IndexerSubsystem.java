@@ -14,7 +14,6 @@ import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Configs.IndexerConfigs;
 import frc.robot.Constants.IndexerConstants;
 
 public class IndexerSubsystem extends SubsystemBase {
@@ -25,7 +24,7 @@ public class IndexerSubsystem extends SubsystemBase {
   public IndexerSubsystem(SparkMax indexerSpark) {
     this.indexerSpark = indexerSpark;
     this.encoder = indexerSpark.getEncoder();
-    indexerSpark.configure(IndexerConfigs.indexerConfig,
+    indexerSpark.configure(IndexerConstants.kSparkMaxConfig,
         ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
   }
