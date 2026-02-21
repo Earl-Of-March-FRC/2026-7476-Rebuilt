@@ -12,7 +12,7 @@ import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Configs.IntakeConfigs;
+import frc.robot.Constants.IntakeConstants;
 
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -22,7 +22,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public IntakeSubsystem(SparkMax intakeSpark) {
     this.intakeSpark = intakeSpark;
     this.intakeEncoder = intakeSpark.getEncoder();
-    intakeSpark.configure(IntakeConfigs.intakeConfig,
+    intakeSpark.configure(IntakeConstants.kSparkMaxConfig,
         ResetMode.kNoResetSafeParameters,
         PersistMode.kPersistParameters);
   }

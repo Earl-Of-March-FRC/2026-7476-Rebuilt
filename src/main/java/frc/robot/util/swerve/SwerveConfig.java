@@ -7,8 +7,6 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import java.util.logging.Logger;
-
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathConstraints;
@@ -22,7 +20,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
 import frc.robot.subsystems.Drivetrain.Gyro;
@@ -33,17 +30,15 @@ import frc.robot.util.vision.CameraProfile;
 
 public final class SwerveConfig {
 
-  // Driving Parameters - Note that these are not the maximum capable speeds of
-  // the robot, rather the allowed maximum speeds
-  public static SwerveDriveProfileID profileId; // 1: Comp 2: SpongeBot 3: OffSeasonSwerve
+  public static SwerveDriveProfileID profileId;
 
   public static Gyro gyro;
 
   public static RobotConfig kRobotConfig;
 
-  public static LinearVelocity kMaxWheelSpeed; // Max possible speed for wheel
-  public static LinearVelocity kMaxSpeed; // Default 4.8 - Max net robot translational speed
-  public static AngularVelocity kMaxAngularSpeed; // radians per second
+  public static LinearVelocity kMaxWheelSpeed;
+  public static LinearVelocity kMaxSpeed;
+  public static AngularVelocity kMaxAngularSpeed;
   public static LinearAcceleration kMaxAcceleration;
 
   public static LinearVelocity kMaxSpeedPathfinding;
@@ -52,15 +47,12 @@ public final class SwerveConfig {
 
   public static PathConstraints kPathfindingConstraints;
 
-  // Chassis configuration
   public static Distance kTrackWidth;
-  // Distance between centers of right and left wheels on robot
-  public static Distance kWheelBase;;
-  // Distance between front and back wheels on robot
+  public static Distance kWheelBase;
   public static SwerveDriveKinematics kDriveKinematics;
 
-  public static Distance kBumperLength; // Front to back
-  public static Distance kBumperWidth; // Left to right
+  public static Distance kBumperLength;
+  public static Distance kBumperWidth;
 
   public static int kFrontLeftDrivingCanId;
   public static int kFrontRightDrivingCanId;
@@ -72,7 +64,18 @@ public final class SwerveConfig {
   public static int kBackLeftTurningCanId;
   public static int kBackRightTurningCanId;
 
-  // Camera configuration - populated from the profile
+  // Swerve module drive motor PID (populated from active profile)
+  public static double kDrivingP;
+  public static double kDrivingI;
+  public static double kDrivingD;
+  public static int kDriveSmartCurrentLimit;
+
+  // Swerve module turn motor PID (populated from active profile)
+  public static double kTurningP;
+  public static double kTurningI;
+  public static double kTurningD;
+  public static int kTurnSmartCurrentLimit;
+
   public static CameraProfile[] kCameraProfiles;
   public static int kNumCameras;
 
@@ -80,17 +83,14 @@ public final class SwerveConfig {
 
   /**
    * Applies the given swerve drive profile to the robot's drive and module
-   * constants.
-   * This updates all relevant static fields in DriveConstants and
-   * ModuleConstants, including camera profiles.
-   * 
+   * constants. This updates all relevant static fields including camera profiles
+   * and swerve module PID values.
+   *
    * @param profile The swerve drive profile to apply
    */
   public static void applyProfile(SwerveDriveProfile profile) {
-    // Apply profile ID
     SwerveConfig.profileId = profile.profileId();
 
-    // Apply new Gyro
     SwerveConfig.gyro = switch (profile.gyro()) {
       case ADXRS450 -> new GyroADXRS450();
       case NavX_MXP_SPI -> new GyroNavX(NavXComType.kMXP_SPI);
@@ -98,26 +98,22 @@ public final class SwerveConfig {
       default -> new GyroNavX(NavXComType.kMXP_SPI);
     };
 
-    // Apply speed and dimension constants
     SwerveConfig.kMaxSpeed = profile.maxSpeedMps();
     SwerveConfig.kTrackWidth = profile.trackWidthMeters();
     SwerveConfig.kWheelBase = profile.wheelBaseMeters();
     SwerveConfig.kBumperLength = profile.bumperLength();
     SwerveConfig.kBumperWidth = profile.bumperWidth();
 
-    // Apply wheel constants
     ModuleConstants.kWheelDiameter = profile.wheelDiameterMeters();
     ModuleConstants.kWheelCircumference = profile.wheelDiameterMeters().times(Math.PI);
     ModuleConstants.kDrivingMotorReduction = profile.driveReduction();
 
-    // Calculate drive wheel free speed
     ModuleConstants.kDriveWheelFreeSpeed = RotationsPerSecond.of(
         ModuleConstants.kDrivingMotorFreeSpeed
             .times(profile.wheelDiameterMeters().times(Math.PI))
             .div(profile.driveReduction())
             .in(MultUnit.combine(RotationsPerSecond, Meters)));
 
-    // Apply robot limits for teleop and auto
     SwerveConfig.kMaxWheelSpeed = profile.maxSpeedMps();
     SwerveConfig.kMaxAngularSpeed = profile.maxAngularSpeedRps();
     SwerveConfig.kMaxAcceleration = profile.maxLinearAccelerationRps2();
@@ -134,7 +130,6 @@ public final class SwerveConfig {
         SwerveConfig.kMaxAngularSpeedPathfinding.in(RadiansPerSecond),
         DriveConstants.kMaxAngularAccelerationPathfinding.in(RadiansPerSecondPerSecond));
 
-    // Configure kinematics
     double halfWheelBase = profile.wheelBaseMeters().div(2).in(Meters);
     double halfTrackWidth = profile.trackWidthMeters().div(2).in(Meters);
 
@@ -147,7 +142,6 @@ public final class SwerveConfig {
 
     SwerveConfig.kDriveKinematics = new SwerveDriveKinematics(moduleTranslations);
 
-    // Apply CAN IDs
     SwerveConfig.kFrontLeftDrivingCanId = profile.driveCanIds()[0];
     SwerveConfig.kFrontRightDrivingCanId = profile.driveCanIds()[1];
     SwerveConfig.kBackLeftDrivingCanId = profile.driveCanIds()[2];
@@ -158,33 +152,39 @@ public final class SwerveConfig {
     SwerveConfig.kBackLeftTurningCanId = profile.turnCanIds()[2];
     SwerveConfig.kBackRightTurningCanId = profile.turnCanIds()[3];
 
-    // Calculate driving feed-forward for simulation
     ModuleConstants.kDrivingFFSim = 1.0 / ModuleConstants.kDriveWheelFreeSpeed.in(RotationsPerSecond);
 
-    // Apply camera profiles from the swerve profile
+    // Apply swerve module PID values from profile
+    SwerveConfig.kDrivingP = profile.drivingP();
+    SwerveConfig.kDrivingI = profile.drivingI();
+    SwerveConfig.kDrivingD = profile.drivingD();
+    SwerveConfig.kDriveSmartCurrentLimit = profile.driveSmartCurrentLimit();
+
+    SwerveConfig.kTurningP = profile.turningP();
+    SwerveConfig.kTurningI = profile.turningI();
+    SwerveConfig.kTurningD = profile.turningD();
+    SwerveConfig.kTurnSmartCurrentLimit = profile.turnSmartCurrentLimit();
+
     SwerveConfig.kCameraProfiles = profile.cameraProfiles();
     SwerveConfig.kNumCameras = profile.getNumCameras();
 
     SwerveConfig.kUseDynamicStandardDeviations = profile.visionUsesDynamicStandardDeviations();
 
-    // Create path planner robot config
     DCMotor gearbox = DCMotor.getNEO(1).withReduction(profile.driveReduction());
     ModuleConfig moduleConfig = new ModuleConfig(
         profile.wheelDiameterMeters(),
         profile.maxSpeedMps(),
         profile.wheelCof(),
         gearbox,
-        profile.driveCurrentLimitAmps(), // Safe limit for NEOs
-        1); // 1 drive motor per module (universal for swerve)
+        profile.driveCurrentLimitAmps(),
+        1);
 
     SwerveConfig.kRobotConfig = new RobotConfig(profile.robotMass(), profile.robotMOI(), moduleConfig,
         moduleTranslations);
   }
 
-  // Private constructor to prevent instantiation
   private SwerveConfig() {
     throw new UnsupportedOperationException(
         this.getClass().getName() + " is a utility class and cannot be instantiated");
   }
-
 }
