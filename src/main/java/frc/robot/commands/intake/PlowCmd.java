@@ -32,6 +32,7 @@ public class PlowCmd extends Command {
   public void end(boolean interrupted) {
     intake.stopIntake();
     Logger.recordOutput("PlowCmd/Status", interrupted ? "Interrupted" : "Completed");
+    
   }
 
   @Override
