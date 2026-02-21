@@ -264,6 +264,59 @@ public final class Constants {
     // public static final Pose2d kLaunchPoseRed = new Pose2d(new
     // Translation2d(10.075, 2.68), new Rotation2d(0));
 
+    public static final PathConstraints L1ClimbConstraints = new PathConstraints(
+        3.0, 4.0,
+        3 * Math.PI, 4 * Math.PI);
+
+    public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
+
+    public static PathPlannerPath bumpLeftClimbPath;
+    public static PathPlannerPath bumpRightClimbPath;
+    public static PathPlannerPath trenchLeftClimbPath;
+    public static PathPlannerPath trenchRightClimbPath;
+    public static PathPlannerPath trenchLeftAuto;
+    public static PathPlannerPath charles;
+
+    static {
+      try {
+        bumpLeftClimbPath = PathPlannerPath.fromPathFile("Bump - Left(L1 Climb)");
+        bumpRightClimbPath = PathPlannerPath.fromPathFile("Bump - Right(L1 Climb)");
+        trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
+        trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
+        trenchLeftAuto = PathPlannerPath.fromPathFile("trench left auto");
+        charles = PathPlannerPath.fromPathFile("charles");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
+    public static final PathPlannerPath[] climbPaths = { bumpLeftClimbPath, bumpRightClimbPath, trenchLeftClimbPath,
+        trenchRightClimbPath };
+
+    public static final Translation2d bumpLeftStartPoint = bumpLeftClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d bumpRightStartPoint = bumpRightClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d trenchLeftStartPoint = trenchLeftClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d trenchRightStartPoint = trenchRightClimbPath.getAllPathPoints().get(0).position;
+
+    public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
+        new Translation2d(Meters.of(bumpLeftStartPoint.getX()).in(Meters), // Blue Alliance
+            Meters.of(bumpLeftStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(bumpRightStartPoint.getX()).in(Meters),
+            Meters.of(bumpRightStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(trenchLeftStartPoint.getX()).in(Meters),
+            Meters.of(trenchLeftStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(trenchRightStartPoint.getX()).in(Meters),
+            Meters.of(trenchRightStartPoint.getY()).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpLeftStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(bumpLeftStartPoint.getY())).in(Meters)), // Red Alliance
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpRightStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(bumpRightStartPoint.getY())).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchLeftStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(trenchLeftStartPoint.getY())).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchRightStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
+    };
+
   }
 
   public static final class IntakeConstants {
@@ -546,58 +599,6 @@ public final class Constants {
             kEdgeToBumpCrossLine.in(Meters)), // Neutral Red Depot
         new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
             kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Neutral Red Outpost
-    };
-  }
-
-  public static class AutoConstants {
-
-    public static final PathConstraints L1ClimbConstraints = new PathConstraints(
-        3.0, 4.0,
-        3 * Math.PI, 4 * Math.PI);
-
-    public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
-
-    public static PathPlannerPath bumpLeftClimbPath;
-    public static PathPlannerPath bumpRightClimbPath;
-    public static PathPlannerPath trenchLeftClimbPath;
-    public static PathPlannerPath trenchRightClimbPath;
-
-    static {
-      try {
-        bumpLeftClimbPath = PathPlannerPath.fromPathFile("Bump - Left(L1 Climb)");
-        bumpRightClimbPath = PathPlannerPath.fromPathFile("Bump - Right(L1 Climb)");
-        trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
-        trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-
-    public static final PathPlannerPath[] climbPaths = { bumpLeftClimbPath, bumpRightClimbPath, trenchLeftClimbPath,
-        trenchRightClimbPath };
-
-    public static final Translation2d bumpLeftStartPoint = bumpLeftClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d bumpRightStartPoint = bumpRightClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d trenchLeftStartPoint = trenchLeftClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d trenchRightStartPoint = trenchRightClimbPath.getAllPathPoints().get(0).position;
-
-    public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
-        new Translation2d(Meters.of(bumpLeftStartPoint.getX()).in(Meters), // Blue Alliance
-            Meters.of(bumpLeftStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(bumpRightStartPoint.getX()).in(Meters),
-            Meters.of(bumpRightStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(trenchLeftStartPoint.getX()).in(Meters),
-            Meters.of(trenchLeftStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(trenchRightStartPoint.getX()).in(Meters),
-            Meters.of(trenchRightStartPoint.getY()).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpLeftStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(bumpLeftStartPoint.getY())).in(Meters)), // Red Alliance
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpRightStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(bumpRightStartPoint.getY())).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchLeftStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(trenchLeftStartPoint.getY())).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchRightStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
     };
   }
 

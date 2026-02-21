@@ -842,8 +842,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
     isFieldRelativeDesired = !isFieldRelativeDesired;
   }
 
+  public boolean isRadialControllerAtSetpoint() {
+    return radialController.atSetpoint();
+  }
+
   @Override
   public void periodic() {
+
     // Check gyro connection with debouncing
     if (!gyroDebouncer.calculate(gyro.isConnected())) {
       gyroDisconnected = true;
@@ -1018,6 +1023,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Gyro Connected", !gyroDisconnected);
     SmartDashboard.putBoolean("Is Field Relative Desired", isFieldRelativeDesired);
     SmartDashboard.putBoolean("Is Field Relative Real", isFieldRelativeReal);
+
+    SmartDashboard.putBoolean("Is Radial PID at setpoint", isRadialControllerAtSetpoint());
   }
 
   @Override

@@ -34,6 +34,7 @@ import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebui
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
@@ -153,6 +154,13 @@ public class RobotContainer {
 
     PathGenerator.setDrivetrain(driveSub);
 
+    NamedCommands.registerCommand("Drive to launching arc", new DriveAtLaunchingRangeCmd(
+        driveSub,
+        () -> 0.0,
+        () -> 0.0,
+        Constants.LauncherConstants.kLaunchRadius,
+        true).until(() -> driveSub.isRadialControllerAtSetpoint()));
+
     configureBindings();
     configureAutos();
   }
@@ -270,6 +278,9 @@ public class RobotContainer {
     autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
+
+    autoChooser.addOption("Full Auto", PathGenerator.fullAuto());
+    autoChooser.addOption("charles", AutoBuilder.followPath(AutoConstants.charles));
 
     autoChooser.addOption("Closest Path",
         Commands.defer(

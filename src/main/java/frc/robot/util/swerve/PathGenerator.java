@@ -414,4 +414,11 @@ public class PathGenerator {
         .andThen(AutoBuilder.followPath(path));
 
   }
+
+  public static SequentialCommandGroup fullAuto() {
+    return new SequentialCommandGroup(
+        AutoBuilder.followPath(AutoConstants.trenchLeftAuto),
+        AutoBuilder.pathfindThenFollowPath(AutoConstants.trenchLeftClimbPath, AutoConstants.L1ClimbConstraints));
+  }
+
 }

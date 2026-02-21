@@ -5,6 +5,18 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "Drive to launching arc"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "Bump - Left(L1 Climb)"
@@ -13,7 +25,7 @@
       ]
     }
   },
-  "resetOdom": true,
-  "folder": "L1 CLimb - Autos",
+  "resetOdom": false,
+  "folder": null,
   "choreoAuto": false
 }
