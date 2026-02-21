@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
@@ -68,6 +69,8 @@ import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.Constants.FieldConstants;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.util.vision.CameraProfile;
 import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
@@ -81,6 +84,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private boolean isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
   private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
+  private final double kMetersFromHubHigh = 0;
+  private final double kMetersFromHubLow = 0;
 
   // Low pas filters for velocity logging
   private final LinearFilter vxFilter = LinearFilter.singlePoleIIR(0.15, 0.02);
@@ -97,6 +102,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   // Current pose of the robot
   private Pose2d robotPose = new Pose2d();
   private Pose2d visionlessPose = new Pose2d();
+
+  public Supplier<Boolean> isUsingHighVelocities = () -> true;
 
   // Simulation
   private SwerveDriveSimulation simulatedSwerveDrive = null;
@@ -1024,4 +1031,28 @@ public class DrivetrainSubsystem extends SubsystemBase {
     }
 
   }
+
+  public Pose2d getHubTargetPose(double targetAngle) {
+    System.out.println("getHubTargetPose");
+    Pose2d currentPose = getPose();
+
+    // Y coordinate stays the same as current pose
+    double targetY = currentPose.getY();
+
+    double metersFromHub = isUsingHighVelocities.get() ? kMetersFromHubHigh
+        : kMetersFromHubLow;
+
+    // Calculate target translation
+    // (0,0) is ALWAYS on the blue alliance side
+
+    // double targetX = (double) FieldConstants.kHubXBlue + metersFromHub;
+    // casting error later
+    double targetX = 0;
+    // Calculate target rotation based on side of field that robot is currently on
+    // double targetRadians = targetAngle;
+
+    return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));
+    // fix casting error later
+  }
+
 }
