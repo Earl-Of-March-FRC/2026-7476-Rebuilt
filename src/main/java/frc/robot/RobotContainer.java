@@ -19,6 +19,7 @@ import frc.robot.subsystems.launcher.TalonFXLauncherSubsystem;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -101,7 +102,7 @@ public class RobotContainer {
       indexerSub = new IndexerSubsystem(null);
       ClimberSub = new ClimberSubsystem(null);
 
-      new LauncherPIDCmd(sparkLauncherSub, () -> SmartDashboard.getNumber("RPM", 0));
+      new LauncherPIDCmd(sparkLauncherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       // launcher pid interface
 
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {

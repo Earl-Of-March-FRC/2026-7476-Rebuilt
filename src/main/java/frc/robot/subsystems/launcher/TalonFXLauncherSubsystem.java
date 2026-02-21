@@ -1,8 +1,8 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems.launcher;
+
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -10,70 +10,72 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
-//import frc.robot.Configs.LauncherConfigs;
-
 import frc.robot.Constants.LauncherConstants;
 
-// LauncherSubsystem is a subsystem that represents the flywheel motor, which spins and launches out balls ("Fuel")
-
-// Structurally, this is similar to SpongeBot's code in Launcher.java on main branch.
-// It does not have a front or back motor, it's a single motor.
 public class TalonFXLauncherSubsystem extends SubsystemBase implements LauncherPIDInterface {
-  private final TalonFX launcherTalon;
 
-  // Control requests are "reusable" objects to save memory
+  private final TalonFX launcherTalon;
+  // Reusable control request object — avoids allocating a new one every loop
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
 
-  private final TalonFXConfiguration launcherSparkMaxConfig = new TalonFXConfiguration();
+  // Accumulated offset added on top of every setpoint (compensates for battery
+  // sag)
+  private AngularVelocity velocityOffset = RPM.of(0);
 
-  // TODO: learn what this means because I just copied this from the last year's
-  // launcher code
-
-  // Raw baseline for what should be the velocity.
-  private double referenceVelocityWithoutOffset = 0.0;
-
-  // In case battery declines, this number will be added to accomodate the drop in
-  // distance.
-  private double velocityOffsetRPM = 0.0;
-
-  // Used to toggle kSlotHigh and kSlotLow (these are high and low constants for
-  // PID)
   private boolean useHighVelocities = true;
 
   public TalonFXLauncherSubsystem(TalonFX launcherTalon) {
-
-    // Connect with the hardware
     this.launcherTalon = launcherTalon;
-    TalonFXConfiguration launcherTalonConfig = new TalonFXConfiguration();
-    launcherTalonConfig.Slot0.kP = LauncherConstants.kLauncherP; // Realistic starting P for TalonFX
-    launcherTalonConfig.Slot0.kI = LauncherConstants.kLauncherI;
-    launcherTalonConfig.Slot0.kD = LauncherConstants.kLauncherD;
 
-    launcherTalonConfig.CurrentLimits.StatorCurrentLimit = 40;
-    launcherTalonConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    SmartDashboard.putNumber("LauncherLowVelocity",
-        LauncherConstants.kVelocityLowRPM * LauncherConstants.kVelocityConversionFactor);
+    TalonFXConfiguration config = new TalonFXConfiguration();
+    config.Slot0.kP = LauncherConstants.kPIDLauncherControllerP;
+    config.Slot0.kI = LauncherConstants.kPIDLauncherControllerI;
+    config.Slot0.kD = LauncherConstants.kPIDLauncherControllerD;
+    config.CurrentLimits.StatorCurrentLimit = LauncherConstants.kSmartCurrentLimit.magnitude();
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
 
+    launcherTalon.getConfigurator().apply(config);
   }
 
   @Override
-  public double getVelocity() {
-    return launcherTalon.getVelocity().getValueAsDouble() * 60.0;
+  public void periodic() {
+    // TalonFX reports velocity in rotations/sec natively
+    AngularVelocity measuredVelocity = RotationsPerSecond.of(
+        launcherTalon.getVelocity().getValueAsDouble());
+
+    Logger.recordOutput("Launcher/Measured/VelocityRPM", measuredVelocity.in(RPM));
+    Logger.recordOutput("Launcher/Measured/VelocityRadPerSec", measuredVelocity.in(RadiansPerSecond));
+    Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffset.in(RPM));
+    Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
+    Logger.recordOutput("Launcher/Measured/StatorCurrentAmps",
+        launcherTalon.getStatorCurrent().getValueAsDouble());
+    Logger.recordOutput("Launcher/Measured/AppliedDutyCycle",
+        launcherTalon.getDutyCycle().getValueAsDouble());
   }
 
+  /** @return Measured velocity in RPM. */
+  @Override
+  public AngularVelocity getVelocity() {
+    return RotationsPerSecond.of(launcherTalon.getVelocity().getValueAsDouble());
+  }
+
+  /** Runs the launcher at a raw percent output. Use for open-loop only. */
   public void setVelocity(double percent) {
-    Logger.recordOutput("Launcher/Setpoint/PercentVelocity", percent);
+    Logger.recordOutput("Launcher/Setpoint/PercentOutput", percent);
     launcherTalon.set(percent);
   }
 
-  public void offsetReferenceVelocity(double offsetRPM) {
-    setReferenceVelocity(velocityOffsetRPM + offsetRPM);
-    Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffsetRPM + offsetRPM);
-    Logger.recordOutput("Launcher/VelocityOffsetRadPerSec",
-        velocityOffsetRPM * LauncherConstants.kVelocityConversionFactor);
+  /**
+   * Adjusts the accumulated velocity offset by the given amount.
+   *
+   * @param offsetRPM Amount to add to the offset, in RPM.
+   */
+  public void offsetReferenceVelocity(AngularVelocity offset) {
+    velocityOffset = RPM.of(velocityOffset.in(RPM) + offset.in(RPM));
+    Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffset.in(RPM));
+    Logger.recordOutput("Launcher/VelocityOffsetRadPerSec", velocityOffset.in(RadiansPerSecond));
   }
 
   public void setUseHighVelocities(boolean use) {
@@ -82,21 +84,19 @@ public class TalonFXLauncherSubsystem extends SubsystemBase implements LauncherP
   }
 
   /**
-   * Sets the reference velocity for the launcher closed loop controller.
+   * Sets the closed-loop velocity setpoint, applying the accumulated offset.
    *
-   * @param referenceVelocity The reference velocity, in RPM.
+   * @param rpm Target velocity in RPM (before offset).
    */
-
   @Override
-  public void setReferenceVelocity(double rpm) {
-    double referenceVelocityWithOffset = rpm;
-    Logger.recordOutput("Launcher/Setpoint/Velocity", rpm);
-    Logger.recordOutput("Launcher/Setpoint/VelocityWithOffset", referenceVelocityWithOffset);
+  public void setReferenceVelocity(AngularVelocity velocity) {
+    AngularVelocity withOffset = RPM.of(velocity.in(RPM) + velocityOffset.in(RPM));
 
-    double rps = rpm / 60.0;
+    Logger.recordOutput("Launcher/Setpoint/TargetRPM", velocity.in(RPM));
+    Logger.recordOutput("Launcher/Setpoint/TargetRPMWithOffset", withOffset.in(RPM));
+    Logger.recordOutput("Launcher/Setpoint/TargetRPS", withOffset.in(RotationsPerSecond));
 
-    // We send a "Control Request" to the motor
-    launcherTalon.setControl(velocityRequest.withVelocity(rps));
+    launcherTalon.setControl(velocityRequest.withVelocity(withOffset.in(RotationsPerSecond)));
   }
 
   public boolean isUsingHighVelocities() {
@@ -106,7 +106,5 @@ public class TalonFXLauncherSubsystem extends SubsystemBase implements LauncherP
   @Override
   public void stop() {
     setVelocity(0);
-    // important
   }
-
 }

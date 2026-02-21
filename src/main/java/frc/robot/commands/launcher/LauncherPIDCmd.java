@@ -1,44 +1,52 @@
 package frc.robot.commands.launcher;
 
-import java.util.function.DoubleSupplier;
+import static edu.wpi.first.units.Units.RPM;
 
+import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.Logger;
+
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.subsystems.launcher.LauncherPIDInterface;
 
 public class LauncherPIDCmd extends Command {
 
-  private final LauncherPIDInterface launcher; // This is an interface, but you can still access methods in the class
-                                               // that implements it.
-  private final DoubleSupplier targetRPM;
+  private final LauncherPIDInterface launcher;
+  private final Supplier<AngularVelocity> targetVelocity;
 
-  public LauncherPIDCmd(LauncherPIDInterface launcher, DoubleSupplier targetRPM) {
+  public LauncherPIDCmd(LauncherPIDInterface launcher, Supplier<AngularVelocity> targetVelocity) {
     this.launcher = launcher;
-    this.targetRPM = targetRPM;
+    this.targetVelocity = targetVelocity;
 
-    if (launcher instanceof edu.wpi.first.wpilibj2.command.Subsystem) {
-      addRequirements((edu.wpi.first.wpilibj2.command.Subsystem) launcher); // Cast the type and set the launcher motor
-                                                                            // as a dependency
+    if (launcher instanceof Subsystem subsystem) {
+      addRequirements(subsystem);
     }
   }
 
-  public LauncherPIDCmd(LauncherPIDInterface launcher, double rpm) {
-    this(launcher, () -> rpm);
+  /** Convenience constructor for a fixed RPM setpoint. */
+  public LauncherPIDCmd(LauncherPIDInterface launcher, AngularVelocity velocity) {
+    this(launcher, () -> velocity);
   }
 
   @Override
   public void initialize() {
-    System.out.println("Launcher PID CMD started");
+    Logger.recordOutput("LauncherPIDCmd/Status", "Initialized");
   }
 
   @Override
   public void execute() {
-    launcher.setReferenceVelocity(targetRPM.getAsDouble());
+    AngularVelocity target = targetVelocity.get();
+    launcher.setReferenceVelocity(target);
+    Logger.recordOutput("LauncherPIDCmd/TargetRPM", target.in(RPM));
+    Logger.recordOutput("LauncherPIDCmd/MeasuredRPM", launcher.getVelocity().in(RPM));
   }
 
   @Override
   public void end(boolean interrupted) {
     launcher.stop();
-    System.out.println("Launcher PID CMD ended");
+    Logger.recordOutput("LauncherPIDCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override

@@ -1,13 +1,20 @@
 package frc.robot.subsystems.launcher;
 
-// The purpose of this interface is to maintain flexibility in terms of motor choice. 
-// As proposed by Wilson, this should be able to let any type motor use this.
+import edu.wpi.first.units.measure.AngularVelocity;
 
 public interface LauncherPIDInterface {
-  void setReferenceVelocity(double rpm);
 
-  double getVelocity();
+  /**
+   * Sets the closed-loop velocity setpoint.
+   *
+   * @param velocity Target velocity as an AngularVelocity (e.g. RPM.of(3000)).
+   */
+  void setReferenceVelocity(AngularVelocity velocity);
+
+  /**
+   * @return Current measured velocity as an AngularVelocity.
+   */
+  AngularVelocity getVelocity();
 
   void stop();
-
 }

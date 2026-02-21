@@ -3,6 +3,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meter;
@@ -10,6 +11,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Milliseconds;
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
@@ -51,6 +53,7 @@ import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -119,29 +122,24 @@ public final class Constants {
   }
 
   public static final class LauncherConstants {
+    public static final Distance kLaunchRadius = Meters.of(2.0);
+    public static final Time kBallAirTime = Seconds.of(0.5);
 
-    public static final Distance kLaunchRadius = Meters.of(2.0); // TEST VALUE Distance from
-                                                                 // center of robot to
-                                                                 // launch point
-    public static final Time kBallAirTime = Seconds.of(0.5); // Estimated time for ball to reach target, used to
-    // leadshots
-    public static final double kVelocityLowRPM = 0;
-    public static final double kVelocityConversionFactor = 0;
+    public static final AngularVelocity kVelocityLowRPM = RPM.of(0);
+    // TODO COME BACK TO THIS TO CHANGE THE MAX!
+    public static final AngularVelocity kVelocityHighRPM = RPM.of(0); // Fill in actual value
 
-    public static final int kLauncherSmartCurrentLimit = 40; // in Amps
+    public static final Current kSmartCurrentLimit = Amps.of(40);
 
-    public static final double kLauncherP = 0;
-    public static final double kLauncherI = 0;
-    public static final double kLauncherD = 0;
+    public static final double kPIDLauncherControllerP = 0;
+    public static final double kPIDLauncherControllerI = 0;
+    public static final double kPIDLauncherControllerD = 0;
 
-    /*
-    
-    
-    */
-    // High velocity threshold
+    public static final double kOutputRangeMin = -1.0;
+    public static final double kOutputRangeMax = 1.0;
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
-    public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot0;
+    public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
   }
 
   public static final class DriveConstants {
@@ -225,23 +223,26 @@ public final class Constants {
 
   }
 
-  public static final class AutoConstants { // Copypasted from 2025 7476 Reefscape Constants.AutoConstants
-    // Auto Parameters - Note that these are not the maximum capable speeds of
-    // the robot, rather the allowed maximum speeds
+  public static final class AutoConstants {
+    public static final LinearVelocity kMaxSpeed = MetersPerSecond.of(2.0);
+    public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(2 * Math.PI);
 
-    // Swerve drive
-    public static final double kMaxSpeedMetersPerSecond = 2; // Default 4.8
-    public static final double kMaxAccelerationMetersPerSecondSquared = 3;
+    public static final double kMaxSpeedMetersPerSecond = kMaxSpeed.in(MetersPerSecond);
+    public static final double kMaxAccelerationMetersPerSecondSquared = 3.0;
     public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI;
     public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI;
-    public static final double kMaxAngularSpeed = 2 * Math.PI;
 
     public static final double kPTranslationController = 1.5;
-    public static final double kPThetaController = 1;
     public static final double kITranslationController = 0.75;
-    public static final double kIThetaController = 0;
     public static final double kDTranslationController = 0.25;
-    public static final double kDThetaController = 0;
+
+    public static final double kPThetaController = 1.0;
+    public static final double kIThetaController = 0.0;
+    public static final double kDThetaController = 0.0;
+
+    // AlignTowerCmd tolerances
+    public static final Distance kAlignTranslationTolerance = Meters.of(0.05);
+    public static final Angle kAlignRotationTolerance = Radians.of(Math.toRadians(2.0));
 
     // public static final class EncoderAutoDriveConstants {
     // public static final double kLeaveZoneMeters = 0.5; // Distance to travel
@@ -267,17 +268,15 @@ public final class Constants {
     public static final int kIntakeMotorCanId = 10;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final double kMotorReduction = 1 / 10.0;
+    public static final double kMotorReduction = 1.0 / 10.0;
 
-    public static final double kPositionConversionFactor = (2 * Math.PI); // Rotations to radians
-    public static final double kVelocityConversionFactor = (2 * Math.PI / 60); // RPM to radians/sec
+    // Conversion factors (RPM → rad/s)
+    public static final double kPositionConversionFactor = 2 * Math.PI;
+    public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
 
-    public static final double kMaxVelocity = 60; // Max velocity of intake in RPM, used as a reference velocity
+    public static final AngularVelocity kMaxVelocity = RPM.of(60);
 
-    // Percent output for intake rollers
     public static final double kIntakeSpeed = 0.5;
-
-    // Percent output for plow rollers
     public static final double kPlowSpeed = 0.7;
   }
 
@@ -300,27 +299,32 @@ public final class Constants {
   }
 
   public static final class ClimberConstants {
-
-    // TODO this was just copypased from IndexerConstants so I mean it's gonna be
-    // kinda cooked
     public static final int kMotorId = 5;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final double kClimberStowPositionInches = 0;
-    public static final double kClimberClimbPositionInches = 32;
-    public static final double kClimberMotorRaiseSpeed = 0.67;
-    public static final double kClimberMotorHookSpeed = 0.67;
+    public static final Distance kStowPosition = Inches.of(0);
+    public static final Distance kClimbPosition = Inches.of(32);
+
+    public static final double kMotorRaiseSpeed = 0.67;
+    public static final double kMotorHookSpeed = 0.67;
 
     public static final double kTicksToInchesConversion = 0.67;
 
-    public static final double kMinClimberLength = -1;
-    public static final double kMaxClimberLength = 33;
+    public static final Distance kMinLength = Inches.of(-1);
+    public static final Distance kMaxLength = Inches.of(33);
 
-    // TODO tune these
-    public static final double kP = 0.1;
-    public static final double kI = 0;
-    public static final double kD = 0;
+    public static final Current kSmartCurrentLimit = Amps.of(40);
 
+    public static final double kOutputRangeMin = -1.0;
+    public static final double kOutputRangeMax = 1.0;
+
+    // TalonFX-specific
+    public static final Current kStatorCurrentLimit = Amps.of(40);
+    public static final double kSensorToMechanismRatio = 1.0; // Update with real gear ratio
+
+    public static final double kPIDClimberControllerP = 0.1;
+    public static final double kPIDClimberControllerI = 0.0;
+    public static final double kPIDClimberControllerD = 0.0;
   }
 
   public static final class GameModelConstants {

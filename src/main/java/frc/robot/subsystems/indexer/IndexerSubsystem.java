@@ -1,57 +1,76 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems.indexer;
+
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Volts;
 
 import org.littletonrobotics.junction.Logger;
 
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkBase;
-import com.revrobotics.spark.SparkMax;
-import com.revrobotics.ResetMode;
 import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IndexerConfigs;
-import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.IndexerConstants;
 
 public class IndexerSubsystem extends SubsystemBase {
+
   private final SparkMax indexerSpark;
   private final RelativeEncoder encoder;
 
-  /** Creates a new Indexer. */
   public IndexerSubsystem(SparkMax indexerSpark) {
     this.indexerSpark = indexerSpark;
-
-    indexerSpark.configure(IndexerConfigs.indexerConfig, ResetMode.kResetSafeParameters,
+    this.encoder = indexerSpark.getEncoder();
+    indexerSpark.configure(IndexerConfigs.indexerConfig,
+        ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
-
-    // SparkBase.configure(SparkBaseConfig, ResetMode, PersistMode)
-    encoder = indexerSpark.getEncoder();
   }
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
+    AngularVelocity measuredVelocity = RPM.of(encoder.getVelocity());
+    Logger.recordOutput("Indexer/Measured/VelocityRPM", measuredVelocity.in(RPM));
+    Logger.recordOutput("Indexer/Measured/VelocityRadPerSec", measuredVelocity.in(RadiansPerSecond));
+    Logger.recordOutput("Indexer/Measured/AppliedOutput", indexerSpark.getAppliedOutput());
+    Logger.recordOutput("Indexer/Measured/CurrentAmps", indexerSpark.getOutputCurrent());
   }
 
+  /**
+   * Sets the indexer to a percent output, applying the direction constant.
+   *
+   * @param percent Output in range [-1.0, 1.0].
+   */
   public void setVelocity(double percent) {
-    Logger.recordOutput("Indexer/Setpoint/PercentVelocity", percent);
+    Logger.recordOutput("Indexer/Setpoint/PercentOutput", percent);
     indexerSpark.set(percent * IndexerConstants.kDirectionConstant);
-  };
+  }
 
+  /** @return Encoder velocity in RPM. */
   public double getVelocity() {
     return encoder.getVelocity();
   }
 
-  public void setVoltage(double voltage) {
-    Logger.recordOutput("Indexer/Setpoint/Voltage", voltage);
-    indexerSpark.setVoltage(voltage * IndexerConstants.kDirectionConstant);
-  };
+  /**
+   * Sets the indexer voltage, applying the direction constant.
+   *
+   * @param volts Target voltage.
+   */
+  public void setVoltage(double volts) {
+    Voltage voltage = Volts.of(volts);
+    Logger.recordOutput("Indexer/Setpoint/Volts", voltage.in(Volts));
+    indexerSpark.setVoltage(voltage.in(Volts) * IndexerConstants.kDirectionConstant);
+  }
 
-  public double getVoltage() {
+  /** @return Applied output as a fraction of bus voltage. */
+  public double getAppliedOutput() {
     return indexerSpark.getAppliedOutput();
+  }
+
+  public void stop() {
+    setVelocity(0);
   }
 }

@@ -1,98 +1,83 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems.launcher;
+
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.ClimberConstants;
-
-//import frc.robot.Configs.LauncherConfigs;
-
 import frc.robot.Constants.LauncherConstants;
 
-// LauncherSubsystem is a subsystem that represents the flywheel motor, which spins and launches out balls ("Fuel")
-
-// Structurally, this is similar to SpongeBot's code in Launcher.java on main branch.
-// It does not have a front or back motor, it's a single motor.
 public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPIDInterface {
+
   private final SparkMax launcherSpark;
   private final RelativeEncoder launcherEncoder;
   private final SparkClosedLoopController launcherClosedLoopController;
-  private final SparkMaxConfig launcherSparkMaxConfig = new SparkMaxConfig();
 
-  // TODO: learn what this means because I just copied this from the last year's
-  // launcher code
-
-  // Raw baseline for what should be the velocity.
-  private double referenceVelocityWithoutOffset = 0.0;
-
-  // In case battery declines, this number will be added to accomodate the drop in
-  // distance.
+  // Accumulated offset added on top of every setpoint (compensates for battery
+  // sag)
   private double velocityOffsetRPM = 0.0;
-
-  // Used to toggle kSlotHigh and kSlotLow (these are high and low constants for
-  // PID)
   private boolean useHighVelocities = true;
 
   public SparkLauncherSubsystem(SparkMax launcherSpark) {
-
-    // Connect with the hardware
     this.launcherSpark = launcherSpark;
     this.launcherEncoder = launcherSpark.getEncoder();
     this.launcherClosedLoopController = launcherSpark.getClosedLoopController();
 
-    launcherSparkMaxConfig.smartCurrentLimit(LauncherConstants.kLauncherSmartCurrentLimit); // Limit the amps
-    launcherSparkMaxConfig.closedLoop
-        .p(LauncherConstants.kLauncherP) // Returns the config with the p modification
-        .i(LauncherConstants.kLauncherI) // Returns the config with the i mod.
-        .d(LauncherConstants.kLauncherD) // Yeah.
-        .outputRange(-1, 1); // So that's why we're able to chain together stuff
+    SparkMaxConfig config = new SparkMaxConfig();
+    config.smartCurrentLimit((int) LauncherConstants.kSmartCurrentLimit.magnitude());
+    config.closedLoop
+        .p(LauncherConstants.kPIDLauncherControllerP)
+        .i(LauncherConstants.kPIDLauncherControllerI)
+        .d(LauncherConstants.kPIDLauncherControllerD)
+        .outputRange(LauncherConstants.kOutputRangeMin, LauncherConstants.kOutputRangeMax);
 
-    launcherSpark
-        .configure(launcherSparkMaxConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-
-    SmartDashboard.putNumber("LauncherLowVelocity",
-        LauncherConstants.kVelocityLowRPM * LauncherConstants.kVelocityConversionFactor);
-
+    launcherSpark.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   @Override
-  public void periodic() { // Will be used for logging for now.
-    // This method will be called once per scheduler run
-    SmartDashboard.putNumber("Vel", launcherEncoder.getVelocity());
+  public void periodic() {
+    AngularVelocity measuredVelocity = RPM.of(launcherEncoder.getVelocity());
+    Logger.recordOutput("Launcher/Measured/VelocityRPM", measuredVelocity.in(RPM));
+    Logger.recordOutput("Launcher/Measured/VelocityRadPerSec", measuredVelocity.in(RadiansPerSecond));
+    Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffsetRPM);
+    Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
+    Logger.recordOutput("Launcher/Measured/AppliedOutput", launcherSpark.getAppliedOutput());
+    Logger.recordOutput("Launcher/Measured/CurrentAmps", launcherSpark.getOutputCurrent());
   }
 
+  /** @return Measured velocity in RPM. */
   @Override
-  public double getVelocity() {
-    return launcherEncoder.getVelocity();
+  public AngularVelocity getVelocity() {
+    return RPM.of(launcherEncoder.getVelocity());
   }
 
+  /** Runs the launcher at a raw percent output. Use for open-loop only. */
   public void setVelocity(double percent) {
-    Logger.recordOutput("Launcher/Setpoint/PercentVelocity", percent);
+    Logger.recordOutput("Launcher/Setpoint/PercentOutput", percent);
     launcherSpark.set(percent);
   }
 
-  public void offsetReferenceVelocity(double offsetRPM) {
-    // Yes interface what will it be called
-    // It will be LauncherPIDCmd.java, and it implements whatever. You go research
-    // it and shi
-    // IT's gonna be in the launcher, II will commit the code
-    velocityOffsetRPM += offsetRPM;
-    Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffsetRPM);
-    Logger.recordOutput("Launcher/VelocityOffsetRadPerSec",
-        velocityOffsetRPM * LauncherConstants.kVelocityConversionFactor);
+  /**
+   * Adjusts the accumulated velocity offset by the given amount.
+   * Call repeatedly to nudge the setpoint up/down during a match.
+   *
+   * @param offsetRPM Amount to add to the offset, in RPM.
+   */
+  public void offsetReferenceVelocity(AngularVelocity offset) {
+    velocityOffsetRPM += offset.in(RPM);
+    AngularVelocity total = RPM.of(velocityOffsetRPM);
+    Logger.recordOutput("Launcher/VelocityOffsetRPM", total.in(RPM));
+    Logger.recordOutput("Launcher/VelocityOffsetRadPerSec", total.in(RadiansPerSecond));
   }
 
   public void setUseHighVelocities(boolean use) {
@@ -101,19 +86,22 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
   }
 
   /**
-   * Sets the reference velocity for the launcher closed loop controller.
+   * Sets the closed-loop velocity setpoint, applying the accumulated offset.
    *
-   * @param referenceVelocity The reference velocity, in RPM.
+   * @param rpm Target velocity in RPM (before offset).
    */
-
   @Override
-  public void setReferenceVelocity(double rpm) {
-    Logger.recordOutput("Launcher/Setpoint/Velocity", rpm);
+  public void setReferenceVelocity(AngularVelocity velocity) {
+    AngularVelocity withOffset = RPM.of(velocity.in(RPM) + velocityOffsetRPM);
 
-    // Converts RPM to radians per second
+    Logger.recordOutput("Launcher/Setpoint/TargetRPM", velocity.in(RPM));
+    Logger.recordOutput("Launcher/Setpoint/TargetRPMWithOffset", withOffset.in(RPM));
+    Logger.recordOutput("Launcher/Setpoint/TargetRadPerSecWithOffset", withOffset.in(RadiansPerSecond));
+
     launcherClosedLoopController.setSetpoint(
-        rpm * LauncherConstants.kVelocityConversionFactor,
-        ControlType.kVelocity, useHighVelocities ? LauncherConstants.kSlotHigh : LauncherConstants.kSlotLow);
+        withOffset.in(RadiansPerSecond),
+        ControlType.kVelocity,
+        useHighVelocities ? LauncherConstants.kSlotHigh : LauncherConstants.kSlotLow);
   }
 
   public boolean isUsingHighVelocities() {
@@ -123,7 +111,6 @@ public class SparkLauncherSubsystem extends SubsystemBase implements LauncherPID
   @Override
   public void stop() {
     setVelocity(0);
-    // important
   }
 
 }

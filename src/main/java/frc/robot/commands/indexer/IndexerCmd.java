@@ -1,37 +1,38 @@
 package frc.robot.commands.indexer;
 
-import java.util.Queue;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 
 public class IndexerCmd extends Command {
-  private final IndexerSubsystem Indexer;
+
+  private final IndexerSubsystem indexer;
   private final double speed;
 
   public IndexerCmd(IndexerSubsystem subsystem, double speed) {
-    this.Indexer = subsystem;
+    this.indexer = subsystem;
     this.speed = speed;
-
-    addRequirements(this.Indexer);
+    addRequirements(this.indexer);
   }
 
   @Override
   public void initialize() {
-    System.out.println("Indexer CMD Started");
-    this.Indexer.setVelocity(this.speed);
+    indexer.setVelocity(speed);
+    Logger.recordOutput("IndexerCmd/Status", "Initialized");
+    Logger.recordOutput("IndexerCmd/TargetPercentOutput", speed);
   }
 
   @Override
   public void execute() {
-    this.Indexer.setVelocity(50);
+    // Log measured velocity for tuning visibility.
+    Logger.recordOutput("IndexerCmd/MeasuredVelocityRPM", indexer.getVelocity());
   }
 
   @Override
   public void end(boolean interrupted) {
-    System.out.println("Intake CMD ended.");
-
-    this.Indexer.setVelocity(0);
+    indexer.stop();
+    Logger.recordOutput("IndexerCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override
