@@ -5,9 +5,13 @@ import static edu.wpi.first.units.Units.Meters;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Distance;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.util.vision.CameraProfile;
 
 public class PoseHelpers {
 
@@ -141,9 +145,9 @@ public class PoseHelpers {
   public static Distance nearestBumpY(Pose2d pose) {
     // Default to top
     if (pose.getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-      return FieldConstants.kEdgeToBumpCenter;
+      return FieldConstants.kEdgeToBumpCrossLine;
     } else {
-      return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToBumpCenter);
+      return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToBumpCrossLine);
     }
   }
 }

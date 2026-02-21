@@ -15,6 +15,8 @@ import org.littletonrobotics.urcl.URCL;
 
 import com.pathplanner.lib.pathfinding.Pathfinding;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -171,6 +173,7 @@ public class Robot extends LoggedRobot {
   /** This function is called once when the robot is first started up. */
   @Override
   public void simulationInit() {
+    SmartDashboard.putNumber("ClimberModelTest", SmartDashboard.getNumber("ClimberModelTest", 0));
   }
 
   /** This function is called periodically whilst in simulation. */
@@ -179,6 +182,10 @@ public class Robot extends LoggedRobot {
     SimulatedArena.getInstance().simulationPeriodic();
     Logger.recordOutput("FieldSimulation/Fuel",
         SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
+
+    // Test the height of the climbers
+    Logger.recordOutput("FieldSimulation/Extra/ClimberModelTest",
+        new Pose3d(0, 0, SmartDashboard.getNumber("ClimberModelTest", 0), Rotation3d.kZero));
   }
 
   /**

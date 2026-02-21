@@ -46,6 +46,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -858,9 +859,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     // Iterate through each camera
     for (int i = 0; i < SwerveConfig.kNumCameras; i++) {
+      final CameraProfile currentCameraProfile = SwerveConfig.kCameraProfiles[i];
+      final Transform3d robotToCamera = currentCameraProfile.getRobotToCameraTransform();
+
       // Get all poses from camera
       List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
-          SwerveConfig.kCameraProfiles[i].getRobotToCameraTransform(),
+          robotToCamera,
           robotPose);
 
       List<Integer> fiducialIds = new ArrayList<>();
@@ -886,9 +890,14 @@ public class DrivetrainSubsystem extends SubsystemBase {
         Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
 
         // Calculate dynamic standard deviations based on measurement quality
-        Vector<N3> stdDevs = VisionStdDevCalculator.calculateStdDevs(
-            visionPose,
-            SwerveConfig.kCameraProfiles[i].standardDeviation());
+        final Vector<N3> stdDevs;
+        if (SwerveConfig.kUseDynamicStandardDeviations) {
+          stdDevs = VisionStdDevCalculator.calculateStdDevs(
+              visionPose,
+              currentCameraProfile.standardDeviation());
+        } else {
+          stdDevs = currentCameraProfile.standardDeviation();
+        }
 
         // Add vision measurement with dynamic standard deviations
         poseEstimator.addVisionMeasurement(
@@ -908,6 +917,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
       }
 
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/FieldRelative;",
+          new Pose3d(getPose()).transformBy(robotToCamera));
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/RobotRelative",
+          robotToCamera);
+
       // Log targets estimated from robot
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetIds",
           fiducialIds.stream().mapToInt(n -> n).toArray());
@@ -917,11 +931,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
           tagAreas.stream().mapToDouble(n -> n).toArray());
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAmbiguities",
           tagAmbiguities.stream().mapToDouble(n -> n).toArray());
-
-      // Log dynamic standard deviations for tuning
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/NumTargets",
           visionPoses.stream().mapToInt(p -> p.targetsUsed.size()).toArray());
+
     }
+    Logger.recordOutput("Drivetrain/Vision/UsingDynamicStds",
+        SwerveConfig.kUseDynamicStandardDeviations);
 
     // Calculate velocity and acceleration
     ChassisSpeeds speedsRaw = getChassisSpeedsRobotRelative();
