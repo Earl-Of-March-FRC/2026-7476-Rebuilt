@@ -19,7 +19,6 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
 import java.io.File;
-import java.util.List;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
@@ -125,6 +124,10 @@ public final class Constants {
   }
 
   public static final class LauncherConstants {
+
+    public static final int kMotorCanSparkId = 20;
+    public static final int kMotorCanTalonId = 21;
+    public static final MotorType kMotorType = MotorType.kBrushless;
     public static final Distance kLaunchRadius = Meters.of(2.0);
     public static final Time kBallAirTime = Seconds.of(0.5);
 

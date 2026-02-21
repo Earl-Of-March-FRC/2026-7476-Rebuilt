@@ -69,7 +69,7 @@ public class RobotContainer {
   public final SparkLauncherSubsystem sparkLauncherSub;
   public final TalonFXLauncherSubsystem talonFXLauncherSub;
   public final IndexerSubsystem indexerSub;
-  public final ClimberSubsystem ClimberSub;
+  public final ClimberSubsystem climberSub;
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -88,8 +88,9 @@ public class RobotContainer {
       sparkLauncherSub = new SparkLauncherSubsystem(null); // set when we have more information
       talonFXLauncherSub = new TalonFXLauncherSubsystem(null); // set when we have more information
 
+      // set when we have more info
       indexerSub = new IndexerSubsystem(null);
-      ClimberSub = new ClimberSubsystem(null);
+      climberSub = new ClimberSubsystem(null);
 
       new LauncherPIDCmd(sparkLauncherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       // launcher pid interface
@@ -124,12 +125,16 @@ public class RobotContainer {
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
       intakeSub = new IntakeSubsystem(
-          new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless));
-      sparkLauncherSub = new SparkLauncherSubsystem(new SparkMax(0, null));
+          new SparkMax(IntakeConstants.kIntakeMotorCanId, IntakeConstants.kMotorType));
 
-      talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(0));
-      indexerSub = new IndexerSubsystem(new SparkMax(0, null));
-      ClimberSub = new ClimberSubsystem(new SparkMax(0, null));
+      talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(Constants.LauncherConstants.kMotorCanTalonId));
+
+      sparkLauncherSub = new SparkLauncherSubsystem(
+          new SparkMax(Constants.LauncherConstants.kMotorCanSparkId, Constants.LauncherConstants.kMotorType));
+      indexerSub = new IndexerSubsystem(
+          new SparkMax(Constants.IndexerConstants.kMotorCanId, Constants.IndexerConstants.kMotorType));
+      climberSub = new ClimberSubsystem(
+          new SparkMax(Constants.ClimberConstants.kMotorId, Constants.ClimberConstants.kMotorType));
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
           new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(
