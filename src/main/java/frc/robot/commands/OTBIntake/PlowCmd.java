@@ -18,19 +18,19 @@ public class PlowCmd extends Command {
 
   @Override
   public void initialize() {
-    intake.setVelocity(speed);
+    intake.setRollerPercent(speed);
     Logger.recordOutput("PlowCmd/Status", "Initialized");
     Logger.recordOutput("PlowCmd/TargetPercentOutput", speed);
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("PlowCmd/MeasuredVelocityRPM", intake.getVelocity());
+    Logger.recordOutput("PlowCmd/MeasuredVelocityRPM", intake.getRollerVelocity());
   }
 
   @Override
   public void end(boolean interrupted) {
-    intake.stopIntake();
+    intake.stopRoller();
     Logger.recordOutput("PlowCmd/Status", interrupted ? "Interrupted" : "Completed");
 
   }

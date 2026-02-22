@@ -295,34 +295,65 @@ public final class Constants {
   }
 
   public static final class OTBIntakeConstants {
-    public static final int kIntakeMotorCanId = 11;
+    public static final int kRollerCanId = 15;
+    public static final int kShoulderCanId = 16;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final double kMotorReduction = 1.0 / 10.0;
+    // TODO: Verify values for these reductions
+    public static final double kRollerReduction = 1.0 / 10.0;
+    public static final double kShoulderReduction = 1.0 / 10.0;
 
-    // Conversion factors (RPM → rad/s)
-    public static final double kPositionConversionFactor = 2 * Math.PI;
-    public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
+    // // Conversion factors (RPM → rad/s)
+    // public static final double kPositionConversionFactor = 2 * Math.PI;
+    // public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
+
+    // Motor Rotations -> Shoulder degrees
+    public static final double kShoulderPositionConversionFactor = 360;
+    // Motor RPM -> Shoulder degrees/Second
+    public static final double kShoulderVelocityConversionFactor = 360 / 60.0;
 
     public static final AngularVelocity kMaxVelocity = RPM.of(60);
 
     public static final double kIntakeSpeed = 0.5;
     public static final double kPlowSpeed = 0.7;
 
-    public static final SparkMaxConfig kSparkMaxConfig = new SparkMaxConfig();
+    public static final double kPIDShoulderControllerP = 0;
+    public static final double kPIDShoulderControllerI = 0;
+    public static final double kPIDShoulderControllerD = 0;
+    public static final double kPIDShoulderControllerFF = 0;
+
+    // TODO: Mesure this value
+    public static final Angle kStowPosition = Degrees.of(0);
+
+    public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kShoulderConfig = new SparkMaxConfig();
+
     static {
-      kSparkMaxConfig
+      kRollerConfig
           .idleMode(IdleMode.kCoast)
-          .smartCurrentLimit(30);
-      kSparkMaxConfig.encoder
-          .positionConversionFactor(kPositionConversionFactor * kMotorReduction)
-          .velocityConversionFactor(kVelocityConversionFactor * kMotorReduction);
+          .smartCurrentLimit(20);
+      // kRollerConfig.encoder
+      // .positionConversionFactor(kPositionConversionFactor * kRollerReduction)
+      // .velocityConversionFactor(kVelocityConversionFactor * kRollerReduction);
+
+      kShoulderConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(40);
+      kShoulderConfig.encoder
+          .positionConversionFactor(kShoulderPositionConversionFactor * kShoulderReduction)
+          .velocityConversionFactor(kShoulderVelocityConversionFactor * kShoulderReduction);
+      kShoulderConfig.closedLoop
+          .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
+          .outputRange(-1, 1).feedForward
+          .kCos(kPIDShoulderControllerFF)
+          // Feedforward requires the absolute postition of the shoulder in rotations
+          .kCosRatio(1.0 / kShoulderPositionConversionFactor);
     }
   }
 
   public static final class IndexerConstants {
-    public static final int kWheelCanId = 12;
-    public static final int kTreadmillCanId = 13;
+    public static final int kWheelCanId = 11;
+    public static final int kTreadmillCanId = 12;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     /**
@@ -340,7 +371,7 @@ public final class Constants {
     static {
       kWheelConfig
           .idleMode(IdleMode.kBrake)
-          .smartCurrentLimit(40);
+          .smartCurrentLimit(20);
       // kWheelConfig.encoder
       // .velocityConversionFactor(kWheelDiameterMeters * Math.PI /
       // kWheelMotorReduction / 60);
@@ -352,7 +383,7 @@ public final class Constants {
   }
 
   public static final class ClimberConstants {
-    public static final int kMotorId = 14;
+    public static final int kMotorId = 13;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final Distance kStowPosition = Inches.of(0);

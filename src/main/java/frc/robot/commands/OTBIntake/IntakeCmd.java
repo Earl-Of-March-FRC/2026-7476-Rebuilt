@@ -18,19 +18,19 @@ public class IntakeCmd extends Command {
 
   @Override
   public void initialize() {
-    intake.setVelocity(speed);
+    intake.setRollerPercent(speed);
     Logger.recordOutput("IntakeCmd/Status", "Initialized");
     Logger.recordOutput("IntakeCmd/TargetPercentOutput", speed);
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("IntakeCmd/MeasuredVelocityRPM", intake.getVelocity());
+    Logger.recordOutput("IntakeCmd/MeasuredVelocityRPM", intake.getRollerVelocity());
   }
 
   @Override
   public void end(boolean interrupted) {
-    intake.stopIntake();
+    intake.stopRoller();
     Logger.recordOutput("IntakeCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 

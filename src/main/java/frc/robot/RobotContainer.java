@@ -83,8 +83,11 @@ public class RobotContainer {
 
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
+
       otbIntakeSub = new OTBIntakeSubsystem(
-          new SparkMax(OTBIntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
+
       sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
           new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
               Constants.LauncherAndIntakeConstants.kMotorType),
@@ -129,7 +132,8 @@ public class RobotContainer {
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
       otbIntakeSub = new OTBIntakeSubsystem(
-          new SparkMax(OTBIntakeConstants.kIntakeMotorCanId, OTBIntakeConstants.kMotorType));
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
       talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(
           new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId));
