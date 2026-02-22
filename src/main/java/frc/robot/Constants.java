@@ -123,7 +123,7 @@ public final class Constants {
     public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(5676.0 / 60.0);
   }
 
-  public static final class LauncherConstants {
+  public static final class LauncherAndIntakeConstants {
 
     public static final int kLeaderCanSparkId = 9;
     public static final int kFollowerCanSparkId = 10;
@@ -294,8 +294,8 @@ public final class Constants {
 
   }
 
-  public static final class IntakeConstants {
-    public static final int kIntakeMotorCanId = 12;
+  public static final class OTBIntakeConstants {
+    public static final int kIntakeMotorCanId = 11;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final double kMotorReduction = 1.0 / 10.0;
@@ -321,7 +321,8 @@ public final class Constants {
   }
 
   public static final class IndexerConstants {
-    public static final int kMotorCanId = 11;
+    public static final int kWheelCanId = 12;
+    public static final int kTreadmillCanId = 13;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     /**
@@ -330,20 +331,28 @@ public final class Constants {
      */
     public static final double kDirectionConstant = -1.0;
 
-    public static final double kMotorReduction = 1.0;
+    public static final double kWheelMotorReduction = 1.0;
     public static final double kWheelDiameterMeters = 0.17;
 
-    public static final SparkMaxConfig kSparkMaxConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
+
     static {
-      kSparkMaxConfig.idleMode(IdleMode.kBrake);
-      kSparkMaxConfig.smartCurrentLimit(40);
-      kSparkMaxConfig.encoder
-          .velocityConversionFactor(kWheelDiameterMeters * Math.PI / kMotorReduction / 60);
+      kWheelConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(40);
+      // kWheelConfig.encoder
+      // .velocityConversionFactor(kWheelDiameterMeters * Math.PI /
+      // kWheelMotorReduction / 60);
+
+      kTreadmillConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(20);
     }
   }
 
   public static final class ClimberConstants {
-    public static final int kMotorId = 5;
+    public static final int kMotorId = 14;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final Distance kStowPosition = Inches.of(0);

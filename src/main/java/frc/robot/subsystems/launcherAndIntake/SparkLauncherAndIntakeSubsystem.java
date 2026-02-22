@@ -15,7 +15,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.LauncherConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 
 public class SparkLauncherAndIntakeSubsystem extends SubsystemBase implements LauncherPIDInterface {
 
@@ -35,9 +35,9 @@ public class SparkLauncherAndIntakeSubsystem extends SubsystemBase implements La
     this.launcherEncoder = leaderSparkMax.getEncoder();
     this.launcherClosedLoopController = leaderSparkMax.getClosedLoopController();
 
-    leaderSparkMax.configure(LauncherConstants.kLeaderConfig, ResetMode.kNoResetSafeParameters,
+    leaderSparkMax.configure(LauncherAndIntakeConstants.kLeaderConfig, ResetMode.kNoResetSafeParameters,
         PersistMode.kNoPersistParameters);
-    followerSparkMax.configure(LauncherConstants.kFollowerConfig, ResetMode.kNoResetSafeParameters,
+    followerSparkMax.configure(LauncherAndIntakeConstants.kFollowerConfig, ResetMode.kNoResetSafeParameters,
         PersistMode.kNoPersistParameters);
   }
 
@@ -98,7 +98,7 @@ public class SparkLauncherAndIntakeSubsystem extends SubsystemBase implements La
     launcherClosedLoopController.setSetpoint(
         withOffset.in(RadiansPerSecond),
         ControlType.kVelocity,
-        useHighVelocities ? LauncherConstants.kSlotHigh : LauncherConstants.kSlotLow);
+        useHighVelocities ? LauncherAndIntakeConstants.kSlotHigh : LauncherAndIntakeConstants.kSlotLow);
   }
 
   public boolean isUsingHighVelocities() {

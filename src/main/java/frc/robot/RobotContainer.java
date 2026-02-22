@@ -38,8 +38,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.IntakeConstants;
-import frc.robot.Constants.LauncherConstants;
+import frc.robot.Constants.OTBIntakeConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
@@ -65,7 +65,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
-  public final OTBIntakeSubsystem intakeSub;
+  public final OTBIntakeSubsystem otbIntakeSub;
   public final SparkLauncherAndIntakeSubsystem sparkLauncherAndIntakeSub;
   public final TalonFXLauncherAndIntakeSubsystem talonFXLauncherAndIntakeSub;
   public final IndexerSubsystem indexerSub;
@@ -83,15 +83,17 @@ public class RobotContainer {
 
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
-      intakeSub = new OTBIntakeSubsystem(
-          new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
       sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
-          new SparkMax(Constants.LauncherConstants.kLeaderCanSparkId, Constants.LauncherConstants.kMotorType),
-          new SparkMax(Constants.LauncherConstants.kFollowerCanSparkId, Constants.LauncherConstants.kMotorType));
+          new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType),
+          new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType));
       talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(null); // set when we have more information
 
       // set when we have more info
-      indexerSub = new IndexerSubsystem(null);
+      indexerSub = new IndexerSubsystem(null, null);
       climberSub = new ClimberSubsystem(null);
 
       new LauncherPIDCmd(sparkLauncherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
@@ -126,17 +128,22 @@ public class RobotContainer {
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
-      intakeSub = new OTBIntakeSubsystem(
-          new SparkMax(IntakeConstants.kIntakeMotorCanId, IntakeConstants.kMotorType));
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kIntakeMotorCanId, OTBIntakeConstants.kMotorType));
 
       talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(
-          new TalonFX(Constants.LauncherConstants.kMotorCanTalonId));
+          new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId));
 
       sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
-          new SparkMax(Constants.LauncherConstants.kLeaderCanSparkId, Constants.LauncherConstants.kMotorType),
-          new SparkMax(Constants.LauncherConstants.kFollowerCanSparkId, Constants.LauncherConstants.kMotorType));
+          new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType),
+          new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType));
+
       indexerSub = new IndexerSubsystem(
-          new SparkMax(Constants.IndexerConstants.kMotorCanId, Constants.IndexerConstants.kMotorType));
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
       climberSub = new ClimberSubsystem(
           new SparkMax(Constants.ClimberConstants.kMotorId, Constants.ClimberConstants.kMotorType));
       // Override bump collision (on by default)
@@ -170,7 +177,7 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         this::getDriverVy,
-        Constants.LauncherConstants.kLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true);
 
     driveSub.setDefaultCommand(driveCmd);
@@ -191,10 +198,10 @@ public class RobotContainer {
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     // Binding for Plow (Button 5 is usually Left Bumper)
-    driverController.button(5).whileTrue(new IntakeCmd(intakeSub, IntakeConstants.kPlowSpeed));
+    driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, OTBIntakeConstants.kPlowSpeed));
 
     // Binding for Intake (Button 6 is usually Right Bumper)
-    driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
+    driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, OTBIntakeConstants.kIntakeSpeed));
 
     driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),

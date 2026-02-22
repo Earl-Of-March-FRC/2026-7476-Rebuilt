@@ -12,7 +12,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.LauncherConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 
 public class TalonFXLauncherAndIntakeSubsystem extends SubsystemBase implements LauncherPIDInterface {
 
@@ -30,10 +30,10 @@ public class TalonFXLauncherAndIntakeSubsystem extends SubsystemBase implements 
     this.launcherTalon = launcherTalon;
 
     TalonFXConfiguration config = new TalonFXConfiguration();
-    config.Slot0.kP = LauncherConstants.kPIDLauncherControllerP;
-    config.Slot0.kI = LauncherConstants.kPIDLauncherControllerI;
-    config.Slot0.kD = LauncherConstants.kPIDLauncherControllerD;
-    config.CurrentLimits.StatorCurrentLimit = LauncherConstants.kSmartCurrentLimit.magnitude();
+    config.Slot0.kP = LauncherAndIntakeConstants.kPIDLauncherControllerP;
+    config.Slot0.kI = LauncherAndIntakeConstants.kPIDLauncherControllerI;
+    config.Slot0.kD = LauncherAndIntakeConstants.kPIDLauncherControllerD;
+    config.CurrentLimits.StatorCurrentLimit = LauncherAndIntakeConstants.kSmartCurrentLimit.magnitude();
     config.CurrentLimits.StatorCurrentLimitEnable = true;
 
     launcherTalon.getConfigurator().apply(config);
