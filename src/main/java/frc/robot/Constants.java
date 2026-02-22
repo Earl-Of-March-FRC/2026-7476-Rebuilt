@@ -383,16 +383,26 @@ public final class Constants {
   }
 
   public static final class ClimberConstants {
-    public static final int kMotorId = 13;
+    public static final int kLeftId = 13;
+    public static final int kRightId = 14;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final Distance kStowPosition = Inches.of(0);
     public static final Distance kClimbPosition = Inches.of(32);
 
-    public static final double kMotorRaiseSpeed = 0.67;
-    public static final double kMotorHookSpeed = 0.67;
+    public static final double kMotorRaiseSpeed = 0.5;
+    public static final double kMotorHookSpeed = 0.5;
 
-    public static final double kTicksToInchesConversion = 0.67;
+    // TODO: measure these values
+    public static final Distance kWhinchDrumDiameter = Inches.of(1);
+    public static final Distance kSpoolCableDiameter = Inches.of(0.25);
+    public static final int kMaxSpoolLayers = 5;
+    public static final int kMinSpoolLayers = 1;
+
+    public static final Distance kAverageEffectiveDiameter = kWhinchDrumDiameter
+        .plus(kSpoolCableDiameter.times((kMaxSpoolLayers + kMinSpoolLayers) / 2.0));
+
+    public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI;
 
     public static final Distance kMinLength = Inches.of(-1);
     public static final Distance kMaxLength = Inches.of(33);
@@ -409,6 +419,18 @@ public final class Constants {
     public static final double kPIDClimberControllerP = 0.1;
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
+
+    public static final SparkMaxConfig kConfig = new SparkMaxConfig();
+    static {
+      kConfig.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfig.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfig.closedLoop
+          .p(kPIDClimberControllerP)
+          .i(kPIDClimberControllerI)
+          .d(kPIDClimberControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax);
+    }
+
   }
 
   public static final class GameModelConstants {

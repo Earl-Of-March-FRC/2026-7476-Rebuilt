@@ -95,9 +95,13 @@ public class RobotContainer {
               Constants.LauncherAndIntakeConstants.kMotorType));
       talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(null); // set when we have more information
 
-      // set when we have more info
-      indexerSub = new IndexerSubsystem(null, null);
-      climberSub = new ClimberSubsystem(null);
+      indexerSub = new IndexerSubsystem(
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
+      climberSub = new ClimberSubsystem(
+          new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+          new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType));
 
       new LauncherPIDCmd(sparkLauncherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       // launcher pid interface
@@ -149,7 +153,9 @@ public class RobotContainer {
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
 
       climberSub = new ClimberSubsystem(
-          new SparkMax(Constants.ClimberConstants.kMotorId, Constants.ClimberConstants.kMotorType));
+          new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+          new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType));
+
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
           new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(

@@ -21,49 +21,56 @@ import frc.robot.Constants.ClimberConstants;
 
 public class ClimberSubsystem extends SubsystemBase implements ClimberSubsystemInterface {
 
-  private final SparkMax climberSpark;
-  private final RelativeEncoder climberEncoder;
-  private final SparkClosedLoopController climberPIDController;
+  public enum ClimbSide {
+    Left, Right
+  }
 
-  public ClimberSubsystem(SparkMax motor) {
-    this.climberSpark = motor;
-    this.climberEncoder = motor.getEncoder();
-    this.climberPIDController = motor.getClosedLoopController();
+  private final SparkMax leftClimberSparkMax;
+  private final SparkMax rightClimberSparkMax;
 
-    SparkMaxConfig config = new SparkMaxConfig();
-    config.smartCurrentLimit((int) ClimberConstants.kSmartCurrentLimit.in(Amps));
-    config.encoder.positionConversionFactor(ClimberConstants.kTicksToInchesConversion);
-    config.closedLoop
-        .p(ClimberConstants.kPIDClimberControllerP)
-        .i(ClimberConstants.kPIDClimberControllerI)
-        .d(ClimberConstants.kPIDClimberControllerD)
-        .outputRange(ClimberConstants.kOutputRangeMin, ClimberConstants.kOutputRangeMax);
+  public ClimberSubsystem(SparkMax leftClimberSparkMax, SparkMax rightClimberSparkMax) {
+    this.leftClimberSparkMax = leftClimberSparkMax;
+    this.rightClimberSparkMax = rightClimberSparkMax;
 
-    climberSpark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    leftClimberSparkMax.configure(ClimberConstants.kConfig, ResetMode.kResetSafeParameters,
+        PersistMode.kNoPersistParameters);
+    rightClimberSparkMax.configure(ClimberConstants.kConfig, ResetMode.kResetSafeParameters,
+        PersistMode.kNoPersistParameters);
   }
 
   @Override
   public void periodic() {
-    Distance position = Inches.of(climberEncoder.getPosition());
-    LinearVelocity velocity = InchesPerSecond.of(climberEncoder.getVelocity());
+    Distance leftPosition = Inches.of(leftClimberSparkMax.getEncoder().getPosition());
+    LinearVelocity leftVelocity = InchesPerSecond.of(leftClimberSparkMax.getEncoder().getVelocity());
+    Distance rightPosition = Inches.of(rightClimberSparkMax.getEncoder().getPosition());
+    LinearVelocity rightVelocity = InchesPerSecond.of(rightClimberSparkMax.getEncoder().getVelocity());
 
-    Logger.recordOutput("Climber/Measured/PositionInches", position.in(Inches));
-    Logger.recordOutput("Climber/Measured/VelocityInchesPerSec", velocity.in(InchesPerSecond));
-    Logger.recordOutput("Climber/Measured/AppliedOutput", climberSpark.getAppliedOutput());
-    Logger.recordOutput("Climber/Measured/CurrentAmps", climberSpark.getOutputCurrent());
+    Logger.recordOutput("Climber/Left/Measured/PositionInches", leftPosition.in(Inches));
+    Logger.recordOutput("Climber/Left/Measured/VelocityInchesPerSec", leftVelocity.in(InchesPerSecond));
+    Logger.recordOutput("Climber/Left/Measured/AppliedOutput", leftClimberSparkMax.getAppliedOutput());
+    Logger.recordOutput("Climber/Left/Measured/CurrentAmps", leftClimberSparkMax.getOutputCurrent());
+
+    Logger.recordOutput("Climber/Right/Measured/PositionInches", rightPosition.in(Inches));
+    Logger.recordOutput("Climber/Right/Measured/VelocityInchesPerSec", rightVelocity.in(InchesPerSecond));
+    Logger.recordOutput("Climber/Right/Measured/AppliedOutput", rightClimberSparkMax.getAppliedOutput());
+    Logger.recordOutput("Climber/Right/Measured/CurrentAmps", rightClimberSparkMax.getOutputCurrent());
   }
 
   @Override
   public void setPercentOutput(double percent) {
     Logger.recordOutput("Climber/Setpoint/PercentOutput", percent);
-    climberSpark.set(percent);
+    leftClimberSparkMax.set(percent);
+    rightClimberSparkMax.set(percent);
   }
 
   @Override
   public void setTargetPosition(double inches) {
     Distance target = Inches.of(inches);
     Logger.recordOutput("Climber/Setpoint/TargetInches", target.in(Inches));
-    climberPIDController.setSetpoint(target.in(Inches), SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
+    leftClimberSparkMax.getClosedLoopController().setSetpoint(target.in(Inches), SparkMax.ControlType.kPosition,
+        ClosedLoopSlot.kSlot0);
+    rightClimberSparkMax.getClosedLoopController().setSetpoint(target.in(Inches), SparkMax.ControlType.kPosition,
+        ClosedLoopSlot.kSlot0);
   }
 
   @Override
@@ -71,9 +78,59 @@ public class ClimberSubsystem extends SubsystemBase implements ClimberSubsystemI
     setPercentOutput(0);
   }
 
-  /** @return Velocity in inches per second. */
+  /** @return Velocity in inches per second. (left side default) */
   @Override
   public double getVelocity() {
-    return climberEncoder.getVelocity();
+    return leftClimberSparkMax.getEncoder().getVelocity();
+  }
+
+  /**
+   * Sets the climber to a percent output on the specified side.
+   * 
+   * @param percent Output in range [-1.0, 1.0].
+   * @param side    The side of the climber to control.
+   */
+  public void setPercentOutput(double percent, ClimbSide side) {
+    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/PercentOutput", percent);
+
+    if (side == ClimbSide.Left) {
+      leftClimberSparkMax.set(percent);
+    } else if (side == ClimbSide.Right) {
+      rightClimberSparkMax.set(percent);
+    }
+  }
+
+  /**
+   * Sets the climber to a target position on the specified side.
+   * 
+   * @param inches Target position in inches.
+   * @param side   The side of the climber to control.
+   */
+  public void setTargetPosition(double inches, ClimbSide side) {
+    Distance target = Inches.of(inches);
+    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/TargetInches", target.in(Inches));
+
+    if (side == ClimbSide.Left) {
+      leftClimberSparkMax.getClosedLoopController().setSetpoint(target.in(Inches), SparkMax.ControlType.kPosition,
+          ClosedLoopSlot.kSlot0);
+    } else if (side == ClimbSide.Right) {
+      rightClimberSparkMax.getClosedLoopController().setSetpoint(target.in(Inches), SparkMax.ControlType.kPosition,
+          ClosedLoopSlot.kSlot0);
+    }
+  }
+
+  /**
+   * @return Velocity in inches per second.
+   * 
+   * @param side The side of the climber to query.
+   */
+  public LinearVelocity getVelocity(ClimbSide side) {
+    if (side == ClimbSide.Left) {
+      return InchesPerSecond.of(leftClimberSparkMax.getEncoder().getVelocity());
+    } else if (side == ClimbSide.Right) {
+      return InchesPerSecond.of(rightClimberSparkMax.getEncoder().getVelocity());
+    } else {
+      return InchesPerSecond.of(0);
+    }
   }
 }
