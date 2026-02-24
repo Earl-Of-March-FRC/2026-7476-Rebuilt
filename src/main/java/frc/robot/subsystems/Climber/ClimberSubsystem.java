@@ -21,7 +21,7 @@ import frc.robot.Constants.ClimberConstants;
 
 public class ClimberSubsystem extends SubsystemBase implements ClimberSubsystemInterface {
 
-  public enum ClimbSide {
+  public static enum ClimbSide {
     Left, Right
   }
 
