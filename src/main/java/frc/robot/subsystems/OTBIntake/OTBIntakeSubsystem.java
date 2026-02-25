@@ -139,6 +139,9 @@ public class OTBIntakeSubsystem extends SubsystemBase {
    * @param position Desired shoulder position as an angle.
    */
   public void setShoulderSetpoint(Angle position) {
+    usePID = true;
+    pidSetpointWithoutOffset = position;
+
     Logger.recordOutput("Intake/Setpoint/ShoulderPositionDegrees", position.in(Degrees));
     shoulderSparkMax.getClosedLoopController().setSetpoint(position.in(Degrees) + angularOffset.in(Degrees),
         ControlType.kPosition);

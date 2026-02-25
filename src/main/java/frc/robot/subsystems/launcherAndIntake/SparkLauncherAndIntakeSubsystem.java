@@ -96,7 +96,7 @@ public class SparkLauncherAndIntakeSubsystem extends SubsystemBase implements La
     Logger.recordOutput("Launcher/Setpoint/TargetRadPerSecWithOffset", withOffset.in(RadiansPerSecond));
 
     launcherClosedLoopController.setSetpoint(
-        withOffset.in(RadiansPerSecond),
+        withOffset.in(RPM),
         ControlType.kVelocity,
         useHighVelocities ? LauncherAndIntakeConstants.kSlotHigh : LauncherAndIntakeConstants.kSlotLow);
   }
