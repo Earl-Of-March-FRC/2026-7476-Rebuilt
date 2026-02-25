@@ -208,10 +208,10 @@ public class RobotContainer {
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     // Binding for Plow (Button 5 is usually Left Bumper)
-    driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, OTBIntakeConstants.kPlowSpeed));
+    driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
 
     // Binding for Intake (Button 6 is usually Right Bumper)
-    driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, OTBIntakeConstants.kIntakeSpeed));
+    driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () -> OTBIntakeConstants.kPlowSpeed));
 
     driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),

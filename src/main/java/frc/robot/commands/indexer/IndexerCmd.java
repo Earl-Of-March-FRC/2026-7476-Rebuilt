@@ -42,8 +42,6 @@ public class IndexerCmd extends Command {
   @Override
   public void initialize() {
     Logger.recordOutput("IndexerCmd/Status", "Initialized");
-    Logger.recordOutput("IndexerCmd/WheelPercentOutput", wheelSpeed.getAsDouble());
-    Logger.recordOutput("IndexerCmd/TreadmillPercentOutput", treadmillSpeed.getAsDouble());
   }
 
   @Override
@@ -53,6 +51,8 @@ public class IndexerCmd extends Command {
 
     // Log measured velocity for tuning visibility.
     Logger.recordOutput("IndexerCmd/MeasuredVelocityRPM", indexer.getWheelVelocity());
+    Logger.recordOutput("IndexerCmd/WheelPercentOutput", wheelSpeed.getAsDouble());
+    Logger.recordOutput("IndexerCmd/TreadmillPercentOutput", treadmillSpeed.getAsDouble());
   }
 
   @Override

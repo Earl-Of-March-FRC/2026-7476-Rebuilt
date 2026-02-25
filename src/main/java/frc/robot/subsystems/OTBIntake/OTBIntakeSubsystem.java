@@ -17,6 +17,10 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.OTBIntakeConstants;
 
+/*
+ * Subsystem for the Over The Bumper (OTB) intake, which consists of a shoulder joint and a roller.
+ * This subsystem funnels balls into the internal intake when deployed.
+ */
 public class OTBIntakeSubsystem extends SubsystemBase {
 
   private final SparkMax shoulderSparkMax;

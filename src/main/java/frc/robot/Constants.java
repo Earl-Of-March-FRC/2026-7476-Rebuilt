@@ -346,7 +346,7 @@ public final class Constants {
           .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
           .outputRange(-1, 1).feedForward
           .kCos(kPIDShoulderControllerFF)
-          // Feedforward requires the absolute postition of the shoulder in rotations
+          // Feedforward requires the absolute postition of the shoulder in rotations (horizontal = 0)
           .kCosRatio(1.0 / kShoulderPositionConversionFactor);
     }
   }

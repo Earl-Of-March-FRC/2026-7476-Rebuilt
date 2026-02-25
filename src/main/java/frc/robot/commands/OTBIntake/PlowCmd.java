@@ -1,5 +1,7 @@
 package frc.robot.commands.OTBIntake;
 
+import java.util.function.DoubleSupplier;
+
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -8,9 +10,9 @@ import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 public class PlowCmd extends Command {
 
   private final OTBIntakeSubsystem intake;
-  private final double speed;
+  private final DoubleSupplier speed;
 
-  public PlowCmd(OTBIntakeSubsystem intake, double speed) {
+  public PlowCmd(OTBIntakeSubsystem intake, DoubleSupplier speed) {
     this.intake = intake;
     this.speed = speed;
     addRequirements(this.intake);
@@ -18,9 +20,9 @@ public class PlowCmd extends Command {
 
   @Override
   public void initialize() {
-    intake.setRollerPercent(speed);
+    intake.setRollerPercent(speed.getAsDouble());
     Logger.recordOutput("PlowCmd/Status", "Initialized");
-    Logger.recordOutput("PlowCmd/TargetPercentOutput", speed);
+    Logger.recordOutput("PlowCmd/TargetPercentOutput", speed.getAsDouble());
   }
 
   @Override
