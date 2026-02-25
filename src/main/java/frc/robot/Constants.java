@@ -123,28 +123,53 @@ public final class Constants {
     public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(5676.0 / 60.0);
   }
 
-  public static final class LauncherConstants {
+  public static final class LauncherAndIntakeConstants {
 
-    public static final int kMotorCanSparkId = 20;
+    public static final int kLeaderCanSparkId = 9;
+    public static final int kFollowerCanSparkId = 10;
     public static final int kMotorCanTalonId = 21;
     public static final MotorType kMotorType = MotorType.kBrushless;
     public static final Distance kLaunchRadius = Meters.of(2.0);
     public static final Time kBallAirTime = Seconds.of(0.5);
+
+    public static final double kMotorReduction = 45.0 / 56.0;
 
     public static final AngularVelocity kVelocityLowRPM = RPM.of(0);
     public static final AngularVelocity kVelocityHighRPM = RPM.of(0); // Fill in actual value
 
     public static final Current kSmartCurrentLimit = Amps.of(40);
 
-    public static final double kPIDLauncherControllerP = 0;
+    // TODO: retune now that the motor reduction has changed
+    public static final double kPIDLauncherControllerP = 8e-5;
     public static final double kPIDLauncherControllerI = 0;
     public static final double kPIDLauncherControllerD = 0;
+    public static final double kPIDLauncherControllerFF = 7e-4;
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
+
+    public static final SparkMaxConfig kLeaderConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
+
+    static {
+      kLeaderConfig
+          .idleMode(IdleMode.kCoast)
+          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kLeaderConfig.encoder
+          // Use wheel RPM
+          .velocityConversionFactor(kMotorReduction);
+      kLeaderConfig.closedLoop
+          .pid(kPIDLauncherControllerP, kPIDLauncherControllerI,
+              kPIDLauncherControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax).feedForward
+          .kV(kPIDLauncherControllerFF);
+
+      kFollowerConfig.smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kFollowerConfig.follow(kLeaderCanSparkId, true);
+    }
   }
 
   public static final class DriveConstants {
@@ -269,65 +294,115 @@ public final class Constants {
 
   }
 
-  public static final class IntakeConstants {
-    public static final int kIntakeMotorCanId = 10;
+  public static final class OTBIntakeConstants {
+    public static final int kRollerCanId = 15;
+    public static final int kShoulderCanId = 16;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final double kMotorReduction = 1.0 / 10.0;
+    // TODO: Verify values for these reductions
+    public static final double kRollerReduction = 1.0 / 10.0;
+    public static final double kShoulderReduction = 1.0 / 10.0;
 
-    // Conversion factors (RPM → rad/s)
-    public static final double kPositionConversionFactor = 2 * Math.PI;
-    public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
+    // // Conversion factors (RPM → rad/s)
+    // public static final double kPositionConversionFactor = 2 * Math.PI;
+    // public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
+
+    // Motor Rotations -> Shoulder degrees
+    public static final double kShoulderPositionConversionFactor = 360;
+    // Motor RPM -> Shoulder degrees/Second
+    public static final double kShoulderVelocityConversionFactor = 360 / 60.0;
 
     public static final AngularVelocity kMaxVelocity = RPM.of(60);
 
     public static final double kIntakeSpeed = 0.5;
     public static final double kPlowSpeed = 0.7;
 
-    public static final SparkMaxConfig kSparkMaxConfig = new SparkMaxConfig();
+    public static final double kPIDShoulderControllerP = 0;
+    public static final double kPIDShoulderControllerI = 0;
+    public static final double kPIDShoulderControllerD = 0;
+    public static final double kPIDShoulderControllerFF = 0;
+
+    // TODO: Mesure this value
+    public static final Angle kStowPosition = Degrees.of(0);
+
+    public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kShoulderConfig = new SparkMaxConfig();
+
     static {
-      kSparkMaxConfig
+      kRollerConfig
           .idleMode(IdleMode.kCoast)
-          .smartCurrentLimit(30);
-      kSparkMaxConfig.encoder
-          .positionConversionFactor(kPositionConversionFactor * kMotorReduction)
-          .velocityConversionFactor(kVelocityConversionFactor * kMotorReduction);
+          .smartCurrentLimit(20);
+      // kRollerConfig.encoder
+      // .positionConversionFactor(kPositionConversionFactor * kRollerReduction)
+      // .velocityConversionFactor(kVelocityConversionFactor * kRollerReduction);
+
+      kShoulderConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(40);
+      kShoulderConfig.encoder
+          .positionConversionFactor(kShoulderPositionConversionFactor * kShoulderReduction)
+          .velocityConversionFactor(kShoulderVelocityConversionFactor * kShoulderReduction);
+      kShoulderConfig.closedLoop
+          .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
+          .outputRange(-1, 1).feedForward
+          .kCos(kPIDShoulderControllerFF)
+          // Feedforward requires the absolute postition of the shoulder in rotations (horizontal = 0)
+          .kCosRatio(1.0 / kShoulderPositionConversionFactor);
     }
   }
 
   public static final class IndexerConstants {
-    public static final int kMotorCanId = 11;
+    public static final int kWheelCanId = 11;
+    public static final int kTreadmillCanId = 12;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     /**
-     * Multiplier that decides whether + or - inputs move the algae towards the
+     * Multiplier that decides whether + or - inputs move the fuel towards the
      * launcher.
      */
     public static final double kDirectionConstant = -1.0;
 
-    public static final double kMotorReduction = 1.0;
+    public static final double kWheelMotorReduction = 1.0;
     public static final double kWheelDiameterMeters = 0.17;
 
-    public static final SparkMaxConfig kSparkMaxConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
+
     static {
-      kSparkMaxConfig.idleMode(IdleMode.kBrake);
-      kSparkMaxConfig.smartCurrentLimit(40);
-      kSparkMaxConfig.encoder
-          .velocityConversionFactor(kWheelDiameterMeters * Math.PI / kMotorReduction / 60);
+      kWheelConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(20);
+      // kWheelConfig.encoder
+      // .velocityConversionFactor(kWheelDiameterMeters * Math.PI /
+      // kWheelMotorReduction / 60);
+
+      kTreadmillConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(20);
     }
   }
 
   public static final class ClimberConstants {
-    public static final int kMotorId = 5;
+    public static final int kLeftId = 13;
+    public static final int kRightId = 14;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final Distance kStowPosition = Inches.of(0);
     public static final Distance kClimbPosition = Inches.of(32);
 
-    public static final double kMotorRaiseSpeed = 0.67;
-    public static final double kMotorHookSpeed = 0.67;
+    public static final double kMotorRaiseSpeed = 0.5;
+    public static final double kMotorHookSpeed = 0.5;
 
-    public static final double kTicksToInchesConversion = 0.67;
+    // TODO: measure these values
+    public static final Distance kWhinchDrumDiameter = Inches.of(1);
+    public static final Distance kSpoolCableDiameter = Inches.of(0.25);
+    public static final int kMaxSpoolLayers = 5;
+    public static final int kMinSpoolLayers = 1;
+
+    public static final Distance kAverageEffectiveDiameter = kWhinchDrumDiameter
+        .plus(kSpoolCableDiameter.times((kMaxSpoolLayers + kMinSpoolLayers) / 2.0));
+
+    public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI;
 
     public static final Distance kMinLength = Inches.of(-1);
     public static final Distance kMaxLength = Inches.of(33);
@@ -344,6 +419,18 @@ public final class Constants {
     public static final double kPIDClimberControllerP = 0.1;
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
+
+    public static final SparkMaxConfig kConfig = new SparkMaxConfig();
+    static {
+      kConfig.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfig.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfig.closedLoop
+          .p(kPIDClimberControllerP)
+          .i(kPIDClimberControllerI)
+          .d(kPIDClimberControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax);
+    }
+
   }
 
   public static final class GameModelConstants {

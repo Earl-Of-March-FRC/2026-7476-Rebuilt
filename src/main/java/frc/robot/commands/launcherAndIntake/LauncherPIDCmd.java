@@ -1,4 +1,4 @@
-package frc.robot.commands.launcher;
+package frc.robot.commands.launcherAndIntake;
 
 import static edu.wpi.first.units.Units.RPM;
 
@@ -9,7 +9,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.subsystems.launcher.LauncherPIDInterface;
+import frc.robot.subsystems.launcherAndIntake.LauncherPIDInterface;
 
 public class LauncherPIDCmd extends Command {
 

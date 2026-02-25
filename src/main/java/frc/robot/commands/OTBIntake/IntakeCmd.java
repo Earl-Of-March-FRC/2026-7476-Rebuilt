@@ -1,16 +1,18 @@
-package frc.robot.commands.intake;
+package frc.robot.commands.OTBIntake;
+
+import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 
 public class IntakeCmd extends Command {
 
-  private final IntakeSubsystem intake;
-  private final double speed;
+  private final OTBIntakeSubsystem intake;
+  private final DoubleSupplier speed;
 
-  public IntakeCmd(IntakeSubsystem subsystem, double speed) {
+  public IntakeCmd(OTBIntakeSubsystem subsystem, DoubleSupplier speed) {
     this.intake = subsystem;
     this.speed = speed;
     addRequirements(this.intake);
@@ -18,19 +20,19 @@ public class IntakeCmd extends Command {
 
   @Override
   public void initialize() {
-    intake.setVelocity(speed);
+    intake.setRollerPercent(speed.getAsDouble());
     Logger.recordOutput("IntakeCmd/Status", "Initialized");
-    Logger.recordOutput("IntakeCmd/TargetPercentOutput", speed);
+    Logger.recordOutput("IntakeCmd/TargetPercentOutput", speed.getAsDouble());
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("IntakeCmd/MeasuredVelocityRPM", intake.getVelocity());
+    Logger.recordOutput("IntakeCmd/MeasuredVelocityRPM", intake.getRollerVelocity());
   }
 
   @Override
   public void end(boolean interrupted) {
-    intake.stopIntake();
+    intake.stopRoller();
     Logger.recordOutput("IntakeCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 

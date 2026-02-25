@@ -11,10 +11,10 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
-import frc.robot.subsystems.intake.IntakeSubsystem;
-import frc.robot.subsystems.launcher.SparkLauncherSubsystem;
-import frc.robot.subsystems.launcher.TalonFXLauncherSubsystem;
+import frc.robot.subsystems.launcherAndIntake.SparkLauncherAndIntakeSubsystem;
+import frc.robot.subsystems.launcherAndIntake.TalonFXLauncherAndIntakeSubsystem;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
@@ -38,12 +38,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.IntakeConstants;
-import frc.robot.Constants.LauncherConstants;
+import frc.robot.Constants.OTBIntakeConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.commands.OTBIntake.IntakeCmd;
+import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
@@ -56,18 +58,16 @@ import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
-import frc.robot.commands.intake.IntakeCmd;
-import frc.robot.commands.intake.PlowCmd;
-import frc.robot.commands.launcher.LauncherPIDCmd;
+import frc.robot.commands.launcherAndIntake.LauncherPIDCmd;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
-  public final IntakeSubsystem intakeSub;
-  public final SparkLauncherSubsystem sparkLauncherSub;
-  public final TalonFXLauncherSubsystem talonFXLauncherSub;
+  public final OTBIntakeSubsystem otbIntakeSub;
+  public final SparkLauncherAndIntakeSubsystem sparkLauncherAndIntakeSub;
+  public final TalonFXLauncherAndIntakeSubsystem talonFXLauncherAndIntakeSub;
   public final IndexerSubsystem indexerSub;
   public final ClimberSubsystem climberSub;
   public final Gyro gyro;
@@ -83,16 +83,27 @@ public class RobotContainer {
 
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
-      intakeSub = new IntakeSubsystem(
-          new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
-      sparkLauncherSub = new SparkLauncherSubsystem(null); // set when we have more information
-      talonFXLauncherSub = new TalonFXLauncherSubsystem(null); // set when we have more information
 
-      // set when we have more info
-      indexerSub = new IndexerSubsystem(null);
-      climberSub = new ClimberSubsystem(null);
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      new LauncherPIDCmd(sparkLauncherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
+      sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
+          new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType),
+          new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType));
+      talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(null); // set when we have more information
+
+      indexerSub = new IndexerSubsystem(
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
+      climberSub = new ClimberSubsystem(
+          new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+          new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType));
+
+      new LauncherPIDCmd(sparkLauncherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       // launcher pid interface
 
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
@@ -124,17 +135,27 @@ public class RobotContainer {
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
-      intakeSub = new IntakeSubsystem(
-          new SparkMax(IntakeConstants.kIntakeMotorCanId, IntakeConstants.kMotorType));
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(Constants.LauncherConstants.kMotorCanTalonId));
+      talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(
+          new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId));
 
-      sparkLauncherSub = new SparkLauncherSubsystem(
-          new SparkMax(Constants.LauncherConstants.kMotorCanSparkId, Constants.LauncherConstants.kMotorType));
+      sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
+          new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType),
+          new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+              Constants.LauncherAndIntakeConstants.kMotorType));
+
       indexerSub = new IndexerSubsystem(
-          new SparkMax(Constants.IndexerConstants.kMotorCanId, Constants.IndexerConstants.kMotorType));
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
       climberSub = new ClimberSubsystem(
-          new SparkMax(Constants.ClimberConstants.kMotorId, Constants.ClimberConstants.kMotorType));
+          new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+          new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType));
+
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
           new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(
@@ -166,7 +187,7 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         this::getDriverVy,
-        Constants.LauncherConstants.kLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true);
 
     driveSub.setDefaultCommand(driveCmd);
@@ -187,10 +208,10 @@ public class RobotContainer {
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     // Binding for Plow (Button 5 is usually Left Bumper)
-    driverController.button(5).whileTrue(new IntakeCmd(intakeSub, IntakeConstants.kPlowSpeed));
+    driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
 
     // Binding for Intake (Button 6 is usually Right Bumper)
-    driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
+    driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () -> OTBIntakeConstants.kPlowSpeed));
 
     driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
