@@ -399,6 +399,12 @@ public final class Constants {
     public static final double kWheelMotorReduction = 1.0;
     public static final double kWheelDiameterMeters = 0.17;
 
+    // TODO: Tune these values
+    public static final double kTreadmillLaunchIndexPercent = 0.5;
+    public static final double kTreadmillStoreIndexPercent = 0.5;
+    public static final double kWheelLaunchIndexPercent = 0.5;
+    public static final double kWheelStoreIndexPercent = 0.5;
+
     public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
 

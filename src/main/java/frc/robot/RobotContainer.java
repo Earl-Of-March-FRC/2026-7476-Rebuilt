@@ -16,6 +16,7 @@ import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.SparkLauncherAndIntakeSubsystem;
 import frc.robot.subsystems.launcherAndIntake.TalonFXLauncherAndIntakeSubsystem;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 
@@ -41,6 +42,7 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
@@ -49,7 +51,10 @@ import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.drivetrain.DriveTrackHubCmd;
+import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.util.PoseHelpers;
+import frc.robot.util.launcher.LaunchHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
@@ -189,6 +194,49 @@ public class RobotContainer {
         this::getDriverVy,
         Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true);
+
+    // Drive while tracking hub and automatically shoot balls if we think they will
+    // go in, an additional trigger can used to lock distance
+    Command driveAndAutoShoot = Commands.deadline(
+        new DriveTrackHubCmd(
+            driveSub,
+            this::getDriverVx,
+            this::getDriverVy,
+            // TODO: Define bindings
+            () -> false,
+            true),
+        new IndexerCmd(
+            indexerSub,
+            () -> LaunchHelpers.willHitTarget(PoseHelpers.getAllianceHubtTranslation3d(),
+                driveSub.getPose(), FieldConstants.kHubInsideWidth, sparkLauncherAndIntakeSub.getVelocity())
+                    ? IndexerConstants.kWheelLaunchIndexPercent
+                    : 0,
+            () -> IndexerConstants.kTreadmillLaunchIndexPercent),
+        new LauncherPIDCmd(sparkLauncherAndIntakeSub,
+            () -> LaunchHelpers.calculateWheelRPM(
+                Meters.of(driveSub.getHubTranslation2dBotRelative().getNorm()))));
+
+    // Drive while tracking hub and shoot balls based on an additional trigger
+    // an additional trigger can used to lock distance
+    Command driveAndManualShoot = Commands.deadline(
+        new DriveTrackHubCmd(
+            driveSub,
+            this::getDriverVx,
+            this::getDriverVy,
+
+            // TODO: Define bindings
+            () -> false,
+            true),
+        new IndexerCmd(
+            indexerSub,
+            // TODO: Define bindings
+            () -> false
+                ? IndexerConstants.kWheelLaunchIndexPercent
+                : 0,
+            () -> IndexerConstants.kTreadmillLaunchIndexPercent),
+        new LauncherPIDCmd(sparkLauncherAndIntakeSub,
+            () -> LaunchHelpers.calculateWheelRPM(
+                Meters.of(driveSub.getHubTranslation2dBotRelative().getNorm()))));
 
     driveSub.setDefaultCommand(driveCmd);
 
