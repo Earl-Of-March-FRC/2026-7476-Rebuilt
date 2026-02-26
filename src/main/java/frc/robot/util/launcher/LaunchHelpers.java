@@ -1,0 +1,122 @@
+package frc.robot.util.launcher;
+
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+
+import com.ctre.phoenix6.signals.MotorOutputStatusValue;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
+import frc.robot.Constants.LauncherAndIntakeConstants;
+
+public class LaunchHelpers {
+
+  /**
+   * Predicts whether a ball launched with the provided launch parameters will hit
+   * the provided target within a certain tolerance.
+   * 
+   * @param target               Target Translation3d
+   * @param botPose              Current bot Pose2d
+   * @param tolerance            Tolerance of the target
+   * @param wheelAngularVelocity Current flywheel speed
+   * @return True if the ball with hit the target within tolerances, false
+   *         otherwise
+   */
+  public static boolean willHitTarget(Translation3d target, Pose2d botPose, Distance tolerance,
+      AngularVelocity wheelAngularVelocity) {
+    LinearVelocity ballLaunchVelocity = calculateBallLaunchVelocity(wheelAngularVelocity);
+    Time airTime = calculateBallAirTime(target.getMeasureZ(), wheelAngularVelocity);
+
+    double VxMPS = Math.cos(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians))
+        * ballLaunchVelocity.in(MetersPerSecond);
+
+    Translation2d ballEndpoint = botPose.getTranslation()
+        .plus(new Translation2d(VxMPS * airTime.in(Seconds), botPose.getRotation()));
+
+    return target.toTranslation2d().getDistance(ballEndpoint) < tolerance.in(Meters);
+  }
+
+  /**
+   * Predicts whether a ball launched with the provided launch parameters will hit
+   * the provided target within a certain tolerance.
+   * 
+   * @param target               Target Translation2d (Height will be set to 0)
+   * @param botPose              Current bot Pose2d
+   * @param tolerance            Tolerance of the target
+   * @param wheelAngularVelocity Current flywheel speed
+   * @return True if the ball with hit the target within tolerances, false
+   *         otherwise
+   */
+  public static boolean willHitTarget(Translation2d target, Pose2d botPose, Distance tolerance,
+      AngularVelocity wheelAngularVelocity) {
+    return willHitTarget(new Translation3d(target), botPose, tolerance, wheelAngularVelocity);
+  }
+
+  /**
+   * Calculate the correct RPM to shoot at the hub from a certain distance
+   * 
+   * @param targetDistance The distance from the hub in the X-Y plane
+   * @return The ideal wheel speed
+   */
+  public static AngularVelocity calculateWheelRPM(Distance targetDistance) {
+    // Use lookup table first, then polynomial regression
+    int lookupIndex = -1;
+    for (int i = 0; i < LauncherAndIntakeConstants.kLaunchDistancesLookup.length; i++) {
+      Distance tableEntry = LauncherAndIntakeConstants.kLaunchDistancesLookup[i];
+      double distance = Math.abs(tableEntry.in(Meters) - targetDistance.in(Meters));
+      double minDistance = 0;
+
+      if (distance < LauncherAndIntakeConstants.kLaunchLookupTolerance.in(Meters) &&
+          distance < minDistance) {
+        lookupIndex = i;
+      }
+    }
+
+    return lookupIndex == -1 ? LauncherAndIntakeConstants.kDistanceToRPMCurve.apply(targetDistance)
+        : LauncherAndIntakeConstants.kLaunchWheelSpeedLookup[lookupIndex];
+  }
+
+  /**
+   * Calculate how long the ball will be in the air
+   * 
+   * @param targetHeight         The height of the target
+   * @param wheelAngularVelocity Current wheel speed
+   * @return
+   */
+  public static Time calculateBallAirTime(Distance targetHeight, AngularVelocity wheelAngularVelocity) {
+    LinearVelocity ballLaunchVelocity = calculateBallLaunchVelocity(wheelAngularVelocity);
+
+    double g = 9.81;
+
+    double VyMPS = Math.sin(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians))
+        * ballLaunchVelocity.in(MetersPerSecond);
+
+    double deltaHeightMeters = targetHeight.minus(LauncherAndIntakeConstants.kBallReleaseHeight).in(Meters);
+
+    double tSeconds = (VyMPS + Math.sqrt(VyMPS * VyMPS - 2 * g * deltaHeightMeters)) / g;
+
+    return Seconds.of(tSeconds);
+  }
+
+  /**
+   * Calculates the launch velocity of the ball when it leaves the launcher
+   * 
+   * @param wheelAngularVelocity Current flywheel speed
+   * @return Ball linear velocity
+   */
+  public static LinearVelocity calculateBallLaunchVelocity(AngularVelocity wheelAngularVelocity) {
+    double wheelLinearVeocityMPS = LauncherAndIntakeConstants.kWheelRadius.in(Meters)
+        * wheelAngularVelocity.in(RadiansPerSecond);
+
+    return MetersPerSecond.of(LauncherAndIntakeConstants.kWheelSlipCoefficient * wheelLinearVeocityMPS);
+  }
+}
