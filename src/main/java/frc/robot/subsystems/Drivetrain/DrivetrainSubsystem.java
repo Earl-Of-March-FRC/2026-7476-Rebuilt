@@ -264,8 +264,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
                 DriveConstants.kDThetaController)),
         config,
         () -> {
-          Optional<Alliance> alliance = DriverStation.getAlliance();
-          return alliance.isPresent() ? alliance.get() == DriverStation.Alliance.Red : false; // default to blue
+          return PoseHelpers.getAlliance() == Alliance.Red;
         },
         this);
   }
@@ -321,8 +320,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualX, boolean isManualY) {
     if (isFieldRelative) {
-      Optional<Alliance> alliance = DriverStation.getAlliance();
-      boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
+      boolean isRedAlliance = PoseHelpers.getAlliance() == Alliance.Red;
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
           speeds.vxMetersPerSecond * (isRedAlliance && isManualX ? -1 : 1),
           speeds.vyMetersPerSecond * (isRedAlliance && isManualY ? -1 : 1),
@@ -559,12 +557,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public Translation2d getHubTranslation2dBotRelative() {
     Pose2d currentPose = getPose();
 
-    // Determine hub position based on alliance, default to blue
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
-    Translation2d hubTranslation = isRedAlliance
-        ? Constants.FieldConstants.kRedHubTranslation2d
-        : Constants.FieldConstants.kBlueHubTranslation2d;
+    Translation2d hubTranslation = PoseHelpers.getAllianceHubtTranslation2d();
 
     Translation2d directionToHub = hubTranslation.minus(currentPose.getTranslation());
     return directionToHub;
@@ -616,16 +609,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return The zone the pose is in
    */
   public FieldZones getPoseZone(Pose2d pose) {
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
-
-    if (alliance.isPresent()) {
-      Logger.recordOutput("Drivetrain/Alliance",
-          isBlueAlliance ? "Blue" : "Red");
-    } else {
-      Logger.recordOutput("Drivetrain/Alliance",
-          "Unknown");
-    }
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
 
     if (pose.getX() > FieldConstants.kAllianceZoneXLength.in(Meters)
         && pose.getX() < FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength).in(Meters)) {
@@ -1036,17 +1020,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public Pose2d getHubTargetPose(double targetAngle) {
     Pose2d currentPose = getPose();
 
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
-
-    Translation2d hubPose = isRedAlliance
-        ? Constants.FieldConstants.kRedHubTranslation2d
-        : Constants.FieldConstants.kBlueHubTranslation2d;
+    Translation2d hubPose = PoseHelpers.getAllianceHubtTranslation2d();
 
     double metersFromHub = isUsingHighVelocities.get() ? kMetersFromHubHigh : kMetersFromHubLow;
 
     // Offset from hub toward/away from hub along the X axis
-    double targetX = hubPose.getX() + (isRedAlliance ? metersFromHub : -metersFromHub);
+    double targetX = hubPose.getX() + (PoseHelpers.getAlliance() == Alliance.Red ? metersFromHub : -metersFromHub);
     double targetY = currentPose.getY();
 
     return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));

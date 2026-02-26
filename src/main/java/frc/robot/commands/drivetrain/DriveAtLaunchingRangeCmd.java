@@ -26,6 +26,7 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -99,10 +100,7 @@ public class DriveAtLaunchingRangeCmd extends Command {
 
     // Invert for red alliance to maintain consistent controls, this must be done
     // before projection
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-      joystickInput = joystickInput.times(-1);
-    }
+    joystickInput = joystickInput.times(PoseHelpers.getAlliance() == Alliance.Red ? -1 : 1);
 
     Translation2d projectedInput = perpendicularUnitVelocity.times(
         joystickInput.dot(perpendicularUnitVelocity) * SwerveConfig.kMaxSpeed.in(MetersPerSecond));
