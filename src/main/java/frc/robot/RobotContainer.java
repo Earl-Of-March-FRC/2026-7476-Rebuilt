@@ -13,8 +13,7 @@ import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
 import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
-import frc.robot.subsystems.launcherAndIntake.SparkLauncherAndIntakeSubsystem;
-import frc.robot.subsystems.launcherAndIntake.TalonFXLauncherAndIntakeSubsystem;
+import frc.robot.subsystems.launcherAndIntake.LauncherSubsystem;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
@@ -39,8 +38,6 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OTBIntakeConstants;
-import frc.robot.Constants.LauncherAndIntakeConstants;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
@@ -49,27 +46,24 @@ import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
-import frc.robot.util.swerve.FieldZones;
-import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
-import frc.robot.commands.launcherAndIntake.LauncherPIDCmd;
 
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
   public final OTBIntakeSubsystem otbIntakeSub;
-  public final SparkLauncherAndIntakeSubsystem sparkLauncherAndIntakeSub;
-  public final TalonFXLauncherAndIntakeSubsystem talonFXLauncherAndIntakeSub;
   public final IndexerSubsystem indexerSub;
+  public final LauncherSubsystem launcherSub;
   public final ClimberSubsystem climberSub;
+
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -88,24 +82,24 @@ public class RobotContainer {
           new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
           new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
-          new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
-              Constants.LauncherAndIntakeConstants.kMotorType),
-          new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
-              Constants.LauncherAndIntakeConstants.kMotorType));
-      talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(null); // set when we have more information
+      launcherSub = new LauncherSubsystem(
+          new LauncherSubsystem.SparkMaxLauncherMotor(
+              new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType),
+              new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType)));
 
+      climberSub = new ClimberSubsystem(
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
 
-      climberSub = new ClimberSubsystem(
-          new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
-          new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType));
-
-      new LauncherPIDCmd(sparkLauncherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
-      // launcher pid interface
-
+      // RPM tuning interface — constructing registers the SmartDashboard key
+      new LauncherCmd(launcherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               SwerveConfig.kFrontLeftDrivingCanId,
@@ -139,22 +133,18 @@ public class RobotContainer {
           new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
           new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      talonFXLauncherAndIntakeSub = new TalonFXLauncherAndIntakeSubsystem(
-          new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId));
+      launcherSub = new LauncherSubsystem(
+          new LauncherSubsystem.TalonFXLauncherMotor(
+              new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId)));
 
-      sparkLauncherAndIntakeSub = new SparkLauncherAndIntakeSubsystem(
-          new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
-              Constants.LauncherAndIntakeConstants.kMotorType),
-          new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
-              Constants.LauncherAndIntakeConstants.kMotorType));
-
+      climberSub = new ClimberSubsystem(
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
-
-      climberSub = new ClimberSubsystem(
-          new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
-          new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType));
 
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(

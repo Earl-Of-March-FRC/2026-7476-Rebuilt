@@ -8,25 +8,20 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.subsystems.launcherAndIntake.LauncherPIDInterface;
+import frc.robot.subsystems.launcherAndIntake.LauncherSubsystem;
 
-public class LauncherPIDCmd extends Command {
+public class LauncherCmd extends Command {
 
-  private final LauncherPIDInterface launcher;
+  private final LauncherSubsystem launcher;
   private final Supplier<AngularVelocity> targetVelocity;
 
-  public LauncherPIDCmd(LauncherPIDInterface launcher, Supplier<AngularVelocity> targetVelocity) {
+  public LauncherCmd(LauncherSubsystem launcher, Supplier<AngularVelocity> targetVelocity) {
     this.launcher = launcher;
     this.targetVelocity = targetVelocity;
-
-    if (launcher instanceof Subsystem subsystem) {
-      addRequirements(subsystem);
-    }
+    addRequirements(launcher);
   }
 
-  /** Convenience constructor for a fixed RPM setpoint. */
-  public LauncherPIDCmd(LauncherPIDInterface launcher, AngularVelocity velocity) {
+  public LauncherCmd(LauncherSubsystem launcher, AngularVelocity velocity) {
     this(launcher, () -> velocity);
   }
 
