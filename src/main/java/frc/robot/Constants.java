@@ -19,6 +19,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
 import java.io.File;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
@@ -125,10 +126,42 @@ public final class Constants {
 
   public static final class LauncherAndIntakeConstants {
 
+    // TODO measure these values
+    public static final Distance kBallReleaseHeight = Inches.of(20);
+    public static final Angle kBallReleaseAngle = null;
+
+    public static final Distance kWheelRadius = Inches.of(2);
+    // Empirical constant describing the ratio between wheel linear velocity and
+    // ball launch velocity
+    // TODO determine from video data
+    public static final double kWheelSlipCoefficient = 1;
+
     public static final int kLeaderCanSparkId = 9;
     public static final int kFollowerCanSparkId = 10;
     public static final int kMotorCanTalonId = 21;
     public static final MotorType kMotorType = MotorType.kBrushless;
+
+    public static final Distance[] kLaunchDistancesLookup = {
+        // TODO fill in values from spreadsheet
+    };
+    public static final AngularVelocity[] kLaunchWheelSpeedLookup = {
+        // TODO fill in values from spreadsheet
+    };
+    // The tolerance for using lookup values, if distance is not within tolerance of
+    // any lookup entry, use interpolation
+    public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
+
+    // Found using polynomial regression (degree 2)
+    // TODO enter real coefficients from spreadsheet
+    private static final double a = 1;
+    private static final double b = 1;
+    private static final double c = 0;
+    public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
+      double d = distance.in(Meters);
+      double RPM = a * d * d + b * d + c;
+      return RotationsPerSecond.of(RPM * 60);
+    };
+
     public static final Distance kLaunchRadius = Meters.of(2.0);
     public static final Time kBallAirTime = Seconds.of(0.5);
 
@@ -346,7 +379,8 @@ public final class Constants {
           .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
           .outputRange(-1, 1).feedForward
           .kCos(kPIDShoulderControllerFF)
-          // Feedforward requires the absolute postition of the shoulder in rotations (horizontal = 0)
+          // Feedforward requires the absolute postition of the shoulder in rotations
+          // (horizontal = 0)
           .kCosRatio(1.0 / kShoulderPositionConversionFactor);
     }
   }
@@ -554,8 +588,18 @@ public final class Constants {
     public static final Distance kHubXBlue = kAllianceZoneXLength;
     public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceZoneXLength);
 
-    public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
-    public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
+    public static final Distance kHubHeight = Inches.of(72);
+    // Distance between opposite sides of the upper hexagon
+    public static final Distance kHubInsideWidth = Inches.of(41.73);
+
+    public static final Translation3d kBlueHubTranslation3d = new Translation3d(kHubXBlue.in(Meters), kHubY.in(Meters),
+        kHubHeight.in(Meters));
+    public static final Translation3d kRedHubTranslation3d = new Translation3d(kHubXRed.in(Meters),
+        kHubY.in(Meters), kHubHeight.in(Meters));
+
+    public static final Translation2d kBlueHubTranslation2d = kBlueHubTranslation3d.toTranslation2d();
+    public static final Translation2d kRedHubTranslation2d = kRedHubTranslation3d.toTranslation2d();
+
     // public static final Translation2d kBlueHubPose = new Translation2d(4.625594,
     // kHubY.in(Meters));
     // public static final Translation2d kRedHubPose = new Translation2d(11.915394,

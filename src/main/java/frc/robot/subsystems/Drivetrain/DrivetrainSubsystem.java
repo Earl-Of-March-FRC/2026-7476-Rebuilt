@@ -563,8 +563,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Optional<Alliance> alliance = DriverStation.getAlliance();
     boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
     Translation2d hubTranslation = isRedAlliance
-        ? Constants.FieldConstants.kRedHubPose
-        : Constants.FieldConstants.kBlueHubPose;
+        ? Constants.FieldConstants.kRedHubTranslation2d
+        : Constants.FieldConstants.kBlueHubTranslation2d;
 
     Translation2d directionToHub = hubTranslation.minus(currentPose.getTranslation());
     return directionToHub;
@@ -1040,8 +1040,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
 
     Translation2d hubPose = isRedAlliance
-        ? Constants.FieldConstants.kRedHubPose
-        : Constants.FieldConstants.kBlueHubPose;
+        ? Constants.FieldConstants.kRedHubTranslation2d
+        : Constants.FieldConstants.kBlueHubTranslation2d;
 
     double metersFromHub = isUsingHighVelocities.get() ? kMetersFromHubHigh : kMetersFromHubLow;
 
