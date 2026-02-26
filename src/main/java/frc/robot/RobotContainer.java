@@ -15,6 +15,7 @@ import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 
@@ -37,7 +38,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OTBIntakeConstants;
+import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
@@ -46,8 +49,11 @@ import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.drivetrain.DriveTrackHubCmd;
+import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
+import frc.robot.util.launcher.LaunchHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
@@ -61,7 +67,7 @@ public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
   public final OTBIntakeSubsystem otbIntakeSub;
   public final IndexerSubsystem indexerSub;
-  public final LauncherAndIntakeSubsystem launcherSub;
+  public final LauncherAndIntakeSubsystem launcherAndIntakeSub;
   public final ClimberSubsystem climberSub;
 
   public final Gyro gyro;
@@ -82,7 +88,7 @@ public class RobotContainer {
           new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
           new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      launcherSub = new LauncherAndIntakeSubsystem(
+      launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
           new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
               new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
                   Constants.LauncherAndIntakeConstants.kMotorType),
@@ -99,7 +105,7 @@ public class RobotContainer {
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
 
       // RPM tuning interface — constructing registers the SmartDashboard key
-      new LauncherCmd(launcherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
+      new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               SwerveConfig.kFrontLeftDrivingCanId,
@@ -133,7 +139,7 @@ public class RobotContainer {
           new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
           new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      launcherSub = new LauncherAndIntakeSubsystem(
+      launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
           new LauncherAndIntakeSubsystem.TalonFXLauncherAndIntakeMotor(
               new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId)));
 
@@ -179,6 +185,49 @@ public class RobotContainer {
         this::getDriverVy,
         Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true);
+
+    // Drive while tracking hub and automatically shoot balls if we think they will
+    // go in, an additional trigger can used to lock distance
+    Command driveAndAutoShoot = Commands.deadline(
+        new DriveTrackHubCmd(
+            driveSub,
+            this::getDriverVx,
+            this::getDriverVy,
+            // TODO: Define bindings
+            () -> false,
+            true),
+        new IndexerCmd(
+            indexerSub,
+            () -> LaunchHelpers.willHitTarget(PoseHelpers.getAllianceHubtTranslation3d(),
+                driveSub.getPose(), FieldConstants.kHubInsideWidth, launcherAndIntakeSub.getVelocity())
+                    ? IndexerConstants.kWheelLaunchIndexPercent
+                    : 0,
+            () -> IndexerConstants.kTreadmillLaunchIndexPercent),
+        new LauncherCmd(launcherAndIntakeSub,
+            () -> LaunchHelpers.calculateWheelRPM(
+                Meters.of(driveSub.getHubTranslation2dBotRelative().getNorm()))));
+
+    // Drive while tracking hub and shoot balls based on an additional trigger
+    // an additional trigger can used to lock distance
+    Command driveAndManualShoot = Commands.deadline(
+        new DriveTrackHubCmd(
+            driveSub,
+            this::getDriverVx,
+            this::getDriverVy,
+
+            // TODO: Define bindings
+            () -> false,
+            true),
+        new IndexerCmd(
+            indexerSub,
+            // TODO: Define bindings
+            () -> false
+                ? IndexerConstants.kWheelLaunchIndexPercent
+                : 0,
+            () -> IndexerConstants.kTreadmillLaunchIndexPercent),
+        new LauncherCmd(launcherAndIntakeSub,
+            () -> LaunchHelpers.calculateWheelRPM(
+                Meters.of(driveSub.getHubTranslation2dBotRelative().getNorm()))));
 
     driveSub.setDefaultCommand(driveCmd);
 

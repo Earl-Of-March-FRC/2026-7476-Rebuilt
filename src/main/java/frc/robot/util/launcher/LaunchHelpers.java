@@ -6,10 +6,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
-import com.ctre.phoenix6.signals.MotorOutputStatusValue;
-
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -105,6 +102,17 @@ public class LaunchHelpers {
     double tSeconds = (VyMPS + Math.sqrt(VyMPS * VyMPS - 2 * g * deltaHeightMeters)) / g;
 
     return Seconds.of(tSeconds);
+  }
+
+  /**
+   * Calculate how long the ball will be in the air
+   * 
+   * @param targetHeight   The height of the target
+   * @param targetDistance The distance of the target from he bot
+   * @return
+   */
+  public static Time calculateBallAirTime(Distance targetHeight, Distance targetDistance) {
+    return calculateBallAirTime(targetHeight, calculateWheelRPM(targetDistance));
   }
 
   /**
