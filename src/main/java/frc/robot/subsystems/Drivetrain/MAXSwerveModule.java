@@ -25,10 +25,10 @@ import static edu.wpi.first.units.Units.Radians;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.RelativeEncoder;
 
-import frc.robot.Configs;
 import frc.robot.Constants.ModuleConstants;
+import frc.robot.util.swerve.SwerveConfig;
+
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 public class MAXSwerveModule implements SwerveModule {
@@ -120,7 +120,7 @@ public class MAXSwerveModule implements SwerveModule {
 
   private void configureConfigs() {
 
-    // Driving config
+    // Driving config — values come from the active SwerveProfile via SwerveConfig
     Distance drivingFactor = ModuleConstants.kWheelDiameter.times(Math.PI)
         .div(ModuleConstants.kDrivingMotorReduction);
 
@@ -128,28 +128,35 @@ public class MAXSwerveModule implements SwerveModule {
 
     drivingConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(50);
+        .smartCurrentLimit(SwerveConfig.kDriveSmartCurrentLimit);
     drivingConfig.encoder
         .positionConversionFactor(drivingFactor.in(Meters))
         .velocityConversionFactor(drivingFactor.div(60.0).in(Meters));
     drivingConfig.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(0.04, 0, 0)
+        .pid(SwerveConfig.kDrivingP, SwerveConfig.kDrivingI, SwerveConfig.kDrivingD)
         .outputRange(-1, 1).feedForward.kV(drivingVelocityFeedForward);
 
+    // Turning config
     Angle turningFactor = Radians.of(2 * Math.PI);
 
     turningConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(20);
+        .smartCurrentLimit(SwerveConfig.kTurnSmartCurrentLimit);
     turningConfig.absoluteEncoder
+        // Invert the turning encoder, since the output shaft rotates in the opposite
+        // direction of the steering motor in the MAXSwerve Module.
         .inverted(true)
         .positionConversionFactor(turningFactor.in(Radians))
         .velocityConversionFactor(turningFactor.div(60.0).in(Radians));
     turningConfig.closedLoop
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-        .pid(1, 0, 0)
+        .pid(SwerveConfig.kTurningP, SwerveConfig.kTurningI, SwerveConfig.kTurningD)
         .outputRange(-1, 1)
+        // Enable PID wrap around for the turning motor. This will allow the PID
+        // controller to go through 0 to get to the setpoint i.e. going from 350 degrees
+        // to 10 degrees will go through 0 rather than the other direction which is a
+        // longer route.
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, turningFactor.in(Radians));
   }
