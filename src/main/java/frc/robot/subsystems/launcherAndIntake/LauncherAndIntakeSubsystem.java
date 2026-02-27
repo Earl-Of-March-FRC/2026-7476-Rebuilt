@@ -22,15 +22,15 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 
-public class LauncherSubsystem extends SubsystemBase {
+public class LauncherAndIntakeSubsystem extends SubsystemBase {
 
   // SparkMax motor implementation
-  public static class SparkMaxLauncherMotor implements LauncherMotorInterface {
+  public static class SparkMaxLauncherAndIntakeMotor implements LauncherAndIntakeMotorInterface {
     private final SparkMax leaderSparkMax;
     private final SparkMax followerSparkMax;
     private final SparkClosedLoopController closedLoopController;
 
-    public SparkMaxLauncherMotor(SparkMax leader, SparkMax follower) {
+    public SparkMaxLauncherAndIntakeMotor(SparkMax leader, SparkMax follower) {
       this.leaderSparkMax = leader;
       this.followerSparkMax = follower;
       this.closedLoopController = leader.getClosedLoopController();
@@ -72,11 +72,11 @@ public class LauncherSubsystem extends SubsystemBase {
   }
 
   // TalonFX motor implementation
-  public static class TalonFXLauncherMotor implements LauncherMotorInterface {
+  public static class TalonFXLauncherAndIntakeMotor implements LauncherAndIntakeMotorInterface {
     private final TalonFX talonFX;
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
 
-    public TalonFXLauncherMotor(TalonFX talonFX) {
+    public TalonFXLauncherAndIntakeMotor(TalonFX talonFX) {
       this.talonFX = talonFX;
 
       TalonFXConfiguration config = new TalonFXConfiguration();
@@ -119,11 +119,11 @@ public class LauncherSubsystem extends SubsystemBase {
   }
 
   // Main Launcher Subsystem
-  private final LauncherMotorInterface motor;
+  private final LauncherAndIntakeMotorInterface motor;
   private double velocityOffsetRPM = 0.0;
   private boolean useHighVelocities = true;
 
-  public LauncherSubsystem(LauncherMotorInterface motor) {
+  public LauncherAndIntakeSubsystem(LauncherAndIntakeMotorInterface motor) {
     this.motor = motor;
   }
 

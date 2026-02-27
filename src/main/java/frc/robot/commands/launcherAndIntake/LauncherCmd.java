@@ -8,20 +8,20 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.launcherAndIntake.LauncherSubsystem;
+import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 public class LauncherCmd extends Command {
 
-  private final LauncherSubsystem launcher;
+  private final LauncherAndIntakeSubsystem launcher;
   private final Supplier<AngularVelocity> targetVelocity;
 
-  public LauncherCmd(LauncherSubsystem launcher, Supplier<AngularVelocity> targetVelocity) {
+  public LauncherCmd(LauncherAndIntakeSubsystem launcher, Supplier<AngularVelocity> targetVelocity) {
     this.launcher = launcher;
     this.targetVelocity = targetVelocity;
     addRequirements(launcher);
   }
 
-  public LauncherCmd(LauncherSubsystem launcher, AngularVelocity velocity) {
+  public LauncherCmd(LauncherAndIntakeSubsystem launcher, AngularVelocity velocity) {
     this(launcher, () -> velocity);
   }
 

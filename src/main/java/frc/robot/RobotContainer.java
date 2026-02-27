@@ -13,7 +13,7 @@ import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
 import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
-import frc.robot.subsystems.launcherAndIntake.LauncherSubsystem;
+import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
@@ -61,7 +61,7 @@ public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
   public final OTBIntakeSubsystem otbIntakeSub;
   public final IndexerSubsystem indexerSub;
-  public final LauncherSubsystem launcherSub;
+  public final LauncherAndIntakeSubsystem launcherSub;
   public final ClimberSubsystem climberSub;
 
   public final Gyro gyro;
@@ -82,8 +82,8 @@ public class RobotContainer {
           new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
           new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      launcherSub = new LauncherSubsystem(
-          new LauncherSubsystem.SparkMaxLauncherMotor(
+      launcherSub = new LauncherAndIntakeSubsystem(
+          new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
               new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
                   Constants.LauncherAndIntakeConstants.kMotorType),
               new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
@@ -133,8 +133,8 @@ public class RobotContainer {
           new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
           new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      launcherSub = new LauncherSubsystem(
-          new LauncherSubsystem.TalonFXLauncherMotor(
+      launcherSub = new LauncherAndIntakeSubsystem(
+          new LauncherAndIntakeSubsystem.TalonFXLauncherAndIntakeMotor(
               new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId)));
 
       climberSub = new ClimberSubsystem(
