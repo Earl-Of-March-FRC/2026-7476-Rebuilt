@@ -3,20 +3,7 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Meter;
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Milliseconds;
-import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.*;
 
 import java.io.File;
 import java.util.function.Function;
@@ -38,21 +25,14 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -63,7 +43,6 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.swerve.SwerveConfig;
-import frc.robot.util.vision.CameraProfile;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -126,9 +105,8 @@ public final class Constants {
 
   public static final class LauncherAndIntakeConstants {
 
-    // TODO measure these values
     public static final Distance kBallReleaseHeight = Inches.of(20);
-    public static final Angle kBallReleaseAngle = null;
+    public static final Angle kBallReleaseAngle = Degree.of(58.016961);
 
     public static final Distance kWheelRadius = Inches.of(2);
     // Empirical constant describing the ratio between wheel linear velocity and
@@ -172,11 +150,10 @@ public final class Constants {
 
     public static final Current kSmartCurrentLimit = Amps.of(40);
 
-    // TODO: retune now that the motor reduction has changed
-    public static final double kPIDLauncherControllerP = 8e-5;
+    public static final double kPIDLauncherControllerP = 1.2e-4;
     public static final double kPIDLauncherControllerI = 0;
-    public static final double kPIDLauncherControllerD = 0;
-    public static final double kPIDLauncherControllerFF = 7e-4;
+    public static final double kPIDLauncherControllerD = 1e-4;
+    public static final double kPIDLauncherControllerFF = 2.1e-4;
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
