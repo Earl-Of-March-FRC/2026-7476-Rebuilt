@@ -117,8 +117,7 @@ public class DriveTrackHubCmd extends Command {
     Translation2d targetBotRelative = toHub;
     if (leadShots) {
       targetBotRelative = targetBotRelative.minus(velocity
-          .times(LaunchHelpers.calculateBallAirTime(FieldConstants.kHubHeight,
-              Meters.of(toHubNorm)).in(Seconds)));
+          .times(LaunchHelpers.calculateBallAirTime(FieldConstants.kHubHeight).in(Seconds)));
     }
 
     Rotation2d desiredHeading = targetBotRelative.getAngle();

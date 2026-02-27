@@ -6,6 +6,8 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.util.Objects;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -14,17 +16,50 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import frc.robot.Constants.LauncherAndIntakeConstants;
+import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 public class LaunchHelpers {
+
+  // Do not access launcherAndIntakeSub directly, use Launcher() to avoid NPE
+  private static LauncherAndIntakeSubsystem launcherAndIntakeSub;
+  private static DrivetrainSubsystem driveSub;
+  private static boolean configured = false;
+
+  public static void setSubsystems(DrivetrainSubsystem driveSubsystem,
+      LauncherAndIntakeSubsystem launcherAndIntakeSubsystem) {
+    if (configured) {
+      throw new IllegalStateException("LauncherHelpers already configured");
+    }
+    launcherAndIntakeSub = Objects.requireNonNull(launcherAndIntakeSubsystem, "Launcher cannot be null");
+    driveSub = Objects.requireNonNull(driveSubsystem, "Drivetrain cannot be null");
+    configured = true;
+  }
+
+  private static LauncherAndIntakeSubsystem launcher() {
+    if (!configured) {
+      throw new IllegalStateException(
+          "LauncherHelpers used before setSubsystems() was called");
+    }
+    return launcherAndIntakeSub;
+  }
+
+  private static DrivetrainSubsystem drive() {
+    if (!configured) {
+      throw new IllegalStateException(
+          "LauncherHelpers used before setSubsystems() was called");
+    }
+    return driveSub;
+  }
 
   /**
    * Predicts whether a ball launched with the provided launch parameters will hit
    * the provided target within a certain tolerance.
    * 
    * @param target               Target Translation3d
-   * @param botPose              Current bot Pose2d
+   * @param botPose              Bot Pose2d
    * @param tolerance            Tolerance of the target
-   * @param wheelAngularVelocity Current flywheel speed
+   * @param wheelAngularVelocity Flywheel speed
    * @return True if the ball with hit the target within tolerances, false
    *         otherwise
    */
@@ -43,19 +78,16 @@ public class LaunchHelpers {
   }
 
   /**
-   * Predicts whether a ball launched with the provided launch parameters will hit
+   * Predicts whether a ball launched with the current launch parameters will hit
    * the provided target within a certain tolerance.
    * 
-   * @param target               Target Translation2d (Height will be set to 0)
-   * @param botPose              Current bot Pose2d
-   * @param tolerance            Tolerance of the target
-   * @param wheelAngularVelocity Current flywheel speed
+   * @param target    Target Translation3d
+   * @param tolerance Tolerance of the target
    * @return True if the ball with hit the target within tolerances, false
    *         otherwise
    */
-  public static boolean willHitTarget(Translation2d target, Pose2d botPose, Distance tolerance,
-      AngularVelocity wheelAngularVelocity) {
-    return willHitTarget(new Translation3d(target), botPose, tolerance, wheelAngularVelocity);
+  public static boolean willHitTarget(Translation3d target, Distance tolerance) {
+    return willHitTarget(target, drive().getPose(), tolerance, launcher().getVelocity());
   }
 
   /**
@@ -83,10 +115,20 @@ public class LaunchHelpers {
   }
 
   /**
-   * Calculate how long the ball will be in the air
+   * Calculate the correct RPM to shoot at the hub from the current distance
+   * 
+   * @return The ideal wheel speed
+   */
+  public static AngularVelocity calculateWheelRPM() {
+    return calculateWheelRPM(drive().getHubDistance());
+  }
+
+  /**
+   * Calculate how long the ball will be in the air with the provided wheel
+   * velocity
    * 
    * @param targetHeight         The height of the target
-   * @param wheelAngularVelocity Current wheel speed
+   * @param wheelAngularVelocity Wheel speed
    * @return
    */
   public static Time calculateBallAirTime(Distance targetHeight, AngularVelocity wheelAngularVelocity) {
@@ -105,20 +147,19 @@ public class LaunchHelpers {
   }
 
   /**
-   * Calculate how long the ball will be in the air
+   * Calculate how long the ball will be in the air with the current wheel speed
    * 
-   * @param targetHeight   The height of the target
-   * @param targetDistance The distance of the target from he bot
+   * @param targetHeight The height of the target
    * @return
    */
-  public static Time calculateBallAirTime(Distance targetHeight, Distance targetDistance) {
-    return calculateBallAirTime(targetHeight, calculateWheelRPM(targetDistance));
+  public static Time calculateBallAirTime(Distance targetHeight) {
+    return calculateBallAirTime(targetHeight, launcher().getVelocity());
   }
 
   /**
-   * Calculates the launch velocity of the ball when it leaves the launcher
+   * Calculates the launch velocity of the ball with the given flywheel speed
    * 
-   * @param wheelAngularVelocity Current flywheel speed
+   * @param wheelAngularVelocity Flywheel speed
    * @return Ball linear velocity
    */
   public static LinearVelocity calculateBallLaunchVelocity(AngularVelocity wheelAngularVelocity) {
@@ -126,5 +167,14 @@ public class LaunchHelpers {
         * wheelAngularVelocity.in(RadiansPerSecond);
 
     return MetersPerSecond.of(LauncherAndIntakeConstants.kWheelSlipCoefficient * wheelLinearVeocityMPS);
+  }
+
+  /**
+   * Calculates the launch velocity of the ball with the current flywheel speed
+   * 
+   * @return Ball linear velocity
+   */
+  public static LinearVelocity calculateBallLaunchVelocity() {
+    return calculateBallLaunchVelocity(launcher().getVelocity());
   }
 }

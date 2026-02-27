@@ -563,6 +563,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
     return directionToHub;
   }
 
+  /** @return The distance to the hub from current bot pose */
+  public Distance getHubDistance() {
+    return Meters.of(getHubTranslation2dBotRelative().getNorm());
+  }
+
   /**
    * Gets the linear velocity correction to maintain a desired radial distance
    * from the hub.

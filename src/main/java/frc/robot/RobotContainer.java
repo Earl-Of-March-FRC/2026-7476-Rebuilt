@@ -166,6 +166,7 @@ public class RobotContainer {
     }
 
     PathGenerator.setDrivetrain(driveSub);
+    LaunchHelpers.setSubsystems(driveSub, launcherAndIntakeSub);
 
     configureBindings();
     configureAutos();
@@ -199,13 +200,12 @@ public class RobotContainer {
         new IndexerCmd(
             indexerSub,
             () -> LaunchHelpers.willHitTarget(PoseHelpers.getAllianceHubtTranslation3d(),
-                driveSub.getPose(), FieldConstants.kHubInsideWidth, launcherAndIntakeSub.getVelocity())
+                FieldConstants.kHubInsideWidth)
                     ? IndexerConstants.kWheelLaunchIndexPercent
                     : 0,
             () -> IndexerConstants.kTreadmillLaunchIndexPercent),
         new LauncherCmd(launcherAndIntakeSub,
-            () -> LaunchHelpers.calculateWheelRPM(
-                Meters.of(driveSub.getHubTranslation2dBotRelative().getNorm()))));
+            () -> LaunchHelpers.calculateWheelRPM()));
 
     // Drive while tracking hub and shoot balls based on an additional trigger
     // an additional trigger can used to lock distance
@@ -226,8 +226,7 @@ public class RobotContainer {
                 : 0,
             () -> IndexerConstants.kTreadmillLaunchIndexPercent),
         new LauncherCmd(launcherAndIntakeSub,
-            () -> LaunchHelpers.calculateWheelRPM(
-                Meters.of(driveSub.getHubTranslation2dBotRelative().getNorm()))));
+            () -> LaunchHelpers.calculateWheelRPM()));
 
     driveSub.setDefaultCommand(driveCmd);
 
