@@ -190,13 +190,20 @@ public class RobotContainer {
     // Drive while tracking hub and automatically shoot balls if we think they will
     // go in, an additional trigger can used to lock distance
     Command driveAndAutoShoot = Commands.deadline(
-        new DriveTrackHubCmd(
-            driveSub,
-            this::getDriverVx,
-            this::getDriverVy,
-            // TODO: Define bindings
-            () -> false,
-            true),
+        Commands.either(
+            Commands.defer(() -> new DriveAtLaunchingRangeCmd(
+                driveSub,
+                this::getDriverVx,
+                this::getDriverVy,
+                driveSub.getHubDistance(),
+                true), Set.of(driveSub)),
+            new DriveTrackHubCmd(
+                driveSub,
+                this::getDriverVx,
+                this::getDriverVy,
+                true),
+            // TODO: Define lock binding
+            () -> false),
         new IndexerCmd(
             indexerSub,
             () -> LaunchHelpers.willHitTarget(PoseHelpers.getAllianceHubtTranslation3d(),
@@ -210,17 +217,23 @@ public class RobotContainer {
     // Drive while tracking hub and shoot balls based on an additional trigger
     // an additional trigger can used to lock distance
     Command driveAndManualShoot = Commands.deadline(
-        new DriveTrackHubCmd(
-            driveSub,
-            this::getDriverVx,
-            this::getDriverVy,
-
-            // TODO: Define bindings
-            () -> false,
-            true),
+        Commands.either(
+            Commands.defer(() -> new DriveAtLaunchingRangeCmd(
+                driveSub,
+                this::getDriverVx,
+                this::getDriverVy,
+                driveSub.getHubDistance(),
+                true), Set.of(driveSub)),
+            new DriveTrackHubCmd(
+                driveSub,
+                this::getDriverVx,
+                this::getDriverVy,
+                true),
+            // TODO: Define lock binding
+            () -> false),
         new IndexerCmd(
             indexerSub,
-            // TODO: Define bindings
+            // TODO: Define shoot binding
             () -> false
                 ? IndexerConstants.kWheelLaunchIndexPercent
                 : 0,
