@@ -169,7 +169,7 @@ public class RobotContainer {
         driveSub,
         () -> 0.0,
         () -> 0.0,
-        Constants.LauncherConstants.kLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true).until(() -> driveSub.isRadialControllerAtSetpoint()));
 
     NamedCommands.registerCommand("Launch", new InstantCommand());
@@ -303,7 +303,7 @@ public class RobotContainer {
             driveSub,
             () -> 0.0,
             () -> 0.0,
-            Constants.LauncherConstants.kLaunchRadius,
+            Constants.LauncherAndIntakeConstants.kLaunchRadius,
             true).until(() -> driveSub.isRadialControllerAtSetpoint()),
         new InstantCommand(), // Change to launch command when finished
         Commands.defer(

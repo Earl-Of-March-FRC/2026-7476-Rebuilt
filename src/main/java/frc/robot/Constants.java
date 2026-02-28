@@ -19,6 +19,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
 import java.io.File;
+import java.util.List;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
@@ -401,7 +402,8 @@ public final class Constants {
           .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
           .outputRange(-1, 1).feedForward
           .kCos(kPIDShoulderControllerFF)
-          // Feedforward requires the absolute postition of the shoulder in rotations (horizontal = 0)
+          // Feedforward requires the absolute postition of the shoulder in rotations
+          // (horizontal = 0)
           .kCosRatio(1.0 / kShoulderPositionConversionFactor);
     }
   }
