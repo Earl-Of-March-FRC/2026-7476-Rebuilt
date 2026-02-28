@@ -40,7 +40,13 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
         // the lockSupplier. If lockSupplier is true, we use the
         // DriveAtLaunchingRangeCmd which will maintain the current distance from the
         // hub
-        Commands.either(
+
+        // We defer the Commands.either(...) block so that the choosen command updates
+        // based
+        // on the supplier
+        Commands.defer(() -> Commands.either(
+            // We defer the DriveAtLaunchingRangeCmd so that it updates the distance to the
+            // hub when it's choosen
             Commands.defer(() -> new DriveAtLaunchingRangeCmd(
                 driveSub,
                 xSupplier,
@@ -52,7 +58,7 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
                 xSupplier,
                 ySupplier,
                 leadShots),
-            lockSupplier),
+            lockSupplier), Set.of(driveSub)),
         new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier));
   }
 
@@ -75,7 +81,13 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
         // the lockSupplier. If lockSupplier is true, we use the
         // DriveAtLaunchingRangeCmd which will maintain the current distance from the
         // hub
-        Commands.either(
+
+        // We defer the Commands.either(...) block so that the choosen command updates
+        // based
+        // on the supplier
+        Commands.defer(() -> Commands.either(
+            // We defer the DriveAtLaunchingRangeCmd so that it updates the distance to the
+            // hub when it's choosen
             Commands.defer(() -> new DriveAtLaunchingRangeCmd(
                 driveSub,
                 xSupplier,
@@ -87,7 +99,7 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
                 xSupplier,
                 ySupplier,
                 leadShots),
-            lockSupplier),
+            lockSupplier), Set.of(driveSub)),
         new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub));
   }
 

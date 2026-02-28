@@ -19,6 +19,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -31,6 +32,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -70,7 +72,7 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
 
-  private LoggedDashboardChooser<Command> autoChooser;
+  private LoggedDashboardChooser<Command> autoChooser, debugChooser;
 
   public RobotContainer() {
     // Get profile from Elastic dashboard selector
@@ -136,8 +138,11 @@ public class RobotContainer {
           new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
       launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
-          new LauncherAndIntakeSubsystem.TalonFXLauncherAndIntakeMotor(
-              new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId)));
+          new LauncherAndIntakeSubsystem.SimSparkMaxLauncherAndIntakeMotor(
+              new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType),
+              DCMotor.getNEO(2).withReduction(Constants.LauncherAndIntakeConstants.kMotorReduction),
+              Constants.SimulationConstants.kSimulatedMaxLauncherSpeed));
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
@@ -183,30 +188,59 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
+    // Toggle locked range with the left trigger, so the driver can choose to
+    // maintain optimal shooting distance while lining up shots
+    BooleanSupplier distanceLockSupplier = new BooleanSupplier() {
+      private boolean wasPressed = driverController.leftTrigger(Constants.OIConstants.kTriggerThreshold).getAsBoolean();
+      private boolean toggleOnTrue = false;
+
+      @Override
+      public boolean getAsBoolean() {
+        boolean isPressed = driverController.leftTrigger(Constants.OIConstants.kTriggerThreshold).getAsBoolean();
+        if (isPressed && !wasPressed) {
+          toggleOnTrue = !toggleOnTrue;// toggle on rising edges
+        }
+        wasPressed = isPressed;
+        return toggleOnTrue;
+      }
+    };
+
     // Drive while tracking hub and automatically shoot balls if we think they will
     // go in, an additional trigger can used to lock distance
-    Command driveAndAutoShoot = new DriveAndLaunchCmd(
+    Command driveAndAutoShootCmd = new DriveAndLaunchCmd(
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
         this::getDriverVx,
         this::getDriverVy,
-        // TODO: Pass in controller triggers for these bindings
-        () -> false,
+        distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
     // Drive while tracking hub and shoot balls based on an additional trigger
     // an additional trigger can used to lock distance
-    Command driveAndManualShoot = new DriveAndLaunchCmd(
+    Command driveAndManualShootCmd = new DriveAndLaunchCmd(
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
         this::getDriverVx,
         this::getDriverVy,
-        // TODO: Pass in controller triggers for these bindings
-        () -> false,
-        () -> false,
+        driverController.rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean,
+        distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
+
+    // Meant for use in autonomous
+    // Turn to the hub and launch all balls, maintain current distance but do not
+    // provide any drive input
+    Command autoLaunchCmd = new DriveAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        () -> 0.0,
+        () -> 0.0,
+        // Always lock distance in auto, since the driver isn't controlling movement
+        () -> true,
+        Constants.LauncherAndIntakeConstants.kLeadShots)
+        .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
     driveSub.setDefaultCommand(driveCmd);
 
@@ -255,15 +289,22 @@ public class RobotContainer {
         new Rotation2d(DriveConstants.kTrenchHeadingRestriction),
         DriveConstants.kTrenchLinearVelocity));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
-        Commands.defer(
-            () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
-            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+    // driverController.povUp().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Neutral).onTrue(
+    // Commands.defer(
+    // () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
+    // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
-        Commands.defer(
-            () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
-            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+    // driverController.povDown().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Neutral).onTrue(
+    // Commands.defer(
+    // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
+    // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+
+    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+        driveAndManualShootCmd);
+    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+        driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(
@@ -307,7 +348,6 @@ public class RobotContainer {
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
-
   }
 
   /**

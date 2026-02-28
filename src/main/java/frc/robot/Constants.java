@@ -59,7 +59,9 @@ import frc.robot.util.swerve.SwerveConfig;
 public final class Constants {
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
-    public static final double kDriveDeadband = 0.05;
+    public static final double kDriveDeadband = 0.2;
+    // Threshld when using trigger axis as a button
+    public static final double kTriggerThreshold = 0.5;
     public static final int kDriverControllerXAxis = 0;
     public static final int kDriverControllerYAxis = 1;
     public static final int kDriverControllerRotAxis = 4;
@@ -112,7 +114,7 @@ public final class Constants {
     // Empirical constant describing the ratio between wheel linear velocity and
     // ball launch velocity
     // TODO determine from video data
-    public static final double kWheelSlipCoefficient = 1;
+    public static final double kWheelSlipCoefficient = 0.3;
 
     public static final int kLeaderCanSparkId = 9;
     public static final int kFollowerCanSparkId = 10;
@@ -142,8 +144,8 @@ public final class Constants {
     private static final double c = 3470;
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
-      double RPM = a * d * d + b * d + c;
-      return RotationsPerSecond.of(RPM * 60);
+      double rpm = a * d * d + b * d + c;
+      return RPM.of(rpm);
     };
 
     public static final Distance kTestLaunchRadius = Meters.of(2.0);
@@ -171,6 +173,8 @@ public final class Constants {
 
     public static final SparkMaxConfig kLeaderConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
+    // TODO: Test this value
+    public static final Time kAutoLaunchTime = Seconds.of(10);
 
     static {
       kLeaderConfig
@@ -518,6 +522,9 @@ public final class Constants {
 
     // NOTE: drivetrainConfig depends on SwerveConfig which is set at runtime,
     // so it is built lazily in RobotContainer rather than here as a static final.
+
+    // TODO: Mesure this value
+    public static final AngularVelocity kSimulatedMaxLauncherSpeed = RPM.of(6000);
   }
 
   public static final class PhotonConstants {

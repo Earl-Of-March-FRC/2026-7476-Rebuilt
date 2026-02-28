@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.Seconds;
 
 import java.util.Objects;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -15,6 +17,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
@@ -166,7 +169,19 @@ public class LaunchHelpers {
 
     double deltaHeightMeters = targetHeight.minus(LauncherAndIntakeConstants.kBallReleaseHeight).in(Meters);
 
-    double tSeconds = (VyMPS + Math.sqrt(VyMPS * VyMPS - 2 * g * deltaHeightMeters)) / g;
+    double discriminant = VyMPS * VyMPS - 2 * g * deltaHeightMeters;
+
+    if (Double.isNaN(discriminant) || discriminant < 0) {
+      return Seconds.of(0);
+    }
+
+    double tSeconds = (VyMPS + Math.sqrt(discriminant)) / g;
+
+    if (Double.isNaN(tSeconds) || tSeconds < 0) {
+      String msg = String.format("Computed non-positive flight time: t=%.6f. Returning 0s.", tSeconds);
+      DriverStation.reportError(msg, false);
+      return Seconds.of(0);
+    }
 
     return Seconds.of(tSeconds);
   }
@@ -188,10 +203,10 @@ public class LaunchHelpers {
    * @return Ball linear velocity
    */
   public static LinearVelocity calculateBallLaunchVelocity(AngularVelocity wheelAngularVelocity) {
-    double wheelLinearVeocityMPS = LauncherAndIntakeConstants.kWheelRadius.in(Meters)
+    double wheelLinearVelocityMPS = LauncherAndIntakeConstants.kWheelRadius.in(Meters)
         * wheelAngularVelocity.in(RadiansPerSecond);
 
-    return MetersPerSecond.of(LauncherAndIntakeConstants.kWheelSlipCoefficient * wheelLinearVeocityMPS);
+    return MetersPerSecond.of(LauncherAndIntakeConstants.kWheelSlipCoefficient * wheelLinearVelocityMPS);
   }
 
   /**
