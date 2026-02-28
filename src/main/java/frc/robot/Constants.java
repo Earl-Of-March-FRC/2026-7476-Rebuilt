@@ -306,7 +306,6 @@ public final class Constants {
     public static PathPlannerPath trenchLeftClimbPath;
     public static PathPlannerPath trenchRightClimbPath;
     public static PathPlannerPath trenchLeftAuto;
-    public static PathPlannerPath charles;
 
     static {
       try {
@@ -315,7 +314,6 @@ public final class Constants {
         trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
         trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
         trenchLeftAuto = PathPlannerPath.fromPathFile("trench left auto");
-        charles = PathPlannerPath.fromPathFile("charles");
       } catch (Exception e) {
         e.printStackTrace();
       }
