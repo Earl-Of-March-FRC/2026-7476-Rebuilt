@@ -380,7 +380,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
-   * Resets the pose estimator to the origin (0, 0, 0°).
+   * Resets the pose estimator to the origin
    */
   public void resetPose() {
     resetPose(new Pose2d(new Translation2d(0.0, 0.0), new Rotation2d()));
@@ -926,7 +926,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StandardDeviation",
             new double[] { stdDevs.get(0), stdDevs.get(1), stdDevs.get(2) });
         Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
-        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/Timestamp", visionPose.timestampSeconds);
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/LatencyTimestamp",
+            visionPose.timestampSeconds);
       }
 
       Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/FieldRelative;",
@@ -977,7 +978,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     double accelerationNorm = Math
         .sqrt(Math.pow(acceleration.vxMetersPerSecond, 2) + Math.pow(acceleration.vyMetersPerSecond, 2));
 
-    // Log everything
+    // Log Drivetrain States
     Logger.recordOutput("Drivetrain/GyroDisconnected", gyroDisconnected);
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
@@ -1040,26 +1041,22 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   public Pose2d getHubTargetPose(double targetAngle) {
-    System.out.println("getHubTargetPose");
     Pose2d currentPose = getPose();
 
-    // Y coordinate stays the same as current pose
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
+
+    Translation2d hubPose = isRedAlliance
+        ? Constants.FieldConstants.kRedHubPose
+        : Constants.FieldConstants.kBlueHubPose;
+
+    double metersFromHub = isUsingHighVelocities.get() ? kMetersFromHubHigh : kMetersFromHubLow;
+
+    // Offset from hub toward/away from hub along the X axis
+    double targetX = hubPose.getX() + (isRedAlliance ? metersFromHub : -metersFromHub);
     double targetY = currentPose.getY();
 
-    double metersFromHub = isUsingHighVelocities.get() ? kMetersFromHubHigh
-        : kMetersFromHubLow;
-
-    // Calculate target translation
-    // (0,0) is ALWAYS on the blue alliance side
-
-    // double targetX = (double) FieldConstants.kHubXBlue + metersFromHub;
-    // casting error later
-    double targetX = 0;
-    // Calculate target rotation based on side of field that robot is currently on
-    // double targetRadians = targetAngle;
-
     return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));
-    // fix casting error later
   }
 
 }

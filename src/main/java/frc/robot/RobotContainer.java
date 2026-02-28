@@ -7,30 +7,24 @@ package frc.robot;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
-import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
-import frc.robot.subsystems.intake.IntakeSubsystem;
-import frc.robot.subsystems.launcher.SparkLauncherSubsystem;
-import frc.robot.subsystems.launcher.TalonFXLauncherSubsystem;
+import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
-
-import java.util.Set;
-import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.Set;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt.*;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -39,7 +33,6 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -47,38 +40,33 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.IntakeConstants;
-import frc.robot.Constants.LauncherConstants;
-import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.commands.OTBIntake.IntakeCmd;
+import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
-import frc.robot.util.swerve.FieldZones;
-import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
-import frc.robot.commands.intake.IntakeCmd;
-import frc.robot.commands.intake.PlowCmd;
-import frc.robot.commands.launcher.LauncherPIDCmd;
 
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
-  public final IntakeSubsystem intakeSub;
-  public final SparkLauncherSubsystem sparkLauncherSub;
-  public final TalonFXLauncherSubsystem talonFXLauncherSub;
+  public final OTBIntakeSubsystem otbIntakeSub;
   public final IndexerSubsystem indexerSub;
-  public final ClimberSubsystem ClimberSub;
+  public final LauncherAndIntakeSubsystem launcherSub;
+  public final ClimberSubsystem climberSub;
+
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -89,25 +77,32 @@ public class RobotContainer {
     // Get profile from Elastic dashboard selector
     SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
     SwerveConfig.applyProfile(activeProfile);
-    // src/main/java/frc/robot/util/swerve/SwerveConfig.java
-    // package frc.robot.util.swerve;
 
-    // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
-    // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
-    // see ye
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
-      intakeSub = new IntakeSubsystem(
-          new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless)); // kMotorCanId is -1 currently
-      sparkLauncherSub = new SparkLauncherSubsystem(null); // set when we have more information
-      talonFXLauncherSub = new TalonFXLauncherSubsystem(null); // set when we have more information
 
-      indexerSub = new IndexerSubsystem(null);
-      ClimberSub = new ClimberSubsystem(null);
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      new LauncherPIDCmd(sparkLauncherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
-      // launcher pid interface
+      launcherSub = new LauncherAndIntakeSubsystem(
+          new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
+              new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType),
+              new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType)));
 
+      climberSub = new ClimberSubsystem(
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+      indexerSub = new IndexerSubsystem(
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
+      // RPM tuning interface — constructing registers the SmartDashboard key
+      new LauncherCmd(launcherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               SwerveConfig.kFrontLeftDrivingCanId,
@@ -127,18 +122,33 @@ public class RobotContainer {
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
     } else { // If the robot is simulated, make simulated subs :P
-      final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(Configs.Simulation.drivetrainConfig,
+      final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(
+          DriveTrainSimulationConfig.Default()
+              .withGyro(SimulationConstants.kSimulatedGyro)
+              .withSwerveModule(SimulationConstants.kSwerveModuleSimConfig)
+              .withTrackLengthTrackWidth(SwerveConfig.kWheelBase, SwerveConfig.kTrackWidth)
+              .withBumperSize(SwerveConfig.kBumperLength, SwerveConfig.kBumperWidth),
           SimulationConstants.kStartingPose);
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
-      intakeSub = new IntakeSubsystem(
-          new SparkMax(IntakeConstants.kIntakeMotorCanId, MotorType.kBrushless));
-      sparkLauncherSub = new SparkLauncherSubsystem(new SparkMax(20, MotorType.kBrushless));
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
 
-      talonFXLauncherSub = new TalonFXLauncherSubsystem(new TalonFX(0));
-      indexerSub = new IndexerSubsystem(new SparkMax(21, MotorType.kBrushless));
-      ClimberSub = new ClimberSubsystem(new SparkMax(22, MotorType.kBrushless));
+      launcherSub = new LauncherAndIntakeSubsystem(
+          new LauncherAndIntakeSubsystem.TalonFXLauncherAndIntakeMotor(
+              new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId)));
+
+      climberSub = new ClimberSubsystem(
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+      indexerSub = new IndexerSubsystem(
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
           new org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt(
@@ -177,7 +187,7 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         this::getDriverVy,
-        Constants.LauncherConstants.kLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true);
 
     driveSub.setDefaultCommand(driveCmd);
@@ -198,10 +208,10 @@ public class RobotContainer {
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     // Binding for Plow (Button 5 is usually Left Bumper)
-    driverController.button(5).whileTrue(new IntakeCmd(intakeSub, IntakeConstants.kPlowSpeed));
+    driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
 
     // Binding for Intake (Button 6 is usually Right Bumper)
-    driverController.button(6).whileTrue(new PlowCmd(intakeSub, IntakeConstants.kIntakeSpeed));
+    driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () -> OTBIntakeConstants.kPlowSpeed));
 
     driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),

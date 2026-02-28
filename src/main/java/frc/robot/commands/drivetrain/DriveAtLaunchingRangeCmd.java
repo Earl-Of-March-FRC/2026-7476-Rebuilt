@@ -24,7 +24,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
-import frc.robot.Constants.LauncherConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.SwerveConfig;
@@ -130,7 +130,7 @@ public class DriveAtLaunchingRangeCmd extends Command {
     // Get heading correction to face the hub
     Translation2d targetBotRelative = toHub;
     if (leadShots) {
-      targetBotRelative = targetBotRelative.minus(velocity.times(LauncherConstants.kBallAirTime.in(Seconds)));
+      targetBotRelative = targetBotRelative.minus(velocity.times(LauncherAndIntakeConstants.kBallAirTime.in(Seconds)));
     }
 
     Rotation2d desiredHeading = targetBotRelative.getAngle();
