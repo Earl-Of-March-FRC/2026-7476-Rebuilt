@@ -21,6 +21,8 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LauncherAndIntakeConstants;
+import frc.robot.util.PoseHelpers;
+import frc.robot.util.launcher.LaunchHelpers;
 
 public class LauncherAndIntakeSubsystem extends SubsystemBase {
 
@@ -136,6 +138,8 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
     Logger.recordOutput("Launcher/Measured/AppliedOutput", motor.getAppliedOutput());
     Logger.recordOutput("Launcher/Measured/CurrentAmps", motor.getCurrent());
+    Logger.recordOutput("Launcher/PredictedBallEndpointHubHeight",
+        LaunchHelpers.predictBallEndpoint(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
   }
 
   public AngularVelocity getVelocity() {

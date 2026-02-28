@@ -121,9 +121,15 @@ public final class Constants {
 
     public static final Distance[] kLaunchDistancesLookup = {
         // TODO fill in values from spreadsheet
+        Meters.of(1.8380),
+        Meters.of(2.5061),
+        Meters.of(3.5380)
     };
     public static final AngularVelocity[] kLaunchWheelSpeedLookup = {
         // TODO fill in values from spreadsheet
+        RPM.of(3100),
+        RPM.of(3200),
+        RPM.of(3600)
     };
     // The tolerance for using lookup values, if distance is not within tolerance of
     // any lookup entry, use interpolation
@@ -131,9 +137,9 @@ public final class Constants {
 
     // Found using polynomial regression (degree 2)
     // TODO enter real coefficients from spreadsheet
-    private static final double a = 1;
-    private static final double b = 1;
-    private static final double c = 0;
+    private static final double a = 140;
+    private static final double b = -458;
+    private static final double c = 3470;
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
       double RPM = a * d * d + b * d + c;

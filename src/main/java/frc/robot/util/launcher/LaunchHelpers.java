@@ -53,6 +53,37 @@ public class LaunchHelpers {
   }
 
   /**
+   * Predicts the endpoint of a ball launched with the provided launch parameters
+   * 
+   * @param targetHeight         The height of the target (final height of the
+   *                             ball)
+   * @param botPose              Bot Pose2d
+   * @param wheelAngularVelocity Flywheel speed
+   * @return The Translation2d of the ball endpoint
+   */
+  public static Translation2d predictBallEndpoint(Distance targetHeight, Pose2d botPose,
+      AngularVelocity wheelAngularVelocity) {
+    LinearVelocity ballLaunchVelocity = calculateBallLaunchVelocity(wheelAngularVelocity);
+    Time airTime = calculateBallAirTime(targetHeight, wheelAngularVelocity);
+
+    double VxMPS = Math.cos(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians))
+        * ballLaunchVelocity.in(MetersPerSecond);
+
+    return botPose.getTranslation()
+        .plus(new Translation2d(VxMPS * airTime.in(Seconds), botPose.getRotation()));
+  }
+
+  /**
+   * Predicts the endpoint of a ball launched with the current launch parameters
+   * 
+   * @param targetHeight The height of the target (final height of the ball)
+   * @return The Translation2d of the ball endpoint
+   */
+  public static Translation2d predictBallEndpoint(Distance targetHeight) {
+    return predictBallEndpoint(targetHeight, drive().getPose(), launcher().getVelocity());
+  }
+
+  /**
    * Predicts whether a ball launched with the provided launch parameters will hit
    * the provided target within a certain tolerance.
    * 
@@ -65,14 +96,8 @@ public class LaunchHelpers {
    */
   public static boolean willHitTarget(Translation3d target, Pose2d botPose, Distance tolerance,
       AngularVelocity wheelAngularVelocity) {
-    LinearVelocity ballLaunchVelocity = calculateBallLaunchVelocity(wheelAngularVelocity);
-    Time airTime = calculateBallAirTime(target.getMeasureZ(), wheelAngularVelocity);
 
-    double VxMPS = Math.cos(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians))
-        * ballLaunchVelocity.in(MetersPerSecond);
-
-    Translation2d ballEndpoint = botPose.getTranslation()
-        .plus(new Translation2d(VxMPS * airTime.in(Seconds), botPose.getRotation()));
+    Translation2d ballEndpoint = predictBallEndpoint(target.getMeasureZ(), botPose, wheelAngularVelocity);
 
     return target.toTranslation2d().getDistance(ballEndpoint) < tolerance.in(Meters);
   }
