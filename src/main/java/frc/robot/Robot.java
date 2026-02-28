@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.function.Supplier;
+
 import org.ironmaple.simulation.SimulatedArena;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -19,6 +21,7 @@ import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.swerve.ProfileSelector;
 
@@ -84,6 +87,7 @@ public class Robot extends LoggedRobot {
 
     SmartDashboard.putBoolean("Auto?", isAutonomous());
     SmartDashboard.putData("Commands", CommandScheduler.getInstance());
+
   }
 
   @Override
@@ -105,6 +109,9 @@ public class Robot extends LoggedRobot {
     PortForwarder.add(1184, "photonvision.local", 1184);
     PortForwarder.add(1185, "photonvision.local", 1185);
     PortForwarder.add(1186, "photonvision.local", 1186);
+
+    SmartDashboard.putBoolean("is Neutral Zone", false);
+
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

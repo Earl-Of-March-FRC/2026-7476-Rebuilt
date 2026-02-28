@@ -28,6 +28,8 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -35,7 +37,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.OIConstants;
@@ -161,6 +165,16 @@ public class RobotContainer {
 
     PathGenerator.setDrivetrain(driveSub);
 
+    NamedCommands.registerCommand("Drive to launching arc", new DriveAtLaunchingRangeCmd(
+        driveSub,
+        () -> 0.0,
+        () -> 0.0,
+        Constants.LauncherAndIntakeConstants.kLaunchRadius,
+        true).until(() -> driveSub.isRadialControllerAtSetpoint()));
+
+    NamedCommands.registerCommand("Launch", new InstantCommand());
+    NamedCommands.registerCommand("Nearest Climb", PathGenerator.loadL1ClimbCommand());
+
     configureBindings();
     configureAutos();
   }
@@ -278,6 +292,25 @@ public class RobotContainer {
     autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
+
+    autoChooser.addOption("Closest Path",
+        Commands.defer(
+            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
+            Set.of(driveSub)));
+
+    autoChooser.addOption("Launch Then Find Nearest Climb", new SequentialCommandGroup(
+        new DriveAtLaunchingRangeCmd(
+            driveSub,
+            () -> 0.0,
+            () -> 0.0,
+            Constants.LauncherAndIntakeConstants.kLaunchRadius,
+            true).until(() -> driveSub.isRadialControllerAtSetpoint()),
+        new InstantCommand(), // Change to launch command when finished
+        Commands.defer(
+            () -> PathGenerator.loadL1ClimbCommand(),
+            Set.of()),
+        new InstantCommand())); // Change to climb command when finished
+
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
 
   }
