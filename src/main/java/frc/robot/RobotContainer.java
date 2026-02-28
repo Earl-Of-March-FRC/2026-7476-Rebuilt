@@ -15,7 +15,6 @@ import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 
@@ -38,9 +37,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OTBIntakeConstants;
-import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
@@ -49,8 +46,7 @@ import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
-import frc.robot.commands.drivetrain.DriveTrackHubCmd;
-import frc.robot.commands.indexer.IndexerCmd;
+import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -184,62 +180,33 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         this::getDriverVy,
-        Constants.LauncherAndIntakeConstants.kLaunchRadius,
-        true);
+        Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
 
     // Drive while tracking hub and automatically shoot balls if we think they will
     // go in, an additional trigger can used to lock distance
-    Command driveAndAutoShoot = Commands.deadline(
-        Commands.either(
-            Commands.defer(() -> new DriveAtLaunchingRangeCmd(
-                driveSub,
-                this::getDriverVx,
-                this::getDriverVy,
-                driveSub.getHubDistance(),
-                true), Set.of(driveSub)),
-            new DriveTrackHubCmd(
-                driveSub,
-                this::getDriverVx,
-                this::getDriverVy,
-                true),
-            // TODO: Define lock binding
-            () -> false),
-        new IndexerCmd(
-            indexerSub,
-            () -> LaunchHelpers.willHitTarget(PoseHelpers.getAllianceHubtTranslation3d(),
-                FieldConstants.kHubInsideWidth)
-                    ? IndexerConstants.kWheelLaunchIndexPercent
-                    : 0,
-            () -> IndexerConstants.kTreadmillLaunchIndexPercent),
-        new LauncherCmd(launcherAndIntakeSub,
-            () -> LaunchHelpers.calculateWheelRPM()));
+    Command driveAndAutoShoot = new DriveAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        this::getDriverVx,
+        this::getDriverVy,
+        // TODO: Pass in controller triggers for these bindings
+        () -> false,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
 
     // Drive while tracking hub and shoot balls based on an additional trigger
     // an additional trigger can used to lock distance
-    Command driveAndManualShoot = Commands.deadline(
-        Commands.either(
-            Commands.defer(() -> new DriveAtLaunchingRangeCmd(
-                driveSub,
-                this::getDriverVx,
-                this::getDriverVy,
-                driveSub.getHubDistance(),
-                true), Set.of(driveSub)),
-            new DriveTrackHubCmd(
-                driveSub,
-                this::getDriverVx,
-                this::getDriverVy,
-                true),
-            // TODO: Define lock binding
-            () -> false),
-        new IndexerCmd(
-            indexerSub,
-            // TODO: Define shoot binding
-            () -> false
-                ? IndexerConstants.kWheelLaunchIndexPercent
-                : 0,
-            () -> IndexerConstants.kTreadmillLaunchIndexPercent),
-        new LauncherCmd(launcherAndIntakeSub,
-            () -> LaunchHelpers.calculateWheelRPM()));
+    Command driveAndManualShoot = new DriveAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        this::getDriverVx,
+        this::getDriverVy,
+        // TODO: Pass in controller triggers for these bindings
+        () -> false,
+        () -> false,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
 
     driveSub.setDefaultCommand(driveCmd);
 

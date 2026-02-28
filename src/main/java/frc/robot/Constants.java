@@ -140,8 +140,10 @@ public final class Constants {
       return RotationsPerSecond.of(RPM * 60);
     };
 
-    public static final Distance kLaunchRadius = Meters.of(2.0);
-    public static final Time kBallAirTime = Seconds.of(0.5);
+    public static final Distance kTestLaunchRadius = Meters.of(2.0);
+    public static final Time kTestBallAirTime = Seconds.of(0.5);
+
+    public static final boolean kLeadShots = true;
 
     public static final double kMotorReduction = 45.0 / 56.0;
 

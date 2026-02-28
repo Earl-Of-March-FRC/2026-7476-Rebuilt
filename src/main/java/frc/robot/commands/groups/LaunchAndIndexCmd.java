@@ -18,7 +18,11 @@ import frc.robot.util.launcher.LaunchHelpers;
 
 public class LaunchAndIndexCmd extends ParallelCommandGroup {
   /**
-   * Creates a new LaunchAndIndexCmd.
+   * Creates a new LaunchAndIndexCmd. This command will run the Launcher at the
+   * speed needed to score from the current range, and will run the Indexer wheel
+   * to feed balls into the Launcher when the launchSupplier is true. Indexer
+   * treadmill will run at the same speed regardless of the launchSupplier to
+   * ensure that balls are fed into the indexer wheel.
    * 
    * @param indexerSub           The IndexerSubsystem to use
    * @param launcherAndIntakeSub The LauncherAndIntakeSubsystem to use
@@ -27,8 +31,6 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
    */
   public LaunchAndIndexCmd(IndexerSubsystem indexerSub, LauncherAndIntakeSubsystem launcherAndIntakeSub,
       BooleanSupplier launchSupplier) {
-    // Add your commands in the addCommands() call, e.g.
-    // addCommands(new FooCommand(), new BarCommand());
     addCommands(new IndexerCmd(
         indexerSub,
         () -> launchSupplier.getAsBoolean()
