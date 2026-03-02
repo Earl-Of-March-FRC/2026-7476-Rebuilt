@@ -6,6 +6,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import java.io.File;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -15,6 +16,8 @@ import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.PathPoint;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -25,8 +28,11 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
@@ -43,6 +49,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.util.vision.CameraProfile;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -314,6 +321,57 @@ public final class Constants {
     // public static final Pose2d kLaunchPoseRed = new Pose2d(new
     // Translation2d(10.075, 2.68), new Rotation2d(0));
 
+    public static final PathConstraints L1ClimbConstraints = new PathConstraints(
+        3.0, 4.0,
+        3 * Math.PI, 4 * Math.PI);
+
+    public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
+
+    public static PathPlannerPath bumpLeftClimbPath;
+    public static PathPlannerPath bumpRightClimbPath;
+    public static PathPlannerPath trenchLeftClimbPath;
+    public static PathPlannerPath trenchRightClimbPath;
+    public static PathPlannerPath trenchLeftAuto;
+
+    static {
+      try {
+        bumpLeftClimbPath = PathPlannerPath.fromPathFile("Bump - Left(L1 Climb)");
+        bumpRightClimbPath = PathPlannerPath.fromPathFile("Bump - Right(L1 Climb)");
+        trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
+        trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
+        trenchLeftAuto = PathPlannerPath.fromPathFile("trench left auto");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
+    public static final PathPlannerPath[] climbPaths = { bumpLeftClimbPath, bumpRightClimbPath, trenchLeftClimbPath,
+        trenchRightClimbPath };
+
+    public static final Translation2d bumpLeftStartPoint = bumpLeftClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d bumpRightStartPoint = bumpRightClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d trenchLeftStartPoint = trenchLeftClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d trenchRightStartPoint = trenchRightClimbPath.getAllPathPoints().get(0).position;
+
+    public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
+        new Translation2d(Meters.of(bumpLeftStartPoint.getX()).in(Meters), // Blue Alliance
+            Meters.of(bumpLeftStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(bumpRightStartPoint.getX()).in(Meters),
+            Meters.of(bumpRightStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(trenchLeftStartPoint.getX()).in(Meters),
+            Meters.of(trenchLeftStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(trenchRightStartPoint.getX()).in(Meters),
+            Meters.of(trenchRightStartPoint.getY()).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpLeftStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(bumpLeftStartPoint.getY())).in(Meters)), // Red Alliance
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpRightStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(bumpRightStartPoint.getY())).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchLeftStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(trenchLeftStartPoint.getY())).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchRightStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
+    };
+
   }
 
   public static final class OTBIntakeConstants {
@@ -529,8 +587,59 @@ public final class Constants {
 
   public static final class PhotonConstants {
     // Camera profiles - each camera's configuration in one place
+    public static final CameraProfile kCamera1Profile = new CameraProfile(
+        "Arducam_1",
+        Radians.of(0.0), // roll
+        Radians.of(0.1301), // pitch
+        Radians.of(0.0), // yaw
+        Meters.of(0.307), // x
+        Meters.of(0.180), // y
+        Meters.of(0.750), // z
+        VecBuilder.fill(0.3, 0.3, 0.3) // standard deviation
+    );
+
+    public static final CameraProfile kCamera2Profile = new CameraProfile(
+        "Arducam_2",
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(Math.PI), // yaw
+        Meters.of(-0.3327), // x
+        Meters.of(0.0), // y
+        Meters.of(0.3708), // z
+        VecBuilder.fill(0.9, 0.9, 0.9) // standard deviation
+    );
+
+    public static final CameraProfile kCamera3Profile = new CameraProfile(
+        "Arducam_3",
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(0.7069), // yaw
+        Meters.of(0.238), // x
+        Meters.of(-0.294), // y
+        Meters.of(0.625), // z
+        VecBuilder.fill(0.5, 0.5, 0.5) // standard deviation
+    );
 
     public static final int kAprilTagPipeline = 0;
+
+    public static final String kCamera1 = "Arducam_1";
+    public static final String kCamera2 = "Arducam_2";
+    public static final String kCamera3 = "Arducam_3";
+
+    public static final String[] kCameras = { kCamera1, kCamera2, kCamera3 };
+
+    public static final List<Vector<N3>> kCameraStandardDeviations = List.of(
+        kCamera1Profile.standardDeviation(),
+        kCamera2Profile.standardDeviation(),
+        kCamera3Profile.standardDeviation());
+
+    public static final int numCameras = kCameras.length;
+
+    public static final Transform3d[] kRobotToCams = {
+        kCamera1Profile.getRobotToCameraTransform(), // Camera 1 Transform3d
+        kCamera2Profile.getRobotToCameraTransform(), // Camera 2 Transform3d
+        kCamera3Profile.getRobotToCameraTransform() // Camera 3 Transform3d
+    };
 
     public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
@@ -650,4 +759,5 @@ public final class Constants {
             kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Neutral Red Outpost
     };
   }
+
 }

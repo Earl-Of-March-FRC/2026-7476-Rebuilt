@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Meters;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
@@ -21,11 +22,15 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.PoseHelpers;
+import java.util.Arrays;
 
 /**
  * Helper class to generate paths on the fly
@@ -281,6 +286,87 @@ public class PathGenerator {
   }
 
   /**
+   * Load the L1 climb path and return a pathfinding command for it.
+   * If loading fails the method returns an InstantCommand so callers can
+   * schedule it without null checks.
+   */
+  public static Command loadL1ClimbCommand() {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    int nearestPathIndex;
+
+    if (isBlueAlliance) {
+      nearestPathIndex = nearestTranslation2dIndex(
+          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 0, 4));
+    } else {
+      nearestPathIndex = nearestTranslation2dIndex(
+          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 4, 8));
+    }
+
+    // Load the path we want to pathfind to and follow
+    PathPlannerPath nearestClimbPath = AutoConstants.climbPaths[nearestPathIndex];
+
+    // Since AutoBuilder is configured, we can use it to build pathfinding commands
+    return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, AutoConstants.L1ClimbConstraints);
+  }
+
+  /**
+   * Creates a command to cross from the neutral zone to our alliance side
+   * depending on the passed in crossing method (either bump or trench).
+   * The command ends immediately if the robot is not in neutral zone (already on
+   * alliance side)
+   * 
+   * @param endVelocity    Desired end velocity
+   * @param crossingMethod Either "Bump" or "Trench"
+   * @return A path to cross from netural zone to alliance side
+   */
+  public static Command crossToAllianceSide(LinearVelocity endVelocity, String crossingMethod) {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    if (drive().getCurrentBotZone() != FieldZones.Neutral) {
+      return new InstantCommand();
+    }
+
+    int neutralZoneWaypointId;
+    PathPlannerPath crossingPath;
+
+    if (isBlueAlliance) {
+      neutralZoneWaypointId = 4;
+    } else {
+      neutralZoneWaypointId = 6;
+    }
+
+    if (crossingMethod.equalsIgnoreCase("Bump")) {
+      int nearestBumpInNeutralZone = nearestTranslation2dIndex(
+          Arrays.copyOfRange(FieldConstants.kBumpPathWaypoints, neutralZoneWaypointId, neutralZoneWaypointId + 2));
+      crossingPath = crossBumpPath(endVelocity, neutralZoneWaypointId + nearestBumpInNeutralZone);
+    } else {
+      int nearestTrenchInNeutralZone = nearestTranslation2dIndex(
+          Arrays.copyOfRange(FieldConstants.kTrenchPathWaypoints, neutralZoneWaypointId, neutralZoneWaypointId + 2));
+      crossingPath = crossTrenchPath(endVelocity, neutralZoneWaypointId + nearestTrenchInNeutralZone);
+    }
+
+    return pathfindThenFollowPathNoFlip(crossingPath, SwerveConfig.kPathfindingConstraints);
+  }
+
+  /**
+   * Creates a sequential command that finds the shortest path to the climb zone
+   * 
+   * @param endVelocity    Desired end velocity
+   * @param crossingMethod Either "Bump" or "Trench"
+   * @return A command group that runs the shortest path to the clime zone
+   */
+  public static SequentialCommandGroup findL1ClimbPath(LinearVelocity endVelocity, String crossingMethod) {
+    return new SequentialCommandGroup(
+        crossToAllianceSide(endVelocity, crossingMethod),
+        Commands.defer(
+            () -> loadL1ClimbCommand(),
+            Set.of(driveSub)));
+  }
+
+  /**
    * Helper method
    * Takes a list of Translation2ds and returns the one closest to
    * the bot
@@ -311,4 +397,12 @@ public class PathGenerator {
         .andThen(AutoBuilder.followPath(path));
 
   }
+
+  // public static SequentialCommandGroup fullAuto() {
+  // return new SequentialCommandGroup(
+  // AutoBuilder.followPath(AutoConstants.trenchLeftAuto),
+  // AutoBuilder.pathfindThenFollowPath(AutoConstants.trenchLeftClimbPath,
+  // AutoConstants.L1ClimbConstraints));
+  // }
+
 }
