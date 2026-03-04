@@ -175,6 +175,39 @@ public final class Constants {
     }
   }
 
+  public static final class ClimbAlignConstants {
+    // AprilTag IDs for the climb towers
+    public static final int kBlueLeftTagId = 31;
+    public static final int kBlueRightTagId = 32;
+    public static final int kRedLeftTagId = 15;
+    public static final int kRedRightTagId = 16;
+
+    // How far forward from the wall (along tag facing direction) the robot stands.
+    // Measure: distance from the wall to where your hook needs to be to engage the
+    // rung.
+    public static final Distance kStandoffDistance = Meters.of(0.55); // TODO: TUNE
+
+    // How far outward (away from center) from the tag the robot targets on the
+    // rung.
+    public static final Distance kOuterRungOffset = Meters.of(0.254); // 10 inches (TUNE)
+
+    // Extra offset PathPlanner pathfinds to before the fine-align phase takes over
+    public static final Distance kCoarseApproachOffset = Meters.of(0.8);
+    public static final double kCoarseApproachEndVelocity = 0.5; // m/s into fine-align
+
+    // Fine-align PID (shared for X and Y)
+    public static final double kAlignP = 2.5;
+    public static final double kAlignI = 0.0;
+    public static final double kAlignD = 0.05;
+
+    // Settle tolerances
+    public static final Distance kTranslationTolerance = Meters.of(0.04);
+    public static final Angle kRotationTolerance = Radians.of(Math.toRadians(2.0));
+
+    // Max speed during final PID alignment phase
+    public static final LinearVelocity kAlignMaxSpeed = MetersPerSecond.of(1.2);
+  }
+
   public static final class DriveConstants {
 
     // Ratios between robot limits in teleop vs auto
