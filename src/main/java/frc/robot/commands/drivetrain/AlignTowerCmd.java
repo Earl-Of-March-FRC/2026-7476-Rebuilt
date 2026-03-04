@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -51,17 +52,24 @@ public class AlignTowerCmd extends Command {
     Pose2d currentPose = driveSub.getPose();
     Pose2d targetPose = driveSub.getHubTargetPose(0);
 
-    double xFeedback = translationController.calculate(currentPose.getX(), targetPose.getX());
-    double yFeedback = translationController.calculate(currentPose.getY(), targetPose.getY());
-    double rotationFeedback = rotationController.calculate(
+    // Calculate raw PID outputs
+    double xOutput = translationController.calculate(currentPose.getX(), targetPose.getX());
+    double yOutput = translationController.calculate(currentPose.getY(), targetPose.getY());
+    double rotOutput = rotationController.calculate(
         currentPose.getRotation().getRadians(),
         targetPose.getRotation().getRadians());
 
-    LinearVelocity xVel = MetersPerSecond.of(AutoConstants.kMaxSpeedMetersPerSecond * xFeedback);
-    LinearVelocity yVel = MetersPerSecond.of(AutoConstants.kMaxSpeedMetersPerSecond * yFeedback);
-    AngularVelocity omega = RadiansPerSecond.of(AutoConstants.kMaxAngularSpeed.in(RadiansPerSecond) * rotationFeedback);
+    // Clamp values to max constants
+    double maxLinear = AutoConstants.kMaxSpeedMetersPerSecond;
+    double maxAngular = AutoConstants.kMaxAngularSpeed.in(RadiansPerSecond);
 
-    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega));
+    LinearVelocity xVel = MetersPerSecond.of(MathUtil.clamp(xOutput, -maxLinear, maxLinear));
+    LinearVelocity yVel = MetersPerSecond.of(MathUtil.clamp(yOutput, -maxLinear, maxLinear));
+    AngularVelocity omega = RadiansPerSecond.of(MathUtil.clamp(rotOutput, -maxAngular, maxAngular));
+
+    // Convert Field-Relative PID results to Robot-Relative for the motors
+    driveSub.runVelocity(
+        ChassisSpeeds.fromFieldRelativeSpeeds(xVel, yVel, omega, currentPose.getRotation()));
 
     Logger.recordOutput("AlignTower/CurrentPose", currentPose);
     Logger.recordOutput("AlignTower/TargetPose", targetPose);

@@ -127,6 +127,10 @@ public class ClimberSubsystem extends SubsystemBase {
     }
   }
 
+  public double getPosition(ClimbSide side) {
+    return side == ClimbSide.Left ? leftMotor.getPosition() : rightMotor.getPosition();
+  }
+
   // Main Climber Subsystem
   private final ClimberMotorInterface leftMotor;
   private final ClimberMotorInterface rightMotor;
@@ -134,6 +138,7 @@ public class ClimberSubsystem extends SubsystemBase {
   public ClimberSubsystem(ClimberMotorInterface leftMotor, ClimberMotorInterface rightMotor) {
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
+
   }
 
   @Override

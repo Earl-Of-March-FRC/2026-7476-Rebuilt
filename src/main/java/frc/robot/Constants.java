@@ -448,6 +448,11 @@ public final class Constants {
     public static final double kMotorRaiseSpeed = 0.5;
     public static final double kMotorHookSpeed = 0.5;
 
+    public static final double kPositionToleranceInches = 0.5;
+    public static final double kSettledVelocityThresholdInchesPerSec = 0.25; // arms have stopped moving into raise
+                                                                             // position
+    public static final double kStallVelocityThresholdInchesPerSec = 0.1; // arms have stalled on bar during pull
+
     // TODO: measure these values
     public static final Distance kWhinchDrumDiameter = Inches.of(1);
     public static final Distance kSpoolCableDiameter = Inches.of(0.25);
@@ -485,6 +490,12 @@ public final class Constants {
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
     }
+
+    public static final Distance kRaisePosition = Inches.of(32.0);
+
+    public static final Distance kPullPosition = Inches.of(0.0);
+
+    public static final Distance kPositionTolerance = Inches.of(0.5);
 
   }
 
