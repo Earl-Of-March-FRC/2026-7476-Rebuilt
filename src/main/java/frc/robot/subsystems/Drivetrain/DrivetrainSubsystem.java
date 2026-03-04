@@ -72,6 +72,7 @@ import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.Constants.FieldConstants;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.util.vision.CameraProfile;
+import frc.robot.util.vision.ClimbAlignmentIndicator;
 import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
 
@@ -102,6 +103,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   // Current pose of the robot
   private Pose2d robotPose = new Pose2d();
   private Pose2d visionlessPose = new Pose2d();
+
+  private final ClimbAlignmentIndicator climbAlignmentIndicator = new ClimbAlignmentIndicator();
 
   public Supplier<Boolean> isUsingHighVelocities = () -> true;
 
@@ -1026,6 +1029,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Is Field Relative Real", isFieldRelativeReal);
 
     SmartDashboard.putBoolean("Is Radial PID at setpoint", isRadialControllerAtSetpoint());
+
+    climbAlignmentIndicator.update(getPose(), cameras);
   }
 
   @Override
