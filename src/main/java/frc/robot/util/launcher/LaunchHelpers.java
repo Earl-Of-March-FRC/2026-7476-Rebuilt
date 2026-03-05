@@ -13,11 +13,13 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
@@ -216,5 +218,17 @@ public class LaunchHelpers {
    */
   public static LinearVelocity calculateBallLaunchVelocity() {
     return calculateBallLaunchVelocity(launcher().getVelocity());
+  }
+
+  public static Translation2d applyLead(Translation2d targetBotRelative) {
+    // Get current velocity
+    ChassisSpeeds currentChassisSpeeds = drive().getChassisSpeedsRobotRelative();
+    // Convert to field-relative speeds
+    currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
+        drive().getPose().getRotation());
+    Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
+        currentChassisSpeeds.vyMetersPerSecond);
+
+    return targetBotRelative.minus(velocity.times(calculateBallAirTime(FieldConstants.kHubHeight).in(Seconds)));
   }
 }

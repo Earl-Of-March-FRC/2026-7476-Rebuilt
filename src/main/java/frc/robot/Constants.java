@@ -117,6 +117,10 @@ public final class Constants {
     public static final Distance kBallReleaseHeight = Inches.of(20);
     public static final Angle kBallReleaseAngle = Degree.of(58.016961);
 
+    // Launch heading relative to bot heading (0 means shooting straight forward,
+    // positive is counterclockwise)
+    public static final Rotation2d kLauncherBotHeading = Rotation2d.fromDegrees(180);
+
     public static final Distance kWheelRadius = Inches.of(2);
     // Empirical constant describing the ratio between wheel linear velocity and
     // ball launch velocity

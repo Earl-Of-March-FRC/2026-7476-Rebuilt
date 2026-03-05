@@ -20,6 +20,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -124,11 +125,11 @@ public class DriveAtLaunchingRangeCmd extends Command {
     // Get heading correction to face the hub
     Translation2d targetBotRelative = toHub;
     if (leadShots) {
-      targetBotRelative = targetBotRelative.minus(velocity
-          .times(LaunchHelpers.calculateBallAirTime(FieldConstants.kHubHeight).in(Seconds)));
+      targetBotRelative = LaunchHelpers.applyLead(targetBotRelative);
     }
 
     Rotation2d desiredHeading = targetBotRelative.getAngle();
+    desiredHeading = desiredHeading.minus(LauncherAndIntakeConstants.kLauncherBotHeading);
     double omega = driveSub.getHeadingCorrectionOmega(desiredHeading).in(RadiansPerSecond);
 
     // Predict future pose 6 command cycles ahead with 10 substeps

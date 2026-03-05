@@ -19,6 +19,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.launcher.LaunchHelpers;
 import frc.robot.util.swerve.FieldZones;
@@ -68,22 +69,14 @@ public class DriveTrackHubCmd extends Command {
 
     Translation2d toHub = driveSub.getHubTranslation2dBotRelative();
 
-    // Get current velocity
-    ChassisSpeeds currentChassisSpeeds = driveSub.getChassisSpeedsRobotRelative();
-    // Convert to field-relative speeds
-    currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
-        driveSub.getPose().getRotation());
-    Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
-        currentChassisSpeeds.vyMetersPerSecond);
-
     // Get heading correction to face the hub
     Translation2d targetBotRelative = toHub;
     if (leadShots) {
-      targetBotRelative = targetBotRelative.minus(velocity
-          .times(LaunchHelpers.calculateBallAirTime(FieldConstants.kHubHeight).in(Seconds)));
+      targetBotRelative = LaunchHelpers.applyLead(targetBotRelative);
     }
 
     Rotation2d desiredHeading = targetBotRelative.getAngle();
+    desiredHeading = desiredHeading.minus(LauncherAndIntakeConstants.kLauncherBotHeading);
     AngularVelocity omega = driveSub.getHeadingCorrectionOmega(desiredHeading);
     LinearVelocity xVel = SwerveConfig.kMaxSpeed.times(xSupplier.get());
     LinearVelocity yVel = SwerveConfig.kMaxSpeed.times(ySupplier.get());
