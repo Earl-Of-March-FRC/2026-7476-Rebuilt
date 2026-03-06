@@ -346,6 +346,8 @@ public final class Constants {
             FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
     };
 
+    public static final double kAlignTowerTimeoutSeconds = 3;
+
   }
 
   public static final class OTBIntakeConstants {
@@ -442,8 +444,7 @@ public final class Constants {
     public static final int kRightId = 14;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final Distance kStowPosition = Inches.of(0);
-    public static final Distance kClimbPosition = Inches.of(32);
+    public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
 
     public static final double kMotorRaiseSpeed = 0.5;
     public static final double kMotorHookSpeed = 0.5;

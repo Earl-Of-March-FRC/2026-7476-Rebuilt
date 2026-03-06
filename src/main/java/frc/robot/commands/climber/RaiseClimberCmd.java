@@ -8,23 +8,26 @@ import frc.robot.Constants.ClimberConstants;
 public class RaiseClimberCmd extends Command {
   private final ClimberSubsystem climber;
 
-  public RaiseClimberCmd(ClimberSubsystem climber) {
+  private final boolean usesLeftMotor;
+
+  public RaiseClimberCmd(ClimberSubsystem climber, boolean usesLeftMotor) {
+    this.usesLeftMotor = usesLeftMotor;
     this.climber = climber;
     addRequirements(climber); // No casting needed!
   }
 
   @Override
   public void initialize() {
-    climber.setTargetPosition(ClimberConstants.kRaisePosition.in(Inches));
+    climber.setTargetPosition(ClimberConstants.kClimberRaisePositionTicks, usesLeftMotor);
   }
 
   @Override
   public boolean isFinished() {
     // Checking if we are within the tolerance range
     double errorLeft = Math
-        .abs(climber.getPosition(ClimberSubsystem.ClimbSide.Left) - ClimberConstants.kRaisePosition.in(Inches));
+        .abs(climber.getPosition(usesLeftMotor) - ClimberConstants.kRaisePosition.in(Inches));
     double errorRight = Math
-        .abs(climber.getPosition(ClimberSubsystem.ClimbSide.Right) - ClimberConstants.kRaisePosition.in(Inches));
+        .abs(climber.getPosition(usesLeftMotor) - ClimberConstants.kRaisePosition.in(Inches));
     return ((errorLeft < ClimberConstants.kPositionTolerance.in(Inches))
         && errorRight < ClimberConstants.kPositionTolerance.in(Inches));
   }

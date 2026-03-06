@@ -32,7 +32,7 @@ public class AlignTowerCmd extends Command {
       AutoConstants.kIThetaController,
       AutoConstants.kDThetaController);
 
-  public AlignTowerCmd(DrivetrainSubsystem driveSub) {
+  public AlignTowerCmd(DrivetrainSubsystem driveSub, boolean leftSide, boolean rightSide) {
     this.driveSub = driveSub;
     addRequirements(driveSub);
 
