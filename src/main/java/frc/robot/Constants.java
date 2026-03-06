@@ -3,6 +3,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meter;
@@ -10,6 +11,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Milliseconds;
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
@@ -22,9 +24,17 @@ import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
+import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.PathPoint;
+
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.ClosedLoopSlot;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -42,9 +52,13 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.MultUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -112,6 +126,55 @@ public final class Constants {
     public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(5676.0 / 60.0);
   }
 
+  public static final class LauncherAndIntakeConstants {
+
+    public static final int kLeaderCanSparkId = 9;
+    public static final int kFollowerCanSparkId = 10;
+    public static final int kMotorCanTalonId = 21;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+    public static final Distance kLaunchRadius = Meters.of(2.0);
+    public static final Time kBallAirTime = Seconds.of(0.5);
+
+    public static final double kMotorReduction = 45.0 / 56.0;
+
+    public static final AngularVelocity kVelocityLowRPM = RPM.of(0);
+    public static final AngularVelocity kVelocityHighRPM = RPM.of(0); // Fill in actual value
+
+    public static final Current kSmartCurrentLimit = Amps.of(40);
+
+    // TODO: retune now that the motor reduction has changed
+    public static final double kPIDLauncherControllerP = 8e-5;
+    public static final double kPIDLauncherControllerI = 0;
+    public static final double kPIDLauncherControllerD = 0;
+    public static final double kPIDLauncherControllerFF = 7e-4;
+
+    public static final double kOutputRangeMin = -1.0;
+    public static final double kOutputRangeMax = 1.0;
+
+    public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
+    public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
+
+    public static final SparkMaxConfig kLeaderConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
+
+    static {
+      kLeaderConfig
+          .idleMode(IdleMode.kCoast)
+          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kLeaderConfig.encoder
+          // Use wheel RPM
+          .velocityConversionFactor(kMotorReduction);
+      kLeaderConfig.closedLoop
+          .pid(kPIDLauncherControllerP, kPIDLauncherControllerI,
+              kPIDLauncherControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax).feedForward
+          .kV(kPIDLauncherControllerFF);
+
+      kFollowerConfig.smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kFollowerConfig.follow(kLeaderCanSparkId, true);
+    }
+  }
+
   public static final class DriveConstants {
 
     // Ratios between robot limits in teleop vs auto
@@ -131,7 +194,7 @@ public final class Constants {
     public static final double kPIDHeadingControllerD = 0.15;
     public static final double kPIDHeadingControllerTolerance = 2.0;
     public static final Angle kBumpHeadingRestriction = Degrees.of(45);
-    public static final Angle kTrenchHeadingRestriction = Degrees.of(180);
+    public static final Angle kTrenchHeadingRestriction = Degrees.of(0);
     public static final Angle kRecalibrateThreshold = Degrees.of(30);
 
     // Parameteres for restricted mode radial controller
@@ -193,13 +256,236 @@ public final class Constants {
 
   }
 
-  public static final class LauncherConstants {
+  public static final class AutoConstants {
+    public static final LinearVelocity kMaxSpeed = MetersPerSecond.of(2.0);
+    public static final AngularVelocity kMaxAngularSpeed = RadiansPerSecond.of(2 * Math.PI);
 
-    public static final Distance kLaunchRadius = Meters.of(2.0); // TEST VALUE Distance from
-                                                                 // center of robot to
-                                                                 // launch point
-    public static final Time kBallAirTime = Seconds.of(0.5); // Estimated time for ball to reach target, used to
-    // leadshots
+    public static final double kMaxSpeedMetersPerSecond = kMaxSpeed.in(MetersPerSecond);
+    public static final double kMaxAccelerationMetersPerSecondSquared = 3.0;
+    public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI;
+    public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI;
+
+    public static final double kPTranslationController = 1.5;
+    public static final double kITranslationController = 0.75;
+    public static final double kDTranslationController = 0.25;
+
+    public static final double kPThetaController = 1.0;
+    public static final double kIThetaController = 0.0;
+    public static final double kDThetaController = 0.0;
+
+    // AlignTowerCmd tolerances
+    public static final Distance kAlignTranslationTolerance = Meters.of(0.05);
+    public static final Angle kAlignRotationTolerance = Radians.of(Math.toRadians(2.0));
+
+    // public static final class EncoderAutoDriveConstants {
+    // public static final double kLeaveZoneMeters = 0.5; // Distance to travel
+    // public static final double kLeaveZoneVelocity = 0.5; // Velocity (Meters/S)
+    // to leave zone at
+    // }
+
+    // // Constraint for the motion profiled robot angle controller
+    // public static final TrapezoidProfile.Constraints kThetaControllerConstraints
+    // = new TrapezoidProfile.Constraints(
+    // kMaxAngularSpeedRadiansPerSecond,
+    // kMaxAngularAccelerationRadiansPerSecondSquared);
+
+    // public static final Pose2d kLaunchPoseBlue = new Pose2d(new
+    // Translation2d(7.475, 5.37),
+    // Rotation2d.fromDegrees(180));
+    // public static final Pose2d kLaunchPoseRed = new Pose2d(new
+    // Translation2d(10.075, 2.68), new Rotation2d(0));
+
+    public static final PathConstraints L1ClimbConstraints = new PathConstraints(
+        3.0, 4.0,
+        3 * Math.PI, 4 * Math.PI);
+
+    public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
+
+    public static PathPlannerPath bumpLeftClimbPath;
+    public static PathPlannerPath bumpRightClimbPath;
+    public static PathPlannerPath trenchLeftClimbPath;
+    public static PathPlannerPath trenchRightClimbPath;
+    public static PathPlannerPath trenchLeftAuto;
+
+    static {
+      try {
+        bumpLeftClimbPath = PathPlannerPath.fromPathFile("Bump - Left(L1 Climb)");
+        bumpRightClimbPath = PathPlannerPath.fromPathFile("Bump - Right(L1 Climb)");
+        trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
+        trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
+        trenchLeftAuto = PathPlannerPath.fromPathFile("trench left auto");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
+    public static final PathPlannerPath[] climbPaths = { bumpLeftClimbPath, bumpRightClimbPath, trenchLeftClimbPath,
+        trenchRightClimbPath };
+
+    public static final Translation2d bumpLeftStartPoint = bumpLeftClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d bumpRightStartPoint = bumpRightClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d trenchLeftStartPoint = trenchLeftClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d trenchRightStartPoint = trenchRightClimbPath.getAllPathPoints().get(0).position;
+
+    public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
+        new Translation2d(Meters.of(bumpLeftStartPoint.getX()).in(Meters), // Blue Alliance
+            Meters.of(bumpLeftStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(bumpRightStartPoint.getX()).in(Meters),
+            Meters.of(bumpRightStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(trenchLeftStartPoint.getX()).in(Meters),
+            Meters.of(trenchLeftStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(trenchRightStartPoint.getX()).in(Meters),
+            Meters.of(trenchRightStartPoint.getY()).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpLeftStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(bumpLeftStartPoint.getY())).in(Meters)), // Red Alliance
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpRightStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(bumpRightStartPoint.getY())).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchLeftStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(trenchLeftStartPoint.getY())).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchRightStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
+    };
+
+  }
+
+  public static final class OTBIntakeConstants {
+    public static final int kRollerCanId = 15;
+    public static final int kShoulderCanId = 16;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    // TODO: Verify values for these reductions
+    public static final double kRollerReduction = 1.0 / 10.0;
+    public static final double kShoulderReduction = 1.0 / 10.0;
+
+    // // Conversion factors (RPM → rad/s)
+    // public static final double kPositionConversionFactor = 2 * Math.PI;
+    // public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
+
+    // Motor Rotations -> Shoulder degrees
+    public static final double kShoulderPositionConversionFactor = 360;
+    // Motor RPM -> Shoulder degrees/Second
+    public static final double kShoulderVelocityConversionFactor = 360 / 60.0;
+
+    public static final AngularVelocity kMaxVelocity = RPM.of(60);
+
+    public static final double kIntakeSpeed = 0.5;
+    public static final double kPlowSpeed = 0.7;
+
+    public static final double kPIDShoulderControllerP = 0;
+    public static final double kPIDShoulderControllerI = 0;
+    public static final double kPIDShoulderControllerD = 0;
+    public static final double kPIDShoulderControllerFF = 0;
+
+    // TODO: Mesure this value
+    public static final Angle kStowPosition = Degrees.of(0);
+
+    public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kShoulderConfig = new SparkMaxConfig();
+
+    static {
+      kRollerConfig
+          .idleMode(IdleMode.kCoast)
+          .smartCurrentLimit(20);
+      // kRollerConfig.encoder
+      // .positionConversionFactor(kPositionConversionFactor * kRollerReduction)
+      // .velocityConversionFactor(kVelocityConversionFactor * kRollerReduction);
+
+      kShoulderConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(40);
+      kShoulderConfig.encoder
+          .positionConversionFactor(kShoulderPositionConversionFactor * kShoulderReduction)
+          .velocityConversionFactor(kShoulderVelocityConversionFactor * kShoulderReduction);
+      kShoulderConfig.closedLoop
+          .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
+          .outputRange(-1, 1).feedForward
+          .kCos(kPIDShoulderControllerFF)
+          // Feedforward requires the absolute postition of the shoulder in rotations
+          // (horizontal = 0)
+          .kCosRatio(1.0 / kShoulderPositionConversionFactor);
+    }
+  }
+
+  public static final class IndexerConstants {
+    public static final int kWheelCanId = 11;
+    public static final int kTreadmillCanId = 12;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    /**
+     * Multiplier that decides whether + or - inputs move the fuel towards the
+     * launcher.
+     */
+    public static final double kDirectionConstant = -1.0;
+
+    public static final double kWheelMotorReduction = 1.0;
+    public static final double kWheelDiameterMeters = 0.17;
+
+    public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
+
+    static {
+      kWheelConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(20);
+      // kWheelConfig.encoder
+      // .velocityConversionFactor(kWheelDiameterMeters * Math.PI /
+      // kWheelMotorReduction / 60);
+
+      kTreadmillConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(20);
+    }
+  }
+
+  public static final class ClimberConstants {
+    public static final int kLeftId = 13;
+    public static final int kRightId = 14;
+    public static final MotorType kMotorType = MotorType.kBrushless;
+
+    public static final Distance kStowPosition = Inches.of(0);
+    public static final Distance kClimbPosition = Inches.of(32);
+
+    public static final double kMotorRaiseSpeed = 0.5;
+    public static final double kMotorHookSpeed = 0.5;
+
+    // TODO: measure these values
+    public static final Distance kWhinchDrumDiameter = Inches.of(1);
+    public static final Distance kSpoolCableDiameter = Inches.of(0.25);
+    public static final int kMaxSpoolLayers = 5;
+    public static final int kMinSpoolLayers = 1;
+
+    public static final Distance kAverageEffectiveDiameter = kWhinchDrumDiameter
+        .plus(kSpoolCableDiameter.times((kMaxSpoolLayers + kMinSpoolLayers) / 2.0));
+
+    public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI;
+
+    public static final Distance kMinLength = Inches.of(-1);
+    public static final Distance kMaxLength = Inches.of(33);
+
+    public static final Current kSmartCurrentLimit = Amps.of(40);
+
+    public static final double kOutputRangeMin = -1.0;
+    public static final double kOutputRangeMax = 1.0;
+
+    // TalonFX-specific
+    public static final Current kStatorCurrentLimit = Amps.of(40);
+    public static final double kSensorToMechanismRatio = 1.0; // Update with real gear ratio
+
+    public static final double kPIDClimberControllerP = 0.1;
+    public static final double kPIDClimberControllerI = 0.0;
+    public static final double kPIDClimberControllerD = 0.0;
+
+    public static final SparkMaxConfig kConfig = new SparkMaxConfig();
+    static {
+      kConfig.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfig.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfig.closedLoop
+          .p(kPIDClimberControllerP)
+          .i(kPIDClimberControllerI)
+          .d(kPIDClimberControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax);
+    }
+
   }
 
   public static final class GameModelConstants {
@@ -217,8 +503,7 @@ public final class Constants {
   }
 
   public static final class SimulationConstants {
-    public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro(); // Simulated instance of our
-    // gyro
+    public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro();
     public static final DCMotor kSimulatedDrivingMotor = DCMotor.getNEO(1);
     public static final DCMotor kSimulatedTurningMotor = DCMotor.getNeo550(1);
     public static final double kSimulatedCoefficentOfFriction = COTS.WHEELS.COLSONS.cof;
@@ -227,11 +512,9 @@ public final class Constants {
     public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromRotations(Math.PI));
 
     // Whether the bump should have defined collision
-    // Maple sim provides 2d simulation, and cannot simulate the bump accurately,
-    // it can be either a wall or non-existant
     public static final boolean kSimBumpCollision = false;
 
-    // Default vision properties
+    // Simulation camera properties
     public static final File kSimVisionConfigurationFile = new File(Filesystem.getDeployDirectory().getPath(),
         "simulated_camera_settings\\arducam_OV9281_calibration_1280x720.json");
     public static final double kSimVisionFPS = 20;
@@ -255,12 +538,73 @@ public final class Constants {
         -0.0017587106009926158,
         -0.0014671022483263552,
         0.049742166267499596, 0, 0, 0);
+
+    // Drivetrain simulation configs (moved here from Configs.Simulation)
+    public static final SwerveModuleSimulationConfig kSwerveModuleSimConfig = COTS.ofMAXSwerve(
+        kSimulatedDrivingMotor,
+        kSimulatedTurningMotor,
+        kSimulatedCoefficentOfFriction,
+        kGearRatioLevel);
+
+    // NOTE: drivetrainConfig depends on SwerveConfig which is set at runtime,
+    // so it is built lazily in RobotContainer rather than here as a static final.
   }
 
   public static final class PhotonConstants {
     // Camera profiles - each camera's configuration in one place
+    public static final CameraProfile kCamera1Profile = new CameraProfile(
+        "Arducam_1",
+        Radians.of(0.0), // roll
+        Radians.of(0.1301), // pitch
+        Radians.of(0.0), // yaw
+        Meters.of(0.307), // x
+        Meters.of(0.180), // y
+        Meters.of(0.750), // z
+        VecBuilder.fill(0.3, 0.3, 0.3) // standard deviation
+    );
+
+    public static final CameraProfile kCamera2Profile = new CameraProfile(
+        "Arducam_2",
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(Math.PI), // yaw
+        Meters.of(-0.3327), // x
+        Meters.of(0.0), // y
+        Meters.of(0.3708), // z
+        VecBuilder.fill(0.9, 0.9, 0.9) // standard deviation
+    );
+
+    public static final CameraProfile kCamera3Profile = new CameraProfile(
+        "Arducam_3",
+        Radians.of(0.0), // roll
+        Radians.of(0.0), // pitch
+        Radians.of(0.7069), // yaw
+        Meters.of(0.238), // x
+        Meters.of(-0.294), // y
+        Meters.of(0.625), // z
+        VecBuilder.fill(0.5, 0.5, 0.5) // standard deviation
+    );
 
     public static final int kAprilTagPipeline = 0;
+
+    public static final String kCamera1 = "Arducam_1";
+    public static final String kCamera2 = "Arducam_2";
+    public static final String kCamera3 = "Arducam_3";
+
+    public static final String[] kCameras = { kCamera1, kCamera2, kCamera3 };
+
+    public static final List<Vector<N3>> kCameraStandardDeviations = List.of(
+        kCamera1Profile.standardDeviation(),
+        kCamera2Profile.standardDeviation(),
+        kCamera3Profile.standardDeviation());
+
+    public static final int numCameras = kCameras.length;
+
+    public static final Transform3d[] kRobotToCams = {
+        kCamera1Profile.getRobotToCameraTransform(), // Camera 1 Transform3d
+        kCamera2Profile.getRobotToCameraTransform(), // Camera 2 Transform3d
+        kCamera3Profile.getRobotToCameraTransform() // Camera 3 Transform3d
+    };
 
     public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
     public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
@@ -306,6 +650,8 @@ public final class Constants {
 
     public static final Distance kEdgeToTrenchCenter = Inches.of(26.22);
     public static final Distance kEdgeToBumpCenter = Inches.of(104.34);
+    // Cross slightly offset from the center of the bump
+    public static final Distance kEdgeToBumpCrossLine = kEdgeToBumpCenter.minus(Inches.of(4));
     public static final Distance kBumpWidth = Inches.of(47.00);
 
     // Distance from field edge to middle of hub
@@ -316,6 +662,10 @@ public final class Constants {
 
     public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
     public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
+    // public static final Translation2d kBlueHubPose = new Translation2d(4.625594,
+    // kHubY.in(Meters));
+    // public static final Translation2d kRedHubPose = new Translation2d(11.915394,
+    // 4.034663);
 
     public static final Distance kCrossAllianceWaypointX = kAllianceZoneXLength
         .minus(SwerveConfig.kBumperWidth.div(2.0));
@@ -347,21 +697,22 @@ public final class Constants {
     // kBumpPathWaypoints[i] and kBumpPathWaypoints[i + 4] are always opposite
     public static final Translation2d[] kBumpPathWaypoints = new Translation2d[] {
         new Translation2d(kCrossAllianceWaypointX.in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Blue Depot
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Blue Depot
         new Translation2d(kCrossAllianceWaypointX.in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Blue Outpost
+            kEdgeToBumpCrossLine.in(Meters)), // Blue Outpost
         new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Red Depot
+            kEdgeToBumpCrossLine.in(Meters)), // Red Depot
         new Translation2d(kFieldLengthX.minus(kCrossAllianceWaypointX).in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Red Outpost
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Red Outpost
         new Translation2d(kCrossNeutralWaypointX.in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Blue Depot
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Neutral Blue Depot
         new Translation2d(kCrossNeutralWaypointX.in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Neutral Blue Outpost
+            kEdgeToBumpCrossLine.in(Meters)), // Neutral Blue Outpost
         new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
-            kEdgeToBumpCenter.in(Meters)), // Neutral Red Depot
+            kEdgeToBumpCrossLine.in(Meters)), // Neutral Red Depot
         new Translation2d(kFieldLengthX.minus(kCrossNeutralWaypointX).in(Meters),
-            kFieldWidthY.minus(kEdgeToBumpCenter).in(Meters)), // Neutral Red Outpost
+            kFieldWidthY.minus(kEdgeToBumpCrossLine).in(Meters)), // Neutral Red Outpost
     };
   }
+
 }

@@ -4,29 +4,32 @@
 
 package frc.robot;
 
+import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
-import frc.robot.subsystems.Drivetrain.GyroNavX;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
+import frc.robot.subsystems.indexer.IndexerSubsystem;
+import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-
-import java.util.Set;
-import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-import static org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt.*;
 
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -34,27 +37,37 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.commands.OTBIntake.IntakeCmd;
+import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
-import frc.robot.util.swerve.FieldZones;
-import frc.robot.util.swerve.PathGenerator;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
 
+import com.revrobotics.spark.SparkMax;
+
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
+  public final OTBIntakeSubsystem otbIntakeSub;
+  public final IndexerSubsystem indexerSub;
+  public final LauncherAndIntakeSubsystem launcherSub;
+  public final ClimberSubsystem climberSub;
+
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
@@ -65,13 +78,32 @@ public class RobotContainer {
     // Get profile from Elastic dashboard selector
     SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
     SwerveConfig.applyProfile(activeProfile);
-    // SwerveDriveProfile activeProfile = SwerveProfiles.COMP_BOT;
-    // SwerveDriveProfile activeProfile = SwerveProfiles.SPONGE_BOT;
-    // SwerveDriveProfile activeProfile = SwerveProfiles.OFF_SEASON_SWERVE;
 
-    if (Robot.isReal()) {
+    if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
 
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
+
+      launcherSub = new LauncherAndIntakeSubsystem(
+          new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
+              new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType),
+              new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType)));
+
+      climberSub = new ClimberSubsystem(
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+      indexerSub = new IndexerSubsystem(
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
+      // RPM tuning interface — constructing registers the SmartDashboard key
+      new LauncherCmd(launcherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               SwerveConfig.kFrontLeftDrivingCanId,
@@ -90,11 +122,33 @@ public class RobotContainer {
               SwerveConfig.kBackRightTurningCanId,
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
-    } else {
-      final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(Configs.Simulation.drivetrainConfig,
+    } else { // If the robot is simulated, make simulated subs :P
+      final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(
+          DriveTrainSimulationConfig.Default()
+              .withGyro(SimulationConstants.kSimulatedGyro)
+              .withSwerveModule(SimulationConstants.kSwerveModuleSimConfig)
+              .withTrackLengthTrackWidth(SwerveConfig.kWheelBase, SwerveConfig.kTrackWidth)
+              .withBumperSize(SwerveConfig.kBumperLength, SwerveConfig.kBumperWidth),
           SimulationConstants.kStartingPose);
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
+
+      otbIntakeSub = new OTBIntakeSubsystem(
+          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
+          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
+
+      launcherSub = new LauncherAndIntakeSubsystem(
+          new LauncherAndIntakeSubsystem.TalonFXLauncherAndIntakeMotor(
+              new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId)));
+
+      climberSub = new ClimberSubsystem(
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+      indexerSub = new IndexerSubsystem(
+          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
 
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
@@ -110,6 +164,16 @@ public class RobotContainer {
     }
 
     PathGenerator.setDrivetrain(driveSub);
+
+    NamedCommands.registerCommand("Drive to launching arc", new DriveAtLaunchingRangeCmd(
+        driveSub,
+        () -> 0.0,
+        () -> 0.0,
+        Constants.LauncherAndIntakeConstants.kLaunchRadius,
+        true).until(() -> driveSub.isRadialControllerAtSetpoint()));
+
+    NamedCommands.registerCommand("Launch", new InstantCommand());
+    NamedCommands.registerCommand("Nearest Climb", PathGenerator.loadL1ClimbCommand());
 
     configureBindings();
     configureAutos();
@@ -127,7 +191,7 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         this::getDriverVy,
-        Constants.LauncherConstants.kLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true);
 
     driveSub.setDefaultCommand(driveCmd);
@@ -146,6 +210,12 @@ public class RobotContainer {
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
+
+    // Binding for Plow (Button 5 is usually Left Bumper)
+    driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
+
+    // Binding for Intake (Button 6 is usually Right Bumper)
+    driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () -> OTBIntakeConstants.kPlowSpeed));
 
     driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
@@ -222,7 +292,27 @@ public class RobotContainer {
     autoChooser = new LoggedDashboardChooser<>("Auto Routine", AutoBuilder.buildAutoChooser());
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
+
+    autoChooser.addOption("Closest Path",
+        Commands.defer(
+            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
+            Set.of(driveSub)));
+
+    autoChooser.addOption("Launch Then Find Nearest Climb", new SequentialCommandGroup(
+        new DriveAtLaunchingRangeCmd(
+            driveSub,
+            () -> 0.0,
+            () -> 0.0,
+            Constants.LauncherAndIntakeConstants.kLaunchRadius,
+            true).until(() -> driveSub.isRadialControllerAtSetpoint()),
+        new InstantCommand(), // Change to launch command when finished
+        Commands.defer(
+            () -> PathGenerator.loadL1ClimbCommand(),
+            Set.of()),
+        new InstantCommand())); // Change to climb command when finished
+
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
+
   }
 
   /**
@@ -234,5 +324,7 @@ public class RobotContainer {
     Command selectedAuto = autoChooser.get();
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
+
   }
+
 }

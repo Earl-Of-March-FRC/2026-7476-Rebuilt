@@ -145,9 +145,9 @@ public class PoseHelpers {
   public static Distance nearestBumpY(Pose2d pose) {
     // Default to top
     if (pose.getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-      return FieldConstants.kEdgeToBumpCenter;
+      return FieldConstants.kEdgeToBumpCrossLine;
     } else {
-      return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToBumpCenter);
+      return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToBumpCrossLine);
     }
   }
 }
