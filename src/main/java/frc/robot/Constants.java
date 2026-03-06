@@ -287,6 +287,11 @@ public final class Constants {
     public static final Angle kBackLeftChassisAngularOffset = Radians.of(Math.PI);
     public static final Angle kBackRightChassisAngularOffset = Radians.of(Math.PI / 2);
 
+    public static final Pose2d kDepotClimb = new Pose2d(Meters.of(0.746), Meters.of(4.193),
+        Rotation2d.fromDegrees(180));
+    public static final Pose2d kOutpostClimb = new Pose2d(Meters.of(0.746), Meters.of(2.981),
+        Rotation2d.fromDegrees(180));
+
   }
 
   public static final class AutoConstants {
