@@ -339,49 +339,32 @@ public final class Constants {
 
     public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
 
-    public static PathPlannerPath bumpLeftClimbPath;
-    public static PathPlannerPath bumpRightClimbPath;
-    public static PathPlannerPath trenchLeftClimbPath;
-    public static PathPlannerPath trenchRightClimbPath;
-    public static PathPlannerPath trenchLeftAuto;
+    public static PathPlannerPath depotClimbPath;
+    public static PathPlannerPath outpostClimbPath;
 
     static {
       try {
-        bumpLeftClimbPath = PathPlannerPath.fromPathFile("Bump - Left(L1 Climb)");
-        bumpRightClimbPath = PathPlannerPath.fromPathFile("Bump - Right(L1 Climb)");
-        trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
-        trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
-        trenchLeftAuto = PathPlannerPath.fromPathFile("trench left auto");
+        depotClimbPath = PathPlannerPath.fromPathFile("Depot(L1 Climb)");
+        outpostClimbPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb)");
       } catch (Exception e) {
         e.printStackTrace();
       }
     }
 
-    public static final PathPlannerPath[] climbPaths = { bumpLeftClimbPath, bumpRightClimbPath, trenchLeftClimbPath,
-        trenchRightClimbPath };
+    public static final PathPlannerPath[] climbPaths = { depotClimbPath, outpostClimbPath };
 
-    public static final Translation2d bumpLeftStartPoint = bumpLeftClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d bumpRightStartPoint = bumpRightClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d trenchLeftStartPoint = trenchLeftClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d trenchRightStartPoint = trenchRightClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d depotStartPoint = depotClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d outpostStartPoint = outpostClimbPath.getAllPathPoints().get(0).position;
 
     public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
-        new Translation2d(Meters.of(bumpLeftStartPoint.getX()).in(Meters), // Blue Alliance
-            Meters.of(bumpLeftStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(bumpRightStartPoint.getX()).in(Meters),
-            Meters.of(bumpRightStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(trenchLeftStartPoint.getX()).in(Meters),
-            Meters.of(trenchLeftStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(trenchRightStartPoint.getX()).in(Meters),
-            Meters.of(trenchRightStartPoint.getY()).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpLeftStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(bumpLeftStartPoint.getY())).in(Meters)), // Red Alliance
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpRightStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(bumpRightStartPoint.getY())).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchLeftStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(trenchLeftStartPoint.getY())).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchRightStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
+        new Translation2d(Meters.of(depotStartPoint.getX()).in(Meters), // Blue Alliance
+            Meters.of(depotStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(outpostStartPoint.getX()).in(Meters),
+            Meters.of(outpostStartPoint.getY()).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(depotStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(depotStartPoint.getY())).in(Meters)), // Red Alliance
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(outpostStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(outpostStartPoint.getY())).in(Meters)),
     };
 
     public static final double kAlignTowerTimeoutSeconds = 3;
