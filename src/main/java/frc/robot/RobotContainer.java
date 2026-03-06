@@ -211,7 +211,7 @@ public class RobotContainer {
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    testController.a().whileTrue(new LauncherCmd(launcherSub, () -> RPM.of(-2000)));
+    testController.a().whileTrue(new LauncherCmd(launcherSub, () -> RPM.of(2000)));
 
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,

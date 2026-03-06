@@ -152,7 +152,7 @@ public final class Constants {
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
-    public static final AngularVelocity kIntakeRPMStepoint = RPM.of(-400);
+    public static final AngularVelocity kIntakeRPMStepoint = RPM.of(400);
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
@@ -163,7 +163,8 @@ public final class Constants {
     static {
       kLeaderConfig
           .idleMode(IdleMode.kCoast)
-          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
+          .inverted(true);
       kLeaderConfig.encoder
           // Use wheel RPM
           .velocityConversionFactor(kMotorReduction);
@@ -173,7 +174,10 @@ public final class Constants {
           .outputRange(kOutputRangeMin, kOutputRangeMax).feedForward
           .kV(kPIDLauncherControllerFF);
 
-      kFollowerConfig.smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kFollowerConfig
+          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
+          .idleMode(IdleMode.kCoast)
+          .inverted(false);
       kFollowerConfig.follow(kLeaderCanSparkId, true);
     }
   }
