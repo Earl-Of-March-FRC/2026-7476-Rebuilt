@@ -48,6 +48,7 @@ import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
+import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -202,6 +203,8 @@ public class RobotContainer {
         this::getDriverVy,
         new Rotation2d(DriveConstants.kBumpHeadingRestriction),
         DriveConstants.kBumpLinearVelocity));
+
+    driverController.start().onTrue(ClimbAlignCmd.fullAlignCommand(driveSub));
 
     // Only schedule when in Launching zone
     driverController.x().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
