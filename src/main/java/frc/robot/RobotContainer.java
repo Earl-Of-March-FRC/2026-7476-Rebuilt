@@ -50,6 +50,7 @@ import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
@@ -71,6 +72,8 @@ public class RobotContainer {
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
+  private final CommandXboxController testController = new CommandXboxController(
+      OIConstants.kTestControllerPort);
 
   private LoggedDashboardChooser<Command> autoChooser;
 
@@ -195,6 +198,11 @@ public class RobotContainer {
         true);
 
     driveSub.setDefaultCommand(driveCmd);
+
+    indexerSub.setDefaultCommand(new IndexerCmd(indexerSub, () -> testController.getLeftY(),
+        () -> testController.getRightY()));
+
+    testController.a().whileTrue(new LauncherCmd(launcherSub, () -> RPM.of(500)));
 
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
