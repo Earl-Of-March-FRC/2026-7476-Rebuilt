@@ -346,6 +346,8 @@ public final class Constants {
             FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
     };
 
+    public static final double kAlignTowerTimeoutSeconds = 3;
+
   }
 
   public static final class OTBIntakeConstants {
@@ -442,11 +444,15 @@ public final class Constants {
     public static final int kRightId = 14;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final Distance kStowPosition = Inches.of(0);
-    public static final Distance kClimbPosition = Inches.of(32);
+    public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
 
     public static final double kMotorRaiseSpeed = 0.5;
     public static final double kMotorHookSpeed = 0.5;
+
+    public static final double kPositionToleranceInches = 0.5;
+    public static final double kSettledVelocityThresholdInchesPerSec = 0.25; // arms have stopped moving into raise
+                                                                             // position
+    public static final double kStallVelocityThresholdInchesPerSec = 0.1; // arms have stalled on bar during pull
 
     // TODO: measure these values
     public static final Distance kWhinchDrumDiameter = Inches.of(1);
@@ -485,6 +491,12 @@ public final class Constants {
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
     }
+
+    public static final Distance kRaisePosition = Inches.of(32.0);
+
+    public static final Distance kPullPosition = Inches.of(0.0);
+
+    public static final Distance kPositionTolerance = Inches.of(0.5);
 
   }
 

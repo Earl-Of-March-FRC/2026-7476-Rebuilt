@@ -21,10 +21,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimberConstants;
 
 public class ClimberSubsystem extends SubsystemBase {
+  public boolean isClimberAtBottom = true;
 
-  public static enum ClimbSide {
-    Left, Right
-  }
+  public static boolean ClimbMotor;
+  // True = Left
+  // False = Right
 
   // SparkMax motor implementation
   public static class SparkMaxClimberMotor implements ClimberMotorInterface {
@@ -127,6 +128,10 @@ public class ClimberSubsystem extends SubsystemBase {
     }
   }
 
+  public double getPosition(boolean isLeftSide) {
+    return isLeftSide == true ? leftMotor.getPosition() : rightMotor.getPosition();
+  }
+
   // Main Climber Subsystem
   private final ClimberMotorInterface leftMotor;
   private final ClimberMotorInterface rightMotor;
@@ -134,6 +139,7 @@ public class ClimberSubsystem extends SubsystemBase {
   public ClimberSubsystem(ClimberMotorInterface leftMotor, ClimberMotorInterface rightMotor) {
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
+
   }
 
   @Override
@@ -155,40 +161,44 @@ public class ClimberSubsystem extends SubsystemBase {
     rightMotor.setPercentOutput(percent);
   }
 
-  public void setTargetPosition(double inches) {
-    Logger.recordOutput("Climber/Setpoint/TargetInches", inches);
+  public void setTargetPositionLeft(double inches) {
+    Logger.recordOutput("Climber/Setpoint/TargetInchesLeft", inches);
+
     leftMotor.setTargetPosition(inches);
+
+  }
+
+  public void setTargetPositionRight(double inches) {
+    Logger.recordOutput("Climber/Setpoint/TargetInchesRight", inches);
+
     rightMotor.setTargetPosition(inches);
+
   }
 
   public void stop() {
     setPercentOutput(0);
   }
 
-  public double getVelocity() {
-    return leftMotor.getVelocity();
-  }
-
-  public void setPercentOutput(double percent, ClimbSide side) {
-    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/PercentOutput", percent);
-    if (side == ClimbSide.Left) {
+  public void setPercentOutput(double percent, boolean isLeftSide) {
+    Logger.recordOutput("Climber/" + (isLeftSide ? "right" : "left") + "/Setpoint/PercentOutput", percent);
+    if (isLeftSide == true) {
       leftMotor.setPercentOutput(percent);
     } else {
       rightMotor.setPercentOutput(percent);
     }
   }
 
-  public void setTargetPosition(double inches, ClimbSide side) {
-    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/TargetInches", inches);
-    if (side == ClimbSide.Left) {
-      leftMotor.setTargetPosition(inches);
+  public void setTargetPosition(int ticks, boolean isLeftSide) {
+    Logger.recordOutput("Climber/" + (isLeftSide ? "right" : "left") + "/Setpoint/TargetInches", ticks);
+    if (isLeftSide) {
+      leftMotor.setTargetPosition(ticks);
     } else {
-      rightMotor.setTargetPosition(inches);
+      rightMotor.setTargetPosition(ticks);
     }
   }
 
-  public LinearVelocity getVelocity(ClimbSide side) {
-    if (side == ClimbSide.Left) {
+  public LinearVelocity getVelocity(boolean isLeftSide) {
+    if (isLeftSide == true) {
       return InchesPerSecond.of(leftMotor.getVelocity());
     } else {
       return InchesPerSecond.of(rightMotor.getVelocity());
