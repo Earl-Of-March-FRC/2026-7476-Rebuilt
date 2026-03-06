@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Trench - Left(L1 Climb)"
+            "pathName": "Depot(L1 Climb)"
           }
         }
       ]
     }
   },
-  "resetOdom": true,
+  "resetOdom": false,
   "folder": null,
   "choreoAuto": false
 }

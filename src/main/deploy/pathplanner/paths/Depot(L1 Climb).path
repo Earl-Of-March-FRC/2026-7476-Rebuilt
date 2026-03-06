@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.0,
-        "y": 7.25
+        "x": 2.5,
+        "y": 4.193
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.147884071780881,
-        "y": 6.160571737105015
+        "x": 2.2441075697789534,
+        "y": 4.193
       },
-      "isLocked": false,
+      "isLocked": true,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.0821466905187833,
-        "y": 4.805706618962433
+        "x": 0.746,
+        "y": 4.193
       },
       "prevControl": {
-        "x": 1.8000564116295097,
-        "y": 5.702088699435318
+        "x": 1.7133304896811024,
+        "y": 4.193
       },
       "nextControl": null,
-      "isLocked": false,
-      "linkedName": null
+      "isLocked": true,
+      "linkedName": "ClimbDepot"
     }
   ],
   "rotationTargets": [],

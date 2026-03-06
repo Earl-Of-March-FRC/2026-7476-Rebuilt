@@ -301,15 +301,14 @@ public class RobotContainer {
     autoChooser.addOption("Launch Then Find Nearest Climb", new SequentialCommandGroup(
         new DriveAtLaunchingRangeCmd(
             driveSub,
-            () -> 0.0,
-            () -> 0.0,
+            () -> 1.0,
+            () -> 1.0,
             Constants.LauncherAndIntakeConstants.kLaunchRadius,
             true).until(() -> driveSub.isRadialControllerAtSetpoint()),
-        new InstantCommand(), // Change to launch command when finished
+        new InstantCommand().withTimeout(5), // Change to launch command when finished
         Commands.defer(
-            () -> PathGenerator.loadL1ClimbCommand(),
-            Set.of()),
-        new InstantCommand())); // Change to climb command when finished
+            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
+            Set.of(driveSub))));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
 
