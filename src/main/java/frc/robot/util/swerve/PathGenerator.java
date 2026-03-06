@@ -315,10 +315,10 @@ public class PathGenerator {
 
     if (isBlueAlliance) {
       nearestPathIndex = nearestTranslation2dIndex(
-          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 0, 4));
+          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 0, 2));
     } else {
       nearestPathIndex = nearestTranslation2dIndex(
-          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 4, 8));
+          Arrays.copyOfRange(AutoConstants.climbPathWaypoints, 2, 4));
     }
 
     // Load the path we want to pathfind to and follow
