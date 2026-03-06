@@ -651,6 +651,21 @@ public class DrivetrainSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the current chassis speeds.
+   * 
+   * @return Current chassis speeds (field-relative, in blue coordinates)
+   */
+  public ChassisSpeeds getChassisSpeedsFieldRelative() {
+    // Get robot realtive speeds
+    ChassisSpeeds currentChassisSpeeds = getChassisSpeedsRobotRelative();
+    // Convert to field-relative speeds
+    currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
+        getPose().getRotation());
+
+    return currentChassisSpeeds;
+  }
+
+  /**
    * Get the current used gyro
    * 
    * Do not use this to get the robot heading, as the gyro offset is applied later

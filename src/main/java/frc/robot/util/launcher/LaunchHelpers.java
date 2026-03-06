@@ -1,7 +1,10 @@
 package frc.robot.util.launcher;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
@@ -11,6 +14,8 @@ import java.util.Objects;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -25,6 +30,16 @@ import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 public class LaunchHelpers {
+
+  /**
+   * Container for the two values that define launch setpoints: flywheel speed and
+   * bot heading
+   * 
+   * @param flywheelSpeed The flywheel speed to launch at
+   * @param botHeading    The bot heading to launch towerds
+   */
+  public record LaunchSetpoints(AngularVelocity flywheelSpeed, Rotation2d botHeading) {
+  }
 
   // Do not access launcherAndIntakeSub directly, use Launcher() to avoid NPE
   private static LauncherAndIntakeSubsystem launcherAndIntakeSub;
@@ -75,7 +90,8 @@ public class LaunchHelpers {
         * ballLaunchVelocity.in(MetersPerSecond);
 
     return botPose.getTranslation()
-        .plus(new Translation2d(VxMPS * airTime.in(Seconds), botPose.getRotation()));
+        .plus(new Translation2d(VxMPS * airTime.in(Seconds),
+            botPose.getRotation().plus(LauncherAndIntakeConstants.kLauncherBotHeading)));
   }
 
   /**
@@ -128,20 +144,22 @@ public class LaunchHelpers {
    */
   public static AngularVelocity calculateWheelRPM(Distance targetDistance) {
     // Use lookup table first, then polynomial regression
-    int lookupIndex = -1;
-    for (int i = 0; i < LauncherAndIntakeConstants.kLaunchDistancesLookup.length; i++) {
-      Distance tableEntry = LauncherAndIntakeConstants.kLaunchDistancesLookup[i];
-      double distance = Math.abs(tableEntry.in(Meters) - targetDistance.in(Meters));
-      double minDistance = 0;
+    // int lookupIndex = -1;
+    // for (int i = 0; i < LauncherAndIntakeConstants.kLaunchDistancesLookup.length;
+    // i++) {
+    // Distance tableEntry = LauncherAndIntakeConstants.kLaunchDistancesLookup[i];
+    // double distance = Math.abs(tableEntry.in(Meters) -
+    // targetDistance.in(Meters));
+    // double minDistance = 0;
 
-      if (distance < LauncherAndIntakeConstants.kLaunchLookupTolerance.in(Meters) &&
-          distance < minDistance) {
-        lookupIndex = i;
-      }
-    }
+    // if (distance < LauncherAndIntakeConstants.kLaunchLookupTolerance.in(Meters)
+    // &&
+    // distance < minDistance) {
+    // lookupIndex = i;
+    // }
+    // }
 
-    return lookupIndex == -1 ? LauncherAndIntakeConstants.kDistanceToRPMCurve.apply(targetDistance)
-        : LauncherAndIntakeConstants.kLaunchWheelSpeedLookup[lookupIndex];
+    return LauncherAndIntakeConstants.kDistanceToRPMCurve.apply(targetDistance);
   }
 
   /**
@@ -199,16 +217,52 @@ public class LaunchHelpers {
   }
 
   /**
-   * Calculates the launch velocity of the ball with the given flywheel speed
+   * Calculates the launch velocity of the ball with the given flywheel speed,
+   * accounting for bot speeds
    * 
    * @param wheelAngularVelocity Flywheel speed
    * @return Ball linear velocity
    */
   public static LinearVelocity calculateBallLaunchVelocity(AngularVelocity wheelAngularVelocity) {
+    return MetersPerSecond.of(calculateBallLaunchVelocityVector(wheelAngularVelocity).getNorm());
+  }
+
+  /**
+   * Calculates the launch velocity of the ball with the given flywheel speed,
+   * accounting for bot speeds
+   * 
+   * @param wheelAngularVelocity Flywheel speed
+   * @return Ball linear velocity as a Translation3d, in mps
+   */
+  public static Translation3d calculateBallLaunchVelocityVector(AngularVelocity wheelAngularVelocity) {
     double wheelLinearVelocityMPS = LauncherAndIntakeConstants.kWheelRadius.in(Meters)
         * wheelAngularVelocity.in(RadiansPerSecond);
 
-    return MetersPerSecond.of(LauncherAndIntakeConstants.kWheelSlipCoefficient * wheelLinearVelocityMPS);
+    // Get current velocity
+    ChassisSpeeds currentChassisSpeeds = drive().getChassisSpeedsFieldRelative();
+    Translation3d botVelocity = new Translation3d(new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
+        currentChassisSpeeds.vyMetersPerSecond));
+
+    Translation3d launchVelocity = new Translation3d(
+        LauncherAndIntakeConstants.kWheelSlipCoefficient * wheelLinearVelocityMPS,
+        new Rotation3d(drive().getPose().getRotation().minus(LauncherAndIntakeConstants.kLauncherBotHeading))
+            .rotateBy(new Rotation3d(Degrees.zero(), LauncherAndIntakeConstants.kBallReleaseAngle.unaryMinus(),
+                Degrees.zero())));
+
+    Logger.recordOutput("LaunchHelpers/LaunchVelocity", launchVelocity);
+
+    return botVelocity.plus(launchVelocity);
+  }
+
+  /**
+   * Calculates the launch velocity of the ball with the current flywheel speed,
+   * accounting for bot speeds
+   * 
+   * @param wheelAngularVelocity Flywheel speed
+   * @return Ball linear velocity as a Translation3d, in mps
+   */
+  public static Translation3d calculateBallLaunchVelocityVector() {
+    return calculateBallLaunchVelocityVector(calculateWheelRPM());
   }
 
   /**
@@ -220,15 +274,55 @@ public class LaunchHelpers {
     return calculateBallLaunchVelocity(launcher().getVelocity());
   }
 
-  public static Translation2d applyLead(Translation2d targetBotRelative) {
+  /**
+   * Calculates the required flywheel speed to launch the ball at a certain
+   * velocity
+   * 
+   * This method is the inverse function of
+   * {@link #calculateBallLaunchVelocity(AngularVelocity)}
+   * 
+   * @param ballLaunchVelocity Desired ball linear velocity
+   * @return Required flywheel speed
+   */
+  public static AngularVelocity calculateRequiredAngularVelocity(LinearVelocity ballLaunchVelocity) {
+    double wheelLinearVelocityMPS = ballLaunchVelocity.in(MetersPerSecond)
+        / LauncherAndIntakeConstants.kWheelSlipCoefficient / LauncherAndIntakeConstants.kWheelRadius.in(Meters);
+
+    return RadiansPerSecond.of(wheelLinearVelocityMPS);
+  }
+
+  /**
+   * Calculate the launch setpoints (flywheel speed and bot heading) to hit a
+   * target, optionally applying lead to account for drivetrain velocity
+   * 
+   * @param targetBotRelative The target translation relative to the bot
+   * @param applyLead         Whether to apply lead to account for drivetrain
+   *                          velocity
+   * @return The launch setpoints to hit the target
+   */
+  public static LaunchSetpoints calculateLaunchSetpoints(Translation2d targetBotRelative, Boolean applyLead) {
+    AngularVelocity flywheelSpeed = calculateWheelRPM(Meters.of(targetBotRelative.getNorm()));
+
+    if (!applyLead) {
+      return new LaunchSetpoints(flywheelSpeed,
+          targetBotRelative.getAngle().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
+    }
+
     // Get current velocity
-    ChassisSpeeds currentChassisSpeeds = drive().getChassisSpeedsRobotRelative();
-    // Convert to field-relative speeds
-    currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
-        drive().getPose().getRotation());
-    Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
+    ChassisSpeeds currentChassisSpeeds = drive().getChassisSpeedsFieldRelative();
+    Translation2d botVelocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
         currentChassisSpeeds.vyMetersPerSecond);
 
-    return targetBotRelative.minus(velocity.times(calculateBallAirTime(FieldConstants.kHubHeight).in(Seconds)));
+    // Get required intial velocity to hit target
+    Translation2d requiredVelocity = new Translation2d(
+        calculateBallLaunchVelocity(flywheelSpeed).in(MetersPerSecond),
+        targetBotRelative.getAngle());
+
+    // Calculate required contribution from launching (Vtotal = Vlaunch + Vbot =>
+    // Vlaunch = Vtotal - Vbot)
+    Translation2d launchVelocity = requiredVelocity.minus(botVelocity);
+
+    return new LaunchSetpoints(calculateRequiredAngularVelocity(MetersPerSecond.of(launchVelocity.getNorm())),
+        launchVelocity.getAngle().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
   }
 }

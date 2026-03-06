@@ -22,6 +22,7 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.launcher.LaunchHelpers;
+import frc.robot.util.launcher.LaunchHelpers.LaunchSetpoints;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -69,14 +70,9 @@ public class DriveTrackHubCmd extends Command {
 
     Translation2d toHub = driveSub.getHubTranslation2dBotRelative();
 
-    // Get heading correction to face the hub
-    Translation2d targetBotRelative = toHub;
-    if (leadShots) {
-      targetBotRelative = LaunchHelpers.applyLead(targetBotRelative);
-    }
+    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub, leadShots);
 
-    Rotation2d desiredHeading = targetBotRelative.getAngle();
-    desiredHeading = desiredHeading.minus(LauncherAndIntakeConstants.kLauncherBotHeading);
+    Rotation2d desiredHeading = launchSetpoints.botHeading();
     AngularVelocity omega = driveSub.getHeadingCorrectionOmega(desiredHeading);
     LinearVelocity xVel = SwerveConfig.kMaxSpeed.times(xSupplier.get());
     LinearVelocity yVel = SwerveConfig.kMaxSpeed.times(ySupplier.get());
@@ -100,8 +96,10 @@ public class DriveTrackHubCmd extends Command {
     // Perform logging
     Logger.recordOutput("Drivetrain/DriveTrackHub/DesiredHeading", desiredHeading);
     Logger.recordOutput("Drivetrain/DriveTrackHub/HubPoseBotRelative", toHub);
-    Logger.recordOutput("Drivetrain/DriveTrackHub/LeadCorrection", targetBotRelative.minus(toHub));
-    Logger.recordOutput("Drivetrain/DriveTrackHub/TargetBotRelative", targetBotRelative);
+    // Logger.recordOutput("Drivetrain/DriveTrackHub/LeadCorrection",
+    // targetBotRelative.minus(toHub));
+    // Logger.recordOutput("Drivetrain/DriveTrackHub/TargetBotRelative",
+    // targetBotRelative);
     Logger.recordOutput("Drivetrain/DriveTrackHub/NextPose", futurePose);
     Logger.recordOutput("Drivetrain/DriveTrackHub/AtLimit", atLimit);
     Logger.recordOutput("Drivetrain/DriveTrackHub/DesiredSpeeds",
@@ -113,9 +111,6 @@ public class DriveTrackHubCmd extends Command {
   public void end(boolean interrupted) {
     // Stop the robot when command ends
     driveSub.runVelocity(new ChassisSpeeds(0, 0, 0));
-
-    // Log that the command is no longer active
-    Logger.recordOutput("Drivetrain/LockedAtLaunchingRange", false);
   }
 
   @Override
