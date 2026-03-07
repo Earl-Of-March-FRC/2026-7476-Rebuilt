@@ -302,12 +302,12 @@ public class RobotContainer {
     driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> IndexerConstants.kWheelSpeed,
         () -> IndexerConstants.kTreadmillSpeed));
 
-    driverController.rightTrigger().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1000)));
+    driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1000)));
 
     driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> -IndexerConstants.kWheelSpeed,
         () -> -IndexerConstants.kTreadmillSpeed));
 
-    driverController.leftTrigger().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(2750)));
+    driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(2750)));
 
     driverController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
@@ -363,10 +363,12 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
-        driveAndManualShootCmd);
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
-        driveAndAutoShootCmd);
+    // driverController.povUp().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Launch).onTrue(
+    // driveAndManualShootCmd);
+    // driverController.povDown().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Launch).onTrue(
+    // driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(
