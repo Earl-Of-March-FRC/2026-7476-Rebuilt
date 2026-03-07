@@ -6,7 +6,7 @@
   },
   "System Joysticks": {
     "window": {
-      "enabled": false
+      "visible": true
     }
   },
   "keyboardJoysticks": [
@@ -17,8 +17,8 @@
           "incKey": 68
         },
         {
-          "decKey": 87,
-          "incKey": 83
+          "decKey": 83,
+          "incKey": 87
         },
         {
           "decKey": 264,
@@ -36,7 +36,9 @@
         90,
         88,
         67,
-        86
+        86,
+        73,
+        80
       ],
       "povConfig": [
         {
@@ -59,7 +61,6 @@
           "incKey": 76
         },
         {
-          "decKey": 73,
           "incKey": 75
         }
       ],
