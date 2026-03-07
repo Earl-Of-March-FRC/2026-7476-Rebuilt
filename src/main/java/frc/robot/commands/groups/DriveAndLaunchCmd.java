@@ -10,13 +10,14 @@ import java.util.function.Supplier;
 
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveTrackHubCmd;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
-public class DriveAndLaunchCmd extends ParallelCommandGroup {
+public class DriveAndLaunchCmd extends ParallelDeadlineGroup {
 
   /**
    * Creates a new DriveAndLaunchCmd. This command will run track the hub, lock
@@ -35,31 +36,15 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
   public DriveAndLaunchCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, Supplier<Double> xSupplier, Supplier<Double> ySupplier,
       BooleanSupplier launchSupplier, BooleanSupplier lockSupplier, boolean leadShots) {
-    addCommands(
-        // Use the either command to switch between the two driving commands based on
-        // the lockSupplier. If lockSupplier is true, we use the
-        // DriveAtLaunchingRangeCmd which will maintain the current distance from the
-        // hub
 
-        // We defer the Commands.either(...) block so that the choosen command updates
-        // based
-        // on the supplier
-        Commands.defer(() -> Commands.either(
-            // We defer the DriveAtLaunchingRangeCmd so that it updates the distance to the
-            // hub when it's choosen
-            Commands.defer(() -> new DriveAtLaunchingRangeCmd(
-                driveSub,
-                xSupplier,
-                ySupplier,
-                driveSub.getHubDistance(),
-                leadShots), Set.of(driveSub)),
-            new DriveTrackHubCmd(
-                driveSub,
-                xSupplier,
-                ySupplier,
-                leadShots),
-            lockSupplier), Set.of(driveSub)),
-        new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, leadShots));
+    super(
+        new DriveTrackHubCmd(
+            driveSub,
+            xSupplier,
+            ySupplier,
+            leadShots,
+            lockSupplier),
+        new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier, leadShots));
   }
 
   /**
@@ -76,30 +61,13 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
   public DriveAndLaunchCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, Supplier<Double> xSupplier, Supplier<Double> ySupplier,
       BooleanSupplier lockSupplier, boolean leadShots) {
-    addCommands(
-        // Use the either command to switch between the two driving commands based on
-        // the lockSupplier. If lockSupplier is true, we use the
-        // DriveAtLaunchingRangeCmd which will maintain the current distance from the
-        // hub
-
-        // We defer the Commands.either(...) block so that the choosen command updates
-        // based
-        // on the supplier
-        Commands.defer(() -> Commands.either(
-            // We defer the DriveAtLaunchingRangeCmd so that it updates the distance to the
-            // hub when it's choosen
-            Commands.defer(() -> new DriveAtLaunchingRangeCmd(
-                driveSub,
-                xSupplier,
-                ySupplier,
-                driveSub.getHubDistance(),
-                leadShots), Set.of(driveSub)),
-            new DriveTrackHubCmd(
-                driveSub,
-                xSupplier,
-                ySupplier,
-                leadShots),
-            lockSupplier), Set.of(driveSub)),
+    super(
+        new DriveTrackHubCmd(
+            driveSub,
+            xSupplier,
+            ySupplier,
+            leadShots,
+            lockSupplier),
         new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, leadShots));
   }
 
