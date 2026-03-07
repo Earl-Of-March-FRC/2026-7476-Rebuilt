@@ -169,8 +169,8 @@ public final class Constants {
     public static final double kPIDLauncherControllerP = 1.2e-4;
     public static final double kPIDLauncherControllerI = 0;
     public static final double kPIDLauncherControllerD = 1e-4;
-    public static final double kPIDLauncherControllerFF = 2.1e-4;
-
+    public static final double kPIDLauncherControllerFF = 1.0
+        / (NeoMotorConstants.kFreeSpeed.in(RPM) * kMotorReduction);
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
