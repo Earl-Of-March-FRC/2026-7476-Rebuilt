@@ -47,7 +47,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -57,7 +56,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -69,8 +67,6 @@ import frc.robot.Constants.PhotonConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
-import frc.robot.Constants.FieldConstants;
-import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.util.vision.CameraProfile;
 import frc.robot.util.vision.ClimbAlignmentIndicator;
 import frc.robot.util.vision.VisionStdDevCalculator;
@@ -267,8 +263,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
                 DriveConstants.kDThetaController)),
         config,
         () -> {
-          Optional<Alliance> alliance = DriverStation.getAlliance();
-          return alliance.isPresent() ? alliance.get() == DriverStation.Alliance.Red : false; // default to blue
+          return PoseHelpers.getAlliance() == Alliance.Red;
         },
         this);
   }
@@ -324,8 +319,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualX, boolean isManualY) {
     if (isFieldRelative) {
-      Optional<Alliance> alliance = DriverStation.getAlliance();
-      boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
+      boolean isRedAlliance = PoseHelpers.getAlliance() == Alliance.Red;
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
           speeds.vxMetersPerSecond * (isRedAlliance && isManualX ? -1 : 1),
           speeds.vyMetersPerSecond * (isRedAlliance && isManualY ? -1 : 1),
@@ -562,15 +556,15 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public Translation2d getHubTranslation2dBotRelative() {
     Pose2d currentPose = getPose();
 
-    // Determine hub position based on alliance, default to blue
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
-    Translation2d hubTranslation = isRedAlliance
-        ? Constants.FieldConstants.kRedHubPose
-        : Constants.FieldConstants.kBlueHubPose;
+    Translation2d hubTranslation = PoseHelpers.getAllianceHubtTranslation2d();
 
     Translation2d directionToHub = hubTranslation.minus(currentPose.getTranslation());
     return directionToHub;
+  }
+
+  /** @return The distance to the hub from current bot pose */
+  public Distance getHubDistance() {
+    return Meters.of(getHubTranslation2dBotRelative().getNorm());
   }
 
   /**
@@ -619,16 +613,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return The zone the pose is in
    */
   public FieldZones getPoseZone(Pose2d pose) {
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
-
-    if (alliance.isPresent()) {
-      Logger.recordOutput("Drivetrain/Alliance",
-          isBlueAlliance ? "Blue" : "Red");
-    } else {
-      Logger.recordOutput("Drivetrain/Alliance",
-          "Unknown");
-    }
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
 
     if (pose.getX() > FieldConstants.kAllianceZoneXLength.in(Meters)
         && pose.getX() < FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength).in(Meters)) {
@@ -666,6 +651,21 @@ public class DrivetrainSubsystem extends SubsystemBase {
    */
   public ChassisSpeeds getChassisSpeedsRobotRelative() {
     return kinematics.toChassisSpeeds(getModuleStates());
+  }
+
+  /**
+   * Gets the current chassis speeds.
+   * 
+   * @return Current chassis speeds (field-relative, in blue coordinates)
+   */
+  public ChassisSpeeds getChassisSpeedsFieldRelative() {
+    // Get robot realtive speeds
+    ChassisSpeeds currentChassisSpeeds = getChassisSpeedsRobotRelative();
+    // Convert to field-relative speeds
+    currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
+        getPose().getRotation());
+
+    return currentChassisSpeeds;
   }
 
   /**
@@ -986,6 +986,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
     Logger.recordOutput("Drivetrain/Pose", getPose());
+    Logger.recordOutput("Drivetrain/Speeds/RobotRelative", getChassisSpeedsRobotRelative());
+    Logger.recordOutput("Drivetrain/Speeds/FieldRelative", getChassisSpeedsFieldRelative());
     Logger.recordOutput("Drivetrain/VisionlessPose", visionlessPose);
     Logger.recordOutput("Drivetrain/Zone", getCurrentBotZone().name());
     Logger.recordOutput("Drivetrain/GyroRotation", gyro.getRotation2d().getDegrees());
@@ -1048,17 +1050,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
   public Pose2d getHubTargetPose(double targetAngle) {
     Pose2d currentPose = getPose();
 
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isRedAlliance = alliance.isPresent() && alliance.get() == Alliance.Red;
-
-    Translation2d hubPose = isRedAlliance
-        ? Constants.FieldConstants.kRedHubPose
-        : Constants.FieldConstants.kBlueHubPose;
+    Translation2d hubPose = PoseHelpers.getAllianceHubtTranslation2d();
 
     double metersFromHub = isUsingHighVelocities.get() ? kMetersFromHubHigh : kMetersFromHubLow;
 
     // Offset from hub toward/away from hub along the X axis
-    double targetX = hubPose.getX() + (isRedAlliance ? metersFromHub : -metersFromHub);
+    double targetX = hubPose.getX() + (PoseHelpers.getAlliance() == Alliance.Red ? metersFromHub : -metersFromHub);
     double targetY = currentPose.getY();
 
     return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));
