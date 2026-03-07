@@ -51,9 +51,7 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
     this(
         indexerSub,
         launcherAndIntakeSub,
-        () -> LaunchHelpers.willHitTarget(
-            PoseHelpers.getAllianceHubtTranslation3d(),
-            FieldConstants.kHubInsideWidth));
+        () -> LaunchHelpers.willHitHub());
   }
 
 }

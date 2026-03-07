@@ -1,7 +1,5 @@
 package frc.robot.subsystems.launcherAndIntake;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -16,12 +14,9 @@ import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkMaxConfig;
-
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.DimensionlessUnit;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LauncherAndIntakeConstants;
@@ -197,7 +192,11 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     Logger.recordOutput("Launcher/Prediction/PredictedBallEndpointHubHeight",
         LaunchHelpers.predictBallEndpoint(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
     Logger.recordOutput("Launcher/Prediction/BallLaunchVelocityMPS",
-        LaunchHelpers.calculateBallLaunchVelocity().in(MetersPerSecond));
+        LaunchHelpers.calculateBallLaunchVelocityVector());
+    Logger.recordOutput("Launcher/Prediction/BallInitialVelocityMPS",
+        LaunchHelpers.calculateBallResultantVelocityVector());
+    Logger.recordOutput("Launcher/Prediction/WillHitHub",
+        LaunchHelpers.willHitHub());
   }
 
   public AngularVelocity getVelocity() {

@@ -983,6 +983,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
     Logger.recordOutput("Drivetrain/Pose", getPose());
+    Logger.recordOutput("Drivetrain/Speeds/RobotRelative", getChassisSpeedsRobotRelative());
+    Logger.recordOutput("Drivetrain/Speeds/FieldRelative", getChassisSpeedsFieldRelative());
     Logger.recordOutput("Drivetrain/VisionlessPose", visionlessPose);
     Logger.recordOutput("Drivetrain/Zone", getCurrentBotZone().name());
     Logger.recordOutput("Drivetrain/GyroRotation", gyro.getRotation2d().getDegrees());
