@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Meters;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -15,6 +16,8 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
@@ -38,10 +41,10 @@ public class NearestClimbCmd extends SequentialCommandGroup {
     ParallelCommandGroup alignAndRaiseClimber = new ParallelCommandGroup();
     PullClimberCmd pullClimber;
 
-    if (drivetrain.getCurrentBotZone() == FieldZones.Neutral) {
-      Optional<Alliance> alliance = DriverStation.getAlliance();
-      boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
 
+    if (drivetrain.getCurrentBotZone() == FieldZones.Neutral) {
       int neutralZoneWaypointId;
       if (isBlueAlliance) {
         neutralZoneWaypointId = 4;
@@ -52,21 +55,29 @@ public class NearestClimbCmd extends SequentialCommandGroup {
           Arrays.copyOfRange(FieldConstants.kTrenchPathWaypoints, neutralZoneWaypointId, neutralZoneWaypointId + 2)));
     }
 
+    SmartDashboard.putNumber("Pose", drivetrain.getPose().getY());
+    SmartDashboard.putNumber("field width", FieldConstants.kFieldWidthY.div(2).in(Meters));
+
+    PathPlannerPath climberPath;
+    boolean usesLeftMotor;
+
     if (drivetrain.getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-      SmartDashboard.putNumber("pose", drivetrain.getPose().getY());
-      SmartDashboard.putNumber("field width", FieldConstants.kFieldWidthY.div(2).in(Meters));
-      alignAndRaiseClimber.addCommands(new RaiseClimberCmd(climber, false),
-          AutoBuilder.pathfindThenFollowPath(AutoConstants.outpostClimbPath, AutoConstants.L1ClimbConstraints));
-      pullClimber = new PullClimberCmd(climber, false);
+      usesLeftMotor = false;
+      climberPath = isBlueAlliance ? AutoConstants.outpostClimbPath : AutoConstants.depotClimbPath;
+
     } else {
-      alignAndRaiseClimber.addCommands(new RaiseClimberCmd(climber, true),
-          AutoBuilder.pathfindThenFollowPath(AutoConstants.depotClimbPath, AutoConstants.L1ClimbConstraints));
-      pullClimber = new PullClimberCmd(climber, true);
+      usesLeftMotor = true;
+      climberPath = isBlueAlliance ? AutoConstants.depotClimbPath : AutoConstants.outpostClimbPath;
     }
+
+    alignAndRaiseClimber.addCommands(new RaiseClimberCmd(climber, usesLeftMotor),
+        AutoBuilder.pathfindThenFollowPath(climberPath, AutoConstants.L1ClimbConstraints));
+
+    pullClimber = new PullClimberCmd(climber, usesLeftMotor);
 
     addCommands(alignAndRaiseClimber);
     addCommands(pullClimber);
 
-    // addRequirements(drivetrain, climber);
+    addRequirements(drivetrain, climber);
   }
 }
