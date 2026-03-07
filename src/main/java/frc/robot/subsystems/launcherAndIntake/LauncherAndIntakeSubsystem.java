@@ -1,6 +1,5 @@
 package frc.robot.subsystems.launcherAndIntake;
 
-import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -11,16 +10,18 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
+import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkMaxConfig;
-
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LauncherAndIntakeConstants;
+import frc.robot.util.PoseHelpers;
+import frc.robot.util.launcher.LaunchHelpers;
 
 public class LauncherAndIntakeSubsystem extends SubsystemBase {
 
@@ -66,6 +67,7 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
       return leaderSparkMax.getOutputCurrent();
     }
 
+    @Override
     public void setPercent(double percent) {
       leaderSparkMax.set(percent);
     }
@@ -113,8 +115,57 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
       return talonFX.getStatorCurrent().getValueAsDouble();
     }
 
-    public void setVelocityPercent(double percent) {
+    @Override
+    public void setPercent(double percent) {
       talonFX.set(percent);
+    }
+  }
+
+  // Sim spark max motor implementation
+  // Models the velocity as changing linearly with applied ouput
+  public static class SimSparkMaxLauncherAndIntakeMotor implements LauncherAndIntakeMotorInterface {
+    private final SparkMaxSim sparkMaxSim;
+    private final AngularVelocity maxRPM;
+
+    public SimSparkMaxLauncherAndIntakeMotor(SparkMax sparkMax, DCMotor motorModel, AngularVelocity maxRPM) {
+      sparkMax.configure(LauncherAndIntakeConstants.kLeaderConfig, ResetMode.kNoResetSafeParameters,
+          PersistMode.kNoPersistParameters);
+
+      this.maxRPM = maxRPM;
+      this.sparkMaxSim = new SparkMaxSim(sparkMax, motorModel);
+      sparkMaxSim.enable();
+    }
+
+    @Override
+    public void setReferenceVelocity(AngularVelocity velocity) {
+      sparkMaxSim.setVelocity(velocity.in(RPM));
+      sparkMaxSim.setAppliedOutput(velocity.div(maxRPM).magnitude());
+    }
+
+    @Override
+    public AngularVelocity getVelocity() {
+      return RPM.of(sparkMaxSim.getVelocity());
+    }
+
+    @Override
+    public void stop() {
+      setPercent(0);
+    }
+
+    @Override
+    public double getAppliedOutput() {
+      return sparkMaxSim.getAppliedOutput();
+    }
+
+    @Override
+    public double getCurrent() {
+      return sparkMaxSim.getMotorCurrent();
+    }
+
+    @Override
+    public void setPercent(double percent) {
+      sparkMaxSim.setAppliedOutput(percent);
+      sparkMaxSim.setVelocity(maxRPM.times(percent).in(RPM));
     }
   }
 
@@ -136,6 +187,18 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
     Logger.recordOutput("Launcher/Measured/AppliedOutput", motor.getAppliedOutput());
     Logger.recordOutput("Launcher/Measured/CurrentAmps", motor.getCurrent());
+    Logger.recordOutput("Launcher/Prediction/BallAirTimeSeconds",
+        LaunchHelpers.calculateBallAirTime(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
+    Logger.recordOutput("Launcher/Prediction/PredictedBallEndpointHubHeight",
+        LaunchHelpers.predictBallEndpoint(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
+    Logger.recordOutput("Launcher/Prediction/BallLaunchVelocityMPS",
+        LaunchHelpers.calculateBallLaunchVelocityVector());
+    Logger.recordOutput("Launcher/Prediction/BallInitialVelocityMPS",
+        LaunchHelpers.calculateBallResultantVelocityVector());
+    Logger.recordOutput("Launcher/Prediction/WillHitHub",
+        LaunchHelpers.willHitHub());
+    Logger.recordOutput("Launcher/Prediction/HubTranslation2D",
+        PoseHelpers.getAllianceHubtTranslation2d());
   }
 
   public AngularVelocity getVelocity() {
@@ -146,6 +209,7 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     AngularVelocity withOffset = RPM.of(velocity.in(RPM) + velocityOffsetRPM);
 
     Logger.recordOutput("Launcher/Setpoint/TargetRPM", velocity.in(RPM));
+    Logger.recordOutput("Launcher/Setpoint/VelocityOffsetRPM", velocityOffsetRPM);
     Logger.recordOutput("Launcher/Setpoint/TargetRPMWithOffset", withOffset.in(RPM));
     Logger.recordOutput("Launcher/Setpoint/TargetRadPerSecWithOffset", withOffset.in(RadiansPerSecond));
 

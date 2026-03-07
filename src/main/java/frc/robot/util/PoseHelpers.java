@@ -2,16 +2,19 @@ package frc.robot.util;
 
 import static edu.wpi.first.units.Units.Meters;
 
+import java.util.Optional;
+
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.FieldConstants;
-import frc.robot.util.vision.CameraProfile;
 
 public class PoseHelpers {
 
@@ -148,6 +151,48 @@ public class PoseHelpers {
       return FieldConstants.kEdgeToBumpCrossLine;
     } else {
       return FieldConstants.kFieldWidthY.minus(FieldConstants.kEdgeToBumpCrossLine);
+    }
+  }
+
+  /** @return The Translation3d of the hub based on current alliance */
+  public static Translation3d getAllianceHubtTranslation3d() {
+    return getAlliance() == Alliance.Blue ? FieldConstants.kBlueHubTranslation3d : FieldConstants.kRedHubTranslation3d;
+  }
+
+  /** @return The Translation2d of the hub based on current alliance */
+  public static Translation2d getAllianceHubtTranslation2d() {
+    return getAlliance() == Alliance.Blue ? FieldConstants.kBlueHubTranslation2d : FieldConstants.kRedHubTranslation2d;
+  }
+
+  /**
+   * Returns the current alliance as reported by FMS. Perfoms logging and defaults
+   * to blue if no alliance is available
+   * 
+   * @return The current alliance
+   */
+  public static Alliance getAlliance() {
+    return getAlliance(Alliance.Blue);
+  }
+
+  /**
+   * Returns the current alliance as reported by FMS. Perfoms logging.
+   * 
+   * @param defaultAlliance The default alliance if no alliance is available
+   * @return The current alliance
+   */
+  public static Alliance getAlliance(Alliance defaultAlliance) {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+
+    if (alliance.isPresent()) {
+      Logger.recordOutput("Drivetrain/Alliance",
+          alliance.get().name());
+      return alliance.get();
+    } else {
+      Logger.recordOutput("Drivetrain/Alliance",
+          "Unknown");
+
+      // Default to blue
+      return defaultAlliance;
     }
   }
 }

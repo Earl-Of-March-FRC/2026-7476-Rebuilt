@@ -20,6 +20,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -34,6 +35,7 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -54,9 +56,11 @@ import frc.robot.commands.climber.PullClimberCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
+import frc.robot.util.launcher.LaunchHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
@@ -70,7 +74,7 @@ public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
   // public final OTBIntakeSubsystem otbIntakeSub;
   public final IndexerSubsystem indexerSub;
-  public final LauncherAndIntakeSubsystem launcherSub;
+  public final LauncherAndIntakeSubsystem launcherAndIntakeSub;
   public final ClimberSubsystem climberSub;
 
   public final Gyro gyro;
@@ -79,7 +83,7 @@ public class RobotContainer {
   private final CommandXboxController testController = new CommandXboxController(
       OIConstants.kTestControllerPort);
 
-  private LoggedDashboardChooser<Command> autoChooser;
+  private LoggedDashboardChooser<Command> autoChooser, debugChooser;
 
   public RobotContainer() {
     // Get profile from Elastic dashboard selector
@@ -95,7 +99,7 @@ public class RobotContainer {
       // new SparkMax(OTBIntakeConstants.kRollerCanId,
       // OTBIntakeConstants.kMotorType));
 
-      launcherSub = new LauncherAndIntakeSubsystem(
+      launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
           new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
               new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
                   Constants.LauncherAndIntakeConstants.kMotorType),
@@ -112,7 +116,7 @@ public class RobotContainer {
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
 
       // RPM tuning interface — constructing registers the SmartDashboard key
-      new LauncherCmd(launcherSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
+      new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
       driveSub = new DrivetrainSubsystem(new MAXSwerveModule[] {
           new MAXSwerveModule(
               SwerveConfig.kFrontLeftDrivingCanId,
@@ -148,9 +152,12 @@ public class RobotContainer {
       // new SparkMax(OTBIntakeConstants.kRollerCanId,
       // OTBIntakeConstants.kMotorType));
 
-      launcherSub = new LauncherAndIntakeSubsystem(
-          new LauncherAndIntakeSubsystem.TalonFXLauncherAndIntakeMotor(
-              new TalonFX(Constants.LauncherAndIntakeConstants.kMotorCanTalonId)));
+      launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
+          new LauncherAndIntakeSubsystem.SimSparkMaxLauncherAndIntakeMotor(
+              new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+                  Constants.LauncherAndIntakeConstants.kMotorType),
+              DCMotor.getNEO(2).withReduction(Constants.LauncherAndIntakeConstants.kMotorReduction),
+              Constants.SimulationConstants.kSimulatedMaxLauncherSpeed));
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
@@ -175,12 +182,13 @@ public class RobotContainer {
     }
 
     PathGenerator.setDrivetrain(driveSub);
+    LaunchHelpers.setSubsystems(driveSub, launcherAndIntakeSub);
 
     NamedCommands.registerCommand("Drive to launching arc", new DriveAtLaunchingRangeCmd(
         driveSub,
         () -> 0.0,
         () -> 0.0,
-        Constants.LauncherAndIntakeConstants.kLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
         true).until(() -> driveSub.isRadialControllerAtSetpoint()));
 
     NamedCommands.registerCommand("Launch", new InstantCommand());
@@ -202,8 +210,63 @@ public class RobotContainer {
         driveSub,
         this::getDriverVx,
         this::getDriverVy,
-        Constants.LauncherAndIntakeConstants.kLaunchRadius,
-        true);
+        Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
+
+    // Toggle locked range with the left trigger, so the driver can choose to
+    // maintain optimal launching distance while lining up shots
+    BooleanSupplier distanceLockSupplier = new BooleanSupplier() {
+      private boolean wasPressed = driverController.leftTrigger(Constants.OIConstants.kTriggerThreshold).getAsBoolean();
+      private boolean toggleOnTrue = false;
+
+      @Override
+      public boolean getAsBoolean() {
+        boolean isPressed = driverController.leftTrigger(Constants.OIConstants.kTriggerThreshold).getAsBoolean();
+        if (isPressed && !wasPressed) {
+          toggleOnTrue = !toggleOnTrue;// toggle on rising edges
+        }
+        wasPressed = isPressed;
+        return toggleOnTrue;
+      }
+    };
+
+    // Drive while tracking hub and automatically launching balls if we think they
+    // will
+    // go in, an additional trigger can used to lock distance
+    Command driveAndAutoShootCmd = new DriveAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        this::getDriverVx,
+        this::getDriverVy,
+        distanceLockSupplier,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
+
+    // Drive while tracking hub and launching balls based on an additional trigger
+    // an additional trigger can used to lock distance
+    Command driveAndManualShootCmd = new DriveAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        this::getDriverVx,
+        this::getDriverVy,
+        driverController.rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean,
+        distanceLockSupplier,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
+
+    // Meant for use in autonomous
+    // Turn to the hub and launch all balls, maintain current distance but do not
+    // provide any drive input
+    Command autoLaunchCmd = new DriveAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        () -> 0.0,
+        () -> 0.0,
+        // Always lock distance in auto, since the driver isn't controlling movement
+        () -> true,
+        Constants.LauncherAndIntakeConstants.kLeadShots)
+        .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
     driveSub.setDefaultCommand(driveCmd);
 
@@ -211,7 +274,9 @@ public class RobotContainer {
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    testController.a().whileTrue(new LauncherCmd(launcherSub, () -> RPM.of(400)));
+    testController.a().whileTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(400)));
+
+    testController.b().onTrue(autoLaunchCmd);
 
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
@@ -219,7 +284,6 @@ public class RobotContainer {
     testController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
             () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3, ClimbSide.Right));
-
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
         this::getDriverVx,
@@ -283,15 +347,22 @@ public class RobotContainer {
     // new Rotation2d(DriveConstants.kTrenchHeadingRestriction),
     // DriveConstants.kTrenchLinearVelocity));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
-        Commands.defer(
-            () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
-            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+    // driverController.povUp().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Neutral).onTrue(
+    // Commands.defer(
+    // () -> PathGenerator.driveToLaunchZoneCommandBump(MetersPerSecond.of(0)),
+    // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
-        Commands.defer(
-            () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
-            Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+    // driverController.povDown().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Neutral).onTrue(
+    // Commands.defer(
+    // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
+    // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
+
+    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+        driveAndManualShootCmd);
+    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+        driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(
@@ -345,7 +416,7 @@ public class RobotContainer {
             driveSub,
             () -> 0.0,
             () -> 0.0,
-            Constants.LauncherAndIntakeConstants.kLaunchRadius,
+            Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
             true).until(() -> driveSub.isRadialControllerAtSetpoint()),
         new InstantCommand(), // Change to launch command when finished
         Commands.defer(
@@ -354,7 +425,6 @@ public class RobotContainer {
         new InstantCommand())); // Change to climb command when finished
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
-
   }
 
   /**
