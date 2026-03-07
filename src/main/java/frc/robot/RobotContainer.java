@@ -49,6 +49,7 @@ import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.climber.PullClimberCmd;
+import frc.robot.commands.drivetrain.AlignTowerCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
@@ -76,6 +77,8 @@ public class RobotContainer {
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
+  private final CommandXboxController operatorController = new CommandXboxController(
+      OIConstants.kOperatorControllerPort);
   private final CommandXboxController testController = new CommandXboxController(
       OIConstants.kTestControllerPort);
 
@@ -298,10 +301,12 @@ public class RobotContainer {
     driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> IndexerConstants.kWheelSpeed,
         () -> IndexerConstants.kTreadmillSpeed));
 
-    driverController.rightBumper().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(400)));
+    driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1000)));
 
     driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> -IndexerConstants.kWheelSpeed,
         () -> -IndexerConstants.kTreadmillSpeed));
+
+    driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(2750)));
 
     driverController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
@@ -357,9 +362,10 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
-        driveAndManualShootCmd);
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+    // driverController.povUp().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Launch).onTrue(
+    // driveAndManualShootCmd);
+    driverController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).whileTrue(
         driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control
