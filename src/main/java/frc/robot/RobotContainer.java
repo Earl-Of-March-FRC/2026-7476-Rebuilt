@@ -235,6 +235,22 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
+    driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> IndexerConstants.kWheelSpeed,
+        () -> IndexerConstants.kTreadmillSpeed));
+
+    driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> -IndexerConstants.kWheelSpeed,
+        () -> -IndexerConstants.kTreadmillSpeed));
+
+    driverController.povLeft()
+        .whileTrue(new PullClimberCmd(climberSub,
+            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 0.3,
+            ClimbSide.Left));
+
+    driverController.povRight()
+        .whileTrue(new PullClimberCmd(climberSub,
+            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 0.3,
+            ClimbSide.Right));
+
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
     // OTBIntakeConstants.kIntakeSpeed));
@@ -243,13 +259,13 @@ public class RobotContainer {
     // driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () ->
     // OTBIntakeConstants.kPlowSpeed));
 
-    driverController.rightBumper().onTrue(Commands.defer(
-        () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
-        Set.of(driveSub)));
+    // driverController.rightBumper().onTrue(Commands.defer(
+    // () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
+    // Set.of(driveSub)));
 
-    driverController.leftBumper().onTrue(Commands.defer(
-        () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
-        Set.of(driveSub)));
+    // driverController.leftBumper().onTrue(Commands.defer(
+    // () -> PathGenerator.crossNearestTrench(MetersPerSecond.of(0)),
+    // Set.of(driveSub)));
 
     // Lock Y coordinate to the nearest bump and align heading
     driverController.povRight().toggleOnTrue(new DriveLockedHeadingAndYCmd(

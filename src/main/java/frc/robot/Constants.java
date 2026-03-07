@@ -425,7 +425,7 @@ public final class Constants {
     public static final double kDirectionConstant = -1.0;
 
     public static final double kTreadmillSpeed = 1.0;
-    public static final double kWheelSpeed = 0.7;
+    public static final double kWheelSpeed = 1.0;
 
     public static final double kWheelMotorReduction = 1.0;
     public static final double kWheelDiameterMeters = 0.17;
