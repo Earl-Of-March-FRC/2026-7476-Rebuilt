@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
+import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveRequest.FieldCentric;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.IdealStartingState;
@@ -28,7 +31,10 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.PoseHelpers;
+
 import java.util.Arrays;
 
 /**
@@ -302,6 +308,63 @@ public class PathGenerator {
     return nearestIndex;
   }
 
+  public static Command crossBumpAuto(Translation2d[] bumpWaypoints) {
+    Rotation2d targetHeading = drive()
+        .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kBumpHeadingRestriction.in(Degrees)), true);
+
+    int bumpID = nearestTranslation2dIndex(bumpWaypoints);
+    Pose2d start = new Pose2d(FieldConstants.kBumpPathWaypoints[bumpID], targetHeading);
+    Pose2d end = new Pose2d(FieldConstants.kBumpPathWaypoints[bumpID < 4 ? bumpID + 4 : bumpID - 4], targetHeading);
+
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    int directionMultiplier;
+    BooleanSupplier isCrossingFinished;
+
+    if (start.getX() < end.getX()) {
+      directionMultiplier = isBlueAlliance ? 1 : -1;
+      isCrossingFinished = () -> drive().getPose().getX() >= end.getX();
+    } else {
+      directionMultiplier = isBlueAlliance ? -1 : 1;
+      isCrossingFinished = () -> drive().getPose().getX() <= end.getX();
+    }
+
+    return AutoBuilder.pathfindToPose(start, SwerveConfig.kPathfindingConstraints)
+        .andThen(new DriveLockedHeadingAndYCmd(driveSub, () -> 1.0 * directionMultiplier, // ?
+            () -> PoseHelpers.nearestBumpY(start), targetHeading))
+        .until(isCrossingFinished);
+  }
+
+  public static Command crossTrenchAuto(Translation2d[] trenchWaypoints) {
+    Rotation2d targetHeading = drive()
+        .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kTrenchHeadingRestriction.in(Degrees)), false);
+
+    int trenchID = nearestTranslation2dIndex(trenchWaypoints);
+    Pose2d start = new Pose2d(FieldConstants.kTrenchPathWaypoints[trenchID], targetHeading);
+    Pose2d end = new Pose2d(FieldConstants.kTrenchPathWaypoints[trenchID < 4 ? trenchID + 4 : trenchID - 4],
+        targetHeading);
+
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    int directionMultiplier;
+    BooleanSupplier isCrossingFinished;
+
+    if (start.getX() < end.getX()) {
+      directionMultiplier = isBlueAlliance ? 1 : -1;
+      isCrossingFinished = () -> drive().getPose().getX() >= end.getX();
+    } else {
+      directionMultiplier = isBlueAlliance ? -1 : 1;
+      isCrossingFinished = () -> drive().getPose().getX() <= end.getX();
+    }
+
+    return AutoBuilder.pathfindToPose(start, SwerveConfig.kPathfindingConstraints)
+        .andThen(new DriveLockedHeadingAndYCmd(driveSub, () -> 1.0 * directionMultiplier, // ?
+            () -> PoseHelpers.nearestTrenchY(start), targetHeading))
+        .until(isCrossingFinished);
+  }
+
   /**
    * Load the L1 climb path and return a pathfinding command for it.
    * If loading fails the method returns an InstantCommand so callers can
@@ -377,7 +440,9 @@ public class PathGenerator {
    */
   public static SequentialCommandGroup findL1ClimbPath(LinearVelocity endVelocity, String crossingMethod) {
     return new SequentialCommandGroup(
-        crossToAllianceSide(endVelocity, crossingMethod),
+        Commands.defer(
+            () -> crossToAllianceSide(endVelocity, crossingMethod),
+            Set.of(driveSub)),
         Commands.defer(
             () -> loadL1ClimbCommand(),
             Set.of(driveSub)));
@@ -414,12 +479,4 @@ public class PathGenerator {
         .andThen(AutoBuilder.followPath(path));
 
   }
-
-  // public static SequentialCommandGroup fullAuto() {
-  // return new SequentialCommandGroup(
-  // AutoBuilder.followPath(AutoConstants.trenchLeftAuto),
-  // AutoBuilder.pathfindThenFollowPath(AutoConstants.trenchLeftClimbPath,
-  // AutoConstants.L1ClimbConstraints));
-  // }
-
 }

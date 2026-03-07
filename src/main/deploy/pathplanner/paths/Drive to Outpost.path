@@ -3,37 +3,32 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.5,
-        "y": 2.981
+        "x": 1.1314995563442765,
+        "y": 0.642803904170363
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.2360508686784404,
-        "y": 2.970486383402038
+        "x": 1.8375755024859746,
+        "y": 0.642803904170363
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 0.746,
-        "y": 2.981
+        "x": 0.5118101153504875,
+        "y": 0.642803904170363
       },
       "prevControl": {
-        "x": 1.5232662084134678,
-        "y": 2.986165396601173
+        "x": 0.2618101153504875,
+        "y": 0.642803904170363
       },
       "nextControl": null,
-      "isLocked": true,
-      "linkedName": "ClimbOutpost"
+      "isLocked": false,
+      "linkedName": "Outpost"
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 1,
-      "rotationDegrees": 0.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],

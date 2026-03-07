@@ -37,16 +37,22 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
+import frc.robot.commands.climber.NearestClimbCmd;
+import frc.robot.commands.climber.PullClimberCmd;
+import frc.robot.commands.climber.RaiseClimberCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
@@ -166,15 +172,17 @@ public class RobotContainer {
 
     PathGenerator.setDrivetrain(driveSub);
 
-    NamedCommands.registerCommand("Drive to launching arc", new DriveAtLaunchingRangeCmd(
+    NamedCommands.registerCommand("Drive to Launching Arc", new DriveAtLaunchingRangeCmd(
         driveSub,
         () -> 0.0,
         () -> 0.0,
         Constants.LauncherAndIntakeConstants.kLaunchRadius,
         true).until(() -> driveSub.isRadialControllerAtSetpoint()));
 
-    NamedCommands.registerCommand("Launch", new InstantCommand());
+    NamedCommands.registerCommand("Launch", new LauncherCmd(launcherSub, AutoConstants.kLauncherRPM));
     NamedCommands.registerCommand("Nearest Climb", PathGenerator.loadL1ClimbCommand());
+    NamedCommands.registerCommand("Raise Climber", new RaiseClimberCmd(climberSub, true)); // ??
+    NamedCommands.registerCommand("Pull Climber", new PullClimberCmd(climberSub, true)); // ??
 
     configureBindings();
     configureAutos();
@@ -296,12 +304,17 @@ public class RobotContainer {
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
 
-    autoChooser.addOption("Closest Path",
+    autoChooser.addOption("Cross Bump Auto",
         Commands.defer(
-            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
+            () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
             Set.of(driveSub)));
 
-    autoChooser.addOption("Launch Then Find Nearest Climb", new SequentialCommandGroup(
+    autoChooser.addOption("Cross Trench Auto",
+        Commands.defer(
+            () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
+            Set.of(driveSub)));
+
+    autoChooser.addOption("Launch Then Climb", new SequentialCommandGroup(
         new DriveAtLaunchingRangeCmd(
             driveSub,
             () -> 1.0,
@@ -309,9 +322,17 @@ public class RobotContainer {
             Constants.LauncherAndIntakeConstants.kLaunchRadius,
             true).until(() -> driveSub.isRadialControllerAtSetpoint()),
         new InstantCommand().withTimeout(5), // Change to launch command when finished
+        new NearestClimbCmd(driveSub, climberSub)));
+
+    autoChooser.addOption("Align to Climb",
         Commands.defer(
             () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
-            Set.of(driveSub))));
+            Set.of(driveSub)));
+
+    autoChooser.addOption("Align to Climb Then Climb",
+        Commands.defer(
+            () -> new NearestClimbCmd(driveSub, climberSub),
+            Set.of(driveSub)));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
 

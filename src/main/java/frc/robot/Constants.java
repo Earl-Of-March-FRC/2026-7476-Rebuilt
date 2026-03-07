@@ -337,15 +337,19 @@ public final class Constants {
         3.0, 4.0,
         3 * Math.PI, 4 * Math.PI);
 
+    public static final AngularVelocity kLauncherRPM = RPM.of(0); // TODO replace with auto launch RPM
     public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
 
     public static PathPlannerPath depotClimbPath;
     public static PathPlannerPath outpostClimbPath;
+    public static PathPlannerPath outpostPath;
+    public static PathConstraints kPathfindingConstraints;
 
     static {
       try {
         depotClimbPath = PathPlannerPath.fromPathFile("Depot(L1 Climb)");
         outpostClimbPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb)");
+        outpostPath = PathPlannerPath.fromPathFile("Drive to Outpost");
       } catch (Exception e) {
         e.printStackTrace();
       }
