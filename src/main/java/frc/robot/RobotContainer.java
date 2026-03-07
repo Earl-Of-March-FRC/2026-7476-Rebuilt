@@ -275,13 +275,14 @@ public class RobotContainer {
 
     testController.a().whileTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(400)));
 
+    testController.b().onTrue(autoLaunchCmd);
+
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
             () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3, ClimbSide.Left));
     testController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
             () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3, ClimbSide.Right));
-
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
         this::getDriverVx,
