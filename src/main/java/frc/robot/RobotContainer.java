@@ -302,6 +302,8 @@ public class RobotContainer {
     driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> IndexerConstants.kWheelSpeed,
         () -> IndexerConstants.kTreadmillSpeed));
 
+    driverController.rightBumper().toggleOnTrue(new LauncherCmd(launcherSub, () -> RPM.of(400)));
+
     driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> -IndexerConstants.kWheelSpeed,
         () -> -IndexerConstants.kTreadmillSpeed));
 
