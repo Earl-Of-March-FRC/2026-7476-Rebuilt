@@ -461,6 +461,10 @@ public final class Constants {
     public static final double kWheelLaunchIndexPercent = 0.5;
     public static final double kWheelStoreIndexPercent = 0.5;
 
+    // Treadmill pulse timing
+    public static final double kPulseOnSeconds = 0.15;
+    public static final double kPulseOffSeconds = 0.10;
+
     public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
 
