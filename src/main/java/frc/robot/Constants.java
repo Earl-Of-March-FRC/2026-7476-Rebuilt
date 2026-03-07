@@ -145,12 +145,12 @@ public final class Constants {
     public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
 
     // Found using polynomial regression (degree 2)
-    private static final double a = 43.5;
-    private static final double b = 119;
-    private static final double c = 2372;
+    private static final double kRPMCurveA = 43.5;
+    private static final double kRPMCurveB = 119;
+    private static final double kRPMCurveC = 2372;
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
-      double rpm = a * d * d + b * d + c;
+      double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm);
     };
 
