@@ -66,7 +66,8 @@ import frc.robot.util.vision.CameraProfile;
 public final class Constants {
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
-    public static final double kDriveDeadband = 0.2;
+    public static final int kTestControllerPort = 2;
+    public static final double kDriveDeadband = 0.05;
     // Threshld when using trigger axis as a button
     public static final double kTriggerThreshold = 0.5;
     public static final int kDriverControllerXAxis = 0;
@@ -172,6 +173,8 @@ public final class Constants {
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
+    public static final AngularVelocity kIntakeRPMStepoint = RPM.of(400);
+
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
 
@@ -183,7 +186,8 @@ public final class Constants {
     static {
       kLeaderConfig
           .idleMode(IdleMode.kCoast)
-          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
+          .inverted(true);
       kLeaderConfig.encoder
           // Use wheel RPM
           .velocityConversionFactor(kMotorReduction);
@@ -193,7 +197,10 @@ public final class Constants {
           .outputRange(kOutputRangeMin, kOutputRangeMax).feedForward
           .kV(kPIDLauncherControllerFF);
 
-      kFollowerConfig.smartCurrentLimit((int) kSmartCurrentLimit.magnitude());
+      kFollowerConfig
+          .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
+          .idleMode(IdleMode.kCoast)
+          .inverted(false);
       kFollowerConfig.follow(kLeaderCanSparkId, true);
     }
   }
@@ -440,6 +447,9 @@ public final class Constants {
      */
     public static final double kDirectionConstant = -1.0;
 
+    public static final double kTreadmillSpeed = 1.0;
+    public static final double kWheelSpeed = 0.7;
+
     public static final double kWheelMotorReduction = 1.0;
     public static final double kWheelDiameterMeters = 0.17;
 
@@ -455,7 +465,8 @@ public final class Constants {
     static {
       kWheelConfig
           .idleMode(IdleMode.kBrake)
-          .smartCurrentLimit(20);
+          .smartCurrentLimit(20)
+          .inverted(true);
       // kWheelConfig.encoder
       // .velocityConversionFactor(kWheelDiameterMeters * Math.PI /
       // kWheelMotorReduction / 60);
@@ -504,11 +515,22 @@ public final class Constants {
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
 
-    public static final SparkMaxConfig kConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kConfigLeft = new SparkMaxConfig();
+    public static final SparkMaxConfig kConfigRight = new SparkMaxConfig();
+
     static {
-      kConfig.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfig.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfig.closedLoop
+      kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigLeft.closedLoop
+          .p(kPIDClimberControllerP)
+          .i(kPIDClimberControllerI)
+          .d(kPIDClimberControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax);
+
+      kConfigRight.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps))
+          .inverted(true);
+      kConfigRight.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigRight.closedLoop
           .p(kPIDClimberControllerP)
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
