@@ -83,6 +83,7 @@ public final class Constants {
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
     public static final int kTestControllerPort = 2;
+    public static final int kOperatorControllerPort = 3;
     public static final double kDriveDeadband = 0.05;
     public static final int kDriverControllerXAxis = 0;
     public static final int kDriverControllerYAxis = 1;
@@ -455,7 +456,7 @@ public final class Constants {
     public static final int kRightId = 14;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
+    public static final Distance kClimberRaisePositionInches = Inches.of(6.7); // TODO ask for setpoint
 
     public static final double kMotorRaiseSpeed = 0.5;
     public static final double kMotorHookSpeed = 0.5;

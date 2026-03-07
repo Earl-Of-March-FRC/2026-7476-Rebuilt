@@ -49,6 +49,7 @@ import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
+import frc.robot.commands.climber.AlignAndClimbCmd;
 import frc.robot.commands.climber.PullClimberCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
@@ -78,6 +79,8 @@ public class RobotContainer {
   private final CommandXboxController testController = new CommandXboxController(
       OIConstants.kTestControllerPort);
 
+  private final CommandXboxController operatorController = new CommandXboxController(
+      OIConstants.kOperatorControllerPort);
   private LoggedDashboardChooser<Command> autoChooser;
 
   public RobotContainer() {
@@ -231,6 +234,12 @@ public class RobotContainer {
     driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
+
+    operatorController.y().whileTrue(new AlignAndClimbCmd(driveSub, climberSub, () -> true, () -> true)); // Climb
+                                                                                                          // middle
+    operatorController.x().whileTrue(new AlignAndClimbCmd(driveSub, climberSub, () -> true, () -> false)); // Climb left
+    operatorController.b().whileTrue(new AlignAndClimbCmd(driveSub, climberSub, () -> false, () -> true)); // Climb
+                                                                                                           // right
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->

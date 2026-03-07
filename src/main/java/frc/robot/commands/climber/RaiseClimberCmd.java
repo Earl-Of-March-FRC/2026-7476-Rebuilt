@@ -18,7 +18,7 @@ public class RaiseClimberCmd extends Command {
 
   @Override
   public void initialize() {
-    climber.setTargetPosition(ClimberConstants.kClimberRaisePositionTicks, usesLeftMotor);
+    climber.setTargetPosition(ClimberConstants.kClimberRaisePositionInches.in(Inches), usesLeftMotor);
   }
 
   @Override

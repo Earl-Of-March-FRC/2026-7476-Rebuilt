@@ -190,7 +190,7 @@ public class ClimberSubsystem extends SubsystemBase {
     }
   }
 
-  public void setTargetPosition(int ticks, boolean isLeftSide) {
+  public void setTargetPosition(double ticks, boolean isLeftSide) {
     Logger.recordOutput("Climber/" + (isLeftSide ? "right" : "left") + "/Setpoint/TargetInches", ticks);
     if (isLeftSide) {
       leftMotor.setTargetPosition(ticks);

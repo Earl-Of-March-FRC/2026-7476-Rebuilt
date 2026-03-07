@@ -1,5 +1,7 @@
 package frc.robot.commands.climber;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -20,7 +22,7 @@ public class PullClimberCmd extends Command {
 
   @Override
   public void initialize() {
-    climber.setTargetPosition(ClimberConstants.kClimberRaisePositionTicks, isLeftSide);
+    climber.setTargetPosition(ClimberConstants.kClimberRaisePositionInches.in(Inches), isLeftSide);
   }
 
   @Override
