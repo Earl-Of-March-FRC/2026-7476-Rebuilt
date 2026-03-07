@@ -107,7 +107,7 @@ public record SwerveDriveProfile(
               Degrees.of(0), // yaw
               Meters.of(0.3003719164), // x
               Meters.of(-0.2467180994), // y
-              Meters.of(0.4676501188), // z
+              Meters.of(0.4994001188), // z
               VecBuilder.fill(0.9, 0.9, 0.9)),
           new CameraProfile(
               "Intake_Ground",
@@ -116,7 +116,7 @@ public record SwerveDriveProfile(
               Degrees.of(0), // yaw
               Meters.of(0.300912657), // x
               Meters.of(0.2467181248), // y
-              Meters.of(0.4676501188), // z
+              Meters.of(0.4994001188), // z
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
       true,
