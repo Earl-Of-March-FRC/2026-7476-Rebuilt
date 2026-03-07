@@ -55,6 +55,7 @@ import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
+import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -298,13 +299,25 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> IndexerConstants.kWheelSpeed,
-        () -> IndexerConstants.kTreadmillSpeed));
+    // driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
+    // IndexerConstants.kWheelSpeed,
+    // () -> IndexerConstants.kTreadmillSpeed));
+
+    // driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
+    // -IndexerConstants.kWheelSpeed,
+    // () -> -IndexerConstants.kTreadmillSpeed));
+
+    driverController.leftBumper().toggleOnTrue(
+        new PulsingTreadmillCmd(indexerSub,
+            IndexerConstants.kWheelSpeed,
+            IndexerConstants.kTreadmillSpeed));
+
+    driverController.rightBumper().toggleOnTrue(
+        new PulsingTreadmillCmd(indexerSub,
+            -IndexerConstants.kWheelSpeed,
+            -IndexerConstants.kTreadmillSpeed));
 
     driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1000)));
-
-    driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> -IndexerConstants.kWheelSpeed,
-        () -> -IndexerConstants.kTreadmillSpeed));
 
     driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(2750)));
 
