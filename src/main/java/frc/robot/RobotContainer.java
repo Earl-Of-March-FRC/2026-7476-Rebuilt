@@ -268,20 +268,20 @@ public class RobotContainer {
     // Set.of(driveSub)));
 
     // Lock Y coordinate to the nearest bump and align heading
-    driverController.povRight().toggleOnTrue(new DriveLockedHeadingAndYCmd(
-        driveSub,
-        this::getDriverVx,
-        () -> PoseHelpers.nearestBumpY(driveSub.getPose()),
-        new Rotation2d(DriveConstants.kBumpHeadingRestriction),
-        DriveConstants.kBumpLinearVelocity));
+    // driverController.povRight().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+    // driveSub,
+    // this::getDriverVx,
+    // () -> PoseHelpers.nearestBumpY(driveSub.getPose()),
+    // new Rotation2d(DriveConstants.kBumpHeadingRestriction),
+    // DriveConstants.kBumpLinearVelocity));
 
-    // Lock Y coordinate to the nearest trench and align heading
-    driverController.povLeft().toggleOnTrue(new DriveLockedHeadingAndYCmd(
-        driveSub,
-        this::getDriverVx,
-        () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
-        new Rotation2d(DriveConstants.kTrenchHeadingRestriction),
-        DriveConstants.kTrenchLinearVelocity));
+    // // Lock Y coordinate to the nearest trench and align heading
+    // driverController.povLeft().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+    // driveSub,
+    // this::getDriverVx,
+    // () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
+    // new Rotation2d(DriveConstants.kTrenchHeadingRestriction),
+    // DriveConstants.kTrenchLinearVelocity));
 
     driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral).onTrue(
         Commands.defer(
