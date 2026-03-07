@@ -16,7 +16,7 @@ public class AlignAndClimbCmd extends SequentialCommandGroup { // Commands that 
       BooleanSupplier usesRightMotor) {
 
     ParallelCommandGroup raiseClimberCmds = new ParallelCommandGroup();
-    ParallelCommandGroup pullClimberCmds = new ParallelCommandGroup();
+    ParallelCommandGroup pullClimberCmds = new ParallelCommandGroup(); // If it ain't broke, don't fix it
 
     if (usesLeftMotor.getAsBoolean()) {
       raiseClimberCmds.addCommands(new RaiseClimberCmd(climber, true));
@@ -28,10 +28,11 @@ public class AlignAndClimbCmd extends SequentialCommandGroup { // Commands that 
       pullClimberCmds.addCommands(new PullClimberCmd(climber, false));
     }
 
+    raiseClimberCmds.addCommands(new AlignTowerCmd(drive, usesLeftMotor.getAsBoolean(), usesRightMotor.getAsBoolean())
+        .withTimeout(AutoConstants.kAlignTowerTimeoutSeconds));
+
     addCommands( // These commands are going to be done:
         // Parallel: Align the robot while simultaneously raising the arm
-        new AlignTowerCmd(drive, usesLeftMotor.getAsBoolean(), usesRightMotor.getAsBoolean())
-            .withTimeout(AutoConstants.kAlignTowerTimeoutSeconds),
         raiseClimberCmds,
         pullClimberCmds
     // Sequential: Once aligned and raised, pull the robot up
