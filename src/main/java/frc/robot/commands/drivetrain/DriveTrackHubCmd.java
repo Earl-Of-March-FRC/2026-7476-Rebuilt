@@ -84,14 +84,16 @@ public class DriveTrackHubCmd extends Command {
             yVel.times(Seconds.of(0.12)),
             new Rotation2d(omega.times(Seconds.of(0.12)))));
 
-    // Only drive if still in launching zone
-    if (driveSub.getPoseZone(futurePose) == FieldZones.Launch) {
-      driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, false);
-      atLimit = false;
-    } else {
-      driveSub.runVelocity(new ChassisSpeeds(MetersPerSecond.zero(), MetersPerSecond.zero(), omega), true, false);
-      atLimit = true;
-    }
+    driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, true);
+    // // Only drive if still in launching zone
+    // if (driveSub.getPoseZone(futurePose) == FieldZones.Launch) {
+    // driveSub.runVelocity(new ChassisSpeeds(xVel, yVel, omega), true, false);
+    // atLimit = false;
+    // } else {
+    // driveSub.runVelocity(new ChassisSpeeds(MetersPerSecond.zero(),
+    // MetersPerSecond.zero(), omega), true, false);
+    // atLimit = true;
+    // }
 
     // Perform logging
     Logger.recordOutput("Drivetrain/DriveTrackHub/DesiredHeading", desiredHeading);
@@ -116,6 +118,7 @@ public class DriveTrackHubCmd extends Command {
   @Override
   public boolean isFinished() {
     // Only track hub when in accepted launching zone
-    return !(driveSub.getCurrentBotZone() == FieldZones.Launch);
+    // return !(driveSub.getCurrentBotZone() == FieldZones.Launch);
+    return false;
   }
 }

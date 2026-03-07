@@ -197,6 +197,8 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
         LaunchHelpers.calculateBallResultantVelocityVector());
     Logger.recordOutput("Launcher/Prediction/WillHitHub",
         LaunchHelpers.willHitHub());
+    Logger.recordOutput("Launcher/Prediction/HubTranslation2D",
+        PoseHelpers.getAllianceHubtTranslation2d());
   }
 
   public AngularVelocity getVelocity() {

@@ -59,7 +59,7 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
                 ySupplier,
                 leadShots),
             lockSupplier), Set.of(driveSub)),
-        new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier));
+        new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, leadShots));
   }
 
   /**
@@ -100,7 +100,7 @@ public class DriveAndLaunchCmd extends ParallelCommandGroup {
                 ySupplier,
                 leadShots),
             lockSupplier), Set.of(driveSub)),
-        new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub));
+        new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, leadShots));
   }
 
 }

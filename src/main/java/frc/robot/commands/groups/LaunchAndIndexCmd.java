@@ -28,9 +28,11 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
    * @param launcherAndIntakeSub The LauncherAndIntakeSubsystem to use
    * @param launchSupplier       A BooleanSupplier that determines whether to
    *                             laucnh balls or not (controls the indexer wheel)
+   * @param leadShots            Whether to lead shots (affects effective target
+   *                             distance)
    */
   public LaunchAndIndexCmd(IndexerSubsystem indexerSub, LauncherAndIntakeSubsystem launcherAndIntakeSub,
-      BooleanSupplier launchSupplier) {
+      BooleanSupplier launchSupplier, boolean leadShots) {
     addCommands(new IndexerCmd(
         indexerSub,
         () -> launchSupplier.getAsBoolean()
@@ -38,7 +40,7 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
             : 0,
         () -> IndexerConstants.kTreadmillLaunchIndexPercent),
         new LauncherCmd(launcherAndIntakeSub,
-            () -> LaunchHelpers.calculateWheelRPM()));
+            () -> LaunchHelpers.calculateHubLaunchSetpoints(leadShots).flywheelSpeed()));
   }
 
   /**
@@ -46,12 +48,16 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
    * 
    * @param indexerSub           The IndexerSubsystem to use
    * @param launcherAndIntakeSub The LauncherAndIntakeSubsystem to use
+   * @param leadShots            Whether to lead shots (affects effective target
+   *                             distance)
    */
-  public LaunchAndIndexCmd(IndexerSubsystem indexerSub, LauncherAndIntakeSubsystem launcherAndIntakeSub) {
+  public LaunchAndIndexCmd(IndexerSubsystem indexerSub, LauncherAndIntakeSubsystem launcherAndIntakeSub,
+      boolean leadShots) {
     this(
         indexerSub,
         launcherAndIntakeSub,
-        () -> LaunchHelpers.willHitHub());
+        () -> LaunchHelpers.willHitHub(),
+        leadShots);
   }
 
 }

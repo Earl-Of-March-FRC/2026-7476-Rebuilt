@@ -199,14 +199,16 @@ public class LaunchHelpers {
    * @return
    */
   public static Time calculateBallAirTime(Distance targetHeight, AngularVelocity wheelAngularVelocity) {
-    Translation3d ballLaunchVelocityVectorMPS = calculateBallResultantVelocityVector(wheelAngularVelocity);
-    double VzMPS = ballLaunchVelocityVectorMPS.getZ();
+    Translation3d ballInitialVelocityVectorMPS = calculateBallResultantVelocityVector(wheelAngularVelocity);
+    double VzMPS = ballInitialVelocityVectorMPS.getZ();
 
     double g = 9.81;
     double deltaHeightMeters = targetHeight.minus(LauncherAndIntakeConstants.kBallReleaseHeight).in(Meters);
     double discriminant = VzMPS * VzMPS - 2 * g * deltaHeightMeters;
 
     if (Double.isNaN(discriminant) || discriminant < 0) {
+      String msg = "Discriminant is NAN or less than 0: discriminant = " + discriminant;
+      DriverStation.reportError(msg, false);
       return Seconds.of(0);
     }
 
@@ -341,16 +343,33 @@ public class LaunchHelpers {
     Translation3d botVelocity = new Translation3d(new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
         currentChassisSpeeds.vyMetersPerSecond));
 
+    // Logger.recordOutput("Debug/botVelocity", botVelocity);
+
     // Get required intial velocity to hit target
     // This is
     Translation3d requiredVelocity = calculateBallLaunchVelocityVector(flywheelSpeed);
+
+    // Override pitch to face target
+    // Project to 2d, override rotation, then add back z component
+    requiredVelocity = new Translation3d(
+        new Translation2d(requiredVelocity.toTranslation2d().getNorm(), targetBotRelative.getAngle()))
+        .plus(new Translation3d(0, 0, requiredVelocity.getZ()));
+
+    // Logger.recordOutput("Debug/requiredVelocity", requiredVelocity);
 
     // Calculate required contribution from launching (Vtotal = Vlaunch + Vbot =>
     // Vlaunch = Vtotal - Vbot)
     Translation3d launchVelocity = requiredVelocity.minus(botVelocity);
 
+    // Logger.recordOutput("Debug/launchVelocity", launchVelocity);
+
+    Rotation2d desiredHeading = launchVelocity.toTranslation2d().getAngle()
+        .minus(LauncherAndIntakeConstants.kLauncherBotHeading);
+
+    // Logger.recordOutput("Debug/desiredHeading", desiredHeading);
+
     return new LaunchSetpoints(calculateRequiredAngularVelocity(MetersPerSecond.of(launchVelocity.getNorm())),
-        launchVelocity.toTranslation2d().getAngle().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
+        desiredHeading);
   }
 
   /**

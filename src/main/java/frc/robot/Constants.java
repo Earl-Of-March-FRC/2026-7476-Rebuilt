@@ -125,7 +125,7 @@ public final class Constants {
     // Empirical constant describing the ratio between wheel linear velocity and
     // ball launch velocity
     // TODO determine from video data
-    public static final double kWheelSlipCoefficient = 0.3;
+    public static final double kWheelSlipCoefficient = 0.4;
 
     public static final int kLeaderCanSparkId = 9;
     public static final int kFollowerCanSparkId = 10;
@@ -134,25 +134,18 @@ public final class Constants {
 
     public static final Distance[] kLaunchDistancesLookup = {
         // TODO fill in values from spreadsheet
-        Meters.of(1.8380),
-        Meters.of(2.5061),
-        Meters.of(3.5380)
     };
     public static final AngularVelocity[] kLaunchWheelSpeedLookup = {
         // TODO fill in values from spreadsheet
-        RPM.of(3100),
-        RPM.of(3200),
-        RPM.of(3600)
     };
     // The tolerance for using lookup values, if distance is not within tolerance of
     // any lookup entry, use interpolation
     public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
 
     // Found using polynomial regression (degree 2)
-    // TODO enter real coefficients from spreadsheet
-    private static final double a = 140;
-    private static final double b = -458;
-    private static final double c = 3470;
+    private static final double a = 43.5;
+    private static final double b = 119;
+    private static final double c = 2372;
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
       double rpm = a * d * d + b * d + c;
@@ -696,8 +689,8 @@ public final class Constants {
     // Distance from field edge to middle of hub
     public static final Distance kHubY = kFieldWidthY.div(2.0);
     // Distance from blue driverstation wall to middle of hub
-    public static final Distance kHubXBlue = kAllianceZoneXLength;
-    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceZoneXLength);
+    public static final Distance kHubXBlue = kAllianceWallToHubCenter;
+    public static final Distance kHubXRed = kFieldLengthX.minus(kAllianceWallToHubCenter);
 
     public static final Distance kHubHeight = Inches.of(72);
     // Distance between opposite sides of the upper hexagon
