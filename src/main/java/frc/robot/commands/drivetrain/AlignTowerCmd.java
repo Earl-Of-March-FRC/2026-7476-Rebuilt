@@ -32,6 +32,8 @@ public class AlignTowerCmd extends Command {
       AutoConstants.kIThetaController,
       AutoConstants.kDThetaController);
 
+  private final int towerSide;
+
   public AlignTowerCmd(DrivetrainSubsystem driveSub, boolean leftSide, boolean rightSide) {
     this.driveSub = driveSub;
     addRequirements(driveSub);
@@ -40,6 +42,8 @@ public class AlignTowerCmd extends Command {
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
     rotationController.setTolerance(AutoConstants.kAlignRotationTolerance.in(Radians));
     translationController.setTolerance(AutoConstants.kAlignTranslationTolerance.in(Meters));
+
+    towerSide = 2 + (leftSide ? -1 : 0) + (rightSide ? 1 : 0); // leftSide = 1, middle = 2, rightSide = 3
   }
 
   @Override
@@ -50,7 +54,8 @@ public class AlignTowerCmd extends Command {
   @Override
   public void execute() {
     Pose2d currentPose = driveSub.getPose();
-    Pose2d targetPose = driveSub.getHubTargetPose(0);
+
+    Pose2d targetPose = driveSub.getHubTargetPose(towerSide); // Replace to a
 
     // Calculate raw PID outputs
     double xOutput = translationController.calculate(currentPose.getX(), targetPose.getX());

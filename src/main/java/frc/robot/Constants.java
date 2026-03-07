@@ -674,6 +674,7 @@ public final class Constants {
 
     public static final Translation2d kBlueHubPose = new Translation2d(kHubXBlue.in(Meters), kHubY.in(Meters));
     public static final Translation2d kRedHubPose = new Translation2d(kHubXRed.in(Meters), kHubY.in(Meters));
+
     // public static final Translation2d kBlueHubPose = new Translation2d(4.625594,
     // kHubY.in(Meters));
     // public static final Translation2d kRedHubPose = new Translation2d(11.915394,
