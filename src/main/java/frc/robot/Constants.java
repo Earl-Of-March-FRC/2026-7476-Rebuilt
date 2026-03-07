@@ -188,9 +188,9 @@ public final class Constants {
       kLeaderConfig
           .idleMode(IdleMode.kCoast)
           .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
-          .inverted(true);
+          .inverted(true)
+          .voltageCompensation(12.0);
       kLeaderConfig.encoder
-          // Use wheel RPM
           .velocityConversionFactor(kMotorReduction);
       kLeaderConfig.closedLoop
           .pid(kPIDLauncherControllerP, kPIDLauncherControllerI,
@@ -201,7 +201,8 @@ public final class Constants {
       kFollowerConfig
           .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
           .idleMode(IdleMode.kCoast)
-          .inverted(false);
+          .inverted(false)
+          .voltageCompensation(12.0);
       kFollowerConfig.follow(kLeaderCanSparkId, true);
     }
   }
