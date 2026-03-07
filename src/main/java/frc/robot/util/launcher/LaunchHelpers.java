@@ -155,7 +155,7 @@ public class LaunchHelpers {
   }
 
   /**
-   * Calculate the correct RPM to shoot at the hub from a certain distance
+   * Calculate the correct RPM to launching at the hub from a certain distance
    * 
    * @param targetDistance The distance from the hub in the X-Y plane
    * @return The ideal wheel speed
@@ -181,7 +181,7 @@ public class LaunchHelpers {
   }
 
   /**
-   * Calculate the correct RPM to shoot at the hub from the <b>current</b>
+   * Calculate the correct RPM to launching at the hub from the <b>current</b>
    * distance
    * 
    * @return The ideal wheel speed

@@ -214,7 +214,7 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
     // Toggle locked range with the left trigger, so the driver can choose to
-    // maintain optimal shooting distance while lining up shots
+    // maintain optimal launching distance while lining up shots
     BooleanSupplier distanceLockSupplier = new BooleanSupplier() {
       private boolean wasPressed = driverController.leftTrigger(Constants.OIConstants.kTriggerThreshold).getAsBoolean();
       private boolean toggleOnTrue = false;
@@ -230,7 +230,8 @@ public class RobotContainer {
       }
     };
 
-    // Drive while tracking hub and automatically shoot balls if we think they will
+    // Drive while tracking hub and automatically launching balls if we think they
+    // will
     // go in, an additional trigger can used to lock distance
     Command driveAndAutoShootCmd = new DriveAndLaunchCmd(
         driveSub,
@@ -241,7 +242,7 @@ public class RobotContainer {
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
-    // Drive while tracking hub and shoot balls based on an additional trigger
+    // Drive while tracking hub and launching balls based on an additional trigger
     // an additional trigger can used to lock distance
     Command driveAndManualShootCmd = new DriveAndLaunchCmd(
         driveSub,

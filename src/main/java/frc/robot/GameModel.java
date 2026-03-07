@@ -68,7 +68,7 @@ public class GameModel {
 
   /**
    * Can we score fuel right now? True if hub is active OR in grace window.
-   * Use this in launcher commands to decide whether to shoot.
+   * Use this in launcher commands to decide whether to launch.
    */
   public boolean canScore() {
     return hubActive || graceTimer > 0;
@@ -123,7 +123,7 @@ public class GameModel {
   }
 
   /**
-   * Should we collect fuel but hold it (not shoot)?
+   * Should we collect fuel but hold it (not launch)?
    * True when hub is inactive and grace has expired.
    */
   public boolean shouldStockpile() {
