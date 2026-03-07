@@ -41,15 +41,19 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
+import frc.robot.commands.climber.PullClimberCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
@@ -63,7 +67,7 @@ import com.revrobotics.spark.SparkMax;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
-  public final OTBIntakeSubsystem otbIntakeSub;
+  // public final OTBIntakeSubsystem otbIntakeSub;
   public final IndexerSubsystem indexerSub;
   public final LauncherAndIntakeSubsystem launcherSub;
   public final ClimberSubsystem climberSub;
@@ -71,6 +75,8 @@ public class RobotContainer {
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
+  private final CommandXboxController testController = new CommandXboxController(
+      OIConstants.kTestControllerPort);
 
   private LoggedDashboardChooser<Command> autoChooser;
 
@@ -82,9 +88,11 @@ public class RobotContainer {
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
 
-      otbIntakeSub = new OTBIntakeSubsystem(
-          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
-          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
+      // otbIntakeSub = new OTBIntakeSubsystem(
+      // new SparkMax(OTBIntakeConstants.kShoulderCanId,
+      // OTBIntakeConstants.kMotorType),
+      // new SparkMax(OTBIntakeConstants.kRollerCanId,
+      // OTBIntakeConstants.kMotorType));
 
       launcherSub = new LauncherAndIntakeSubsystem(
           new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
@@ -133,9 +141,11 @@ public class RobotContainer {
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
-      otbIntakeSub = new OTBIntakeSubsystem(
-          new SparkMax(OTBIntakeConstants.kShoulderCanId, OTBIntakeConstants.kMotorType),
-          new SparkMax(OTBIntakeConstants.kRollerCanId, OTBIntakeConstants.kMotorType));
+      // otbIntakeSub = new OTBIntakeSubsystem(
+      // new SparkMax(OTBIntakeConstants.kShoulderCanId,
+      // OTBIntakeConstants.kMotorType),
+      // new SparkMax(OTBIntakeConstants.kRollerCanId,
+      // OTBIntakeConstants.kMotorType));
 
       launcherSub = new LauncherAndIntakeSubsystem(
           new LauncherAndIntakeSubsystem.TalonFXLauncherAndIntakeMotor(
@@ -196,6 +206,17 @@ public class RobotContainer {
 
     driveSub.setDefaultCommand(driveCmd);
 
+    indexerSub.setDefaultCommand(
+        new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
+            () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
+
+    testController.a().whileTrue(new LauncherCmd(launcherSub, () -> RPM.of(400)));
+
+    testController.povLeft()
+        .whileTrue(new PullClimberCmd(climberSub, true));
+    testController.povRight()
+        .whileTrue(new PullClimberCmd(climberSub, false));
+
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
         this::getDriverVx,
@@ -211,11 +232,13 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    // Binding for Plow (Button 5 is usually Left Bumper)
-    driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
+    // // Binding for Plow (Button 5 is usually Left Bumper)
+    // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
+    // OTBIntakeConstants.kIntakeSpeed));
 
-    // Binding for Intake (Button 6 is usually Right Bumper)
-    driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () -> OTBIntakeConstants.kPlowSpeed));
+    // // Binding for Intake (Button 6 is usually Right Bumper)
+    // driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () ->
+    // OTBIntakeConstants.kPlowSpeed));
 
     driverController.rightBumper().onTrue(Commands.defer(
         () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),

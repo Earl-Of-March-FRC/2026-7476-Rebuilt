@@ -33,7 +33,9 @@ public class ClimberSubsystem extends SubsystemBase {
 
     public SparkMaxClimberMotor(SparkMax sparkMax) {
       this.sparkMax = sparkMax;
-      sparkMax.configure(ClimberConstants.kConfig, ResetMode.kResetSafeParameters,
+      sparkMax.configure(ClimberConstants.kConfigLeft, ResetMode.kResetSafeParameters,
+          PersistMode.kNoPersistParameters);
+      sparkMax.configure(ClimberConstants.kConfigRight, ResetMode.kResetSafeParameters,
           PersistMode.kNoPersistParameters);
     }
 
