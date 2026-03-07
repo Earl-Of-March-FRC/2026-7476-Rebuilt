@@ -153,7 +153,7 @@ public final class Constants {
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
-    public static final AngularVelocity kIntakeRPMStepoint = RPM.of(400);
+    public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(400);
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
