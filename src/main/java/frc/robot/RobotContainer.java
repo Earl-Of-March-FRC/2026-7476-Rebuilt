@@ -309,13 +309,13 @@ public class RobotContainer {
 
     driverController.leftBumper().toggleOnTrue(
         new PulsingTreadmillCmd(indexerSub,
-            IndexerConstants.kWheelSpeed,
-            IndexerConstants.kTreadmillSpeed));
+            -IndexerConstants.kWheelSpeed,
+            -IndexerConstants.kTreadmillSpeed));
 
     driverController.rightBumper().toggleOnTrue(
         new PulsingTreadmillCmd(indexerSub,
-            -IndexerConstants.kWheelSpeed,
-            -IndexerConstants.kTreadmillSpeed));
+            IndexerConstants.kWheelSpeed,
+            IndexerConstants.kTreadmillSpeed));
 
     driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1250)));
 

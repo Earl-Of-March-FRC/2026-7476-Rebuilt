@@ -81,7 +81,7 @@ public final class Constants {
   }
 
   public static final class ModuleConstants {
-    // The MAXSwerve module can be configured with one of three pinion gears: 12T,
+    // The MAXSwerve module canf be configured with one of three pinion gears: 12T,
     // 13T, or 14T. This changes the drive speed of the module (a pinion gear with
     // more teeth will result in a robot that drives faster).
     public static final int kDrivingMotorPinionTeeth = 13;
@@ -462,8 +462,8 @@ public final class Constants {
     public static final double kWheelStoreIndexPercent = 0.5;
 
     // Treadmill pulse timing
-    public static final double kPulseOnSeconds = 0.15;
-    public static final double kPulseOffSeconds = 0.10;
+    public static final double kPulseOnSeconds = 0.075;
+    public static final double kPulseOffSeconds = 0.05;
 
     public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
