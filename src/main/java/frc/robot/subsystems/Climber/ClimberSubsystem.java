@@ -3,6 +3,7 @@ package frc.robot.subsystems.Climber;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
+import static edu.wpi.first.units.Units.Meters;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -15,6 +16,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -140,12 +143,16 @@ public class ClimberSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    Logger.recordOutput("Climber/Left/Measured/PositionInches", leftMotor.getPosition());
+    Logger.recordOutput("Climber/Left/Measured/Position/Inches", leftMotor.getPosition());
+    Logger.recordOutput("Climber/Left/Measured/Position/Pose3d",
+        new Pose3d(0, Inches.of(leftMotor.getPosition()).in(Meters), 0, Rotation3d.kZero));
     Logger.recordOutput("Climber/Left/Measured/VelocityInchesPerSec", leftMotor.getVelocity());
     Logger.recordOutput("Climber/Left/Measured/AppliedOutput", leftMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Left/Measured/CurrentAmps", leftMotor.getCurrent());
 
-    Logger.recordOutput("Climber/Right/Measured/PositionInches", rightMotor.getPosition());
+    Logger.recordOutput("Climber/Right/Measured/Position/Inches", rightMotor.getPosition());
+    Logger.recordOutput("Climber/Right/Measured/Position/Pose3d",
+        new Pose3d(0, Inches.of(rightMotor.getPosition()).in(Meters), 0, Rotation3d.kZero));
     Logger.recordOutput("Climber/Right/Measured/VelocityInchesPerSec", rightMotor.getVelocity());
     Logger.recordOutput("Climber/Right/Measured/AppliedOutput", rightMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Right/Measured/CurrentAmps", rightMotor.getCurrent());
@@ -158,7 +165,9 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   public void setTargetPosition(double inches) {
-    Logger.recordOutput("Climber/Setpoint/TargetInches", inches);
+    Logger.recordOutput("Climber/Setpoint/Target/Inches", inches);
+    Logger.recordOutput("Climber/Setpoint/Target/Pose3d",
+        new Pose3d(0, Inches.of(inches).in(Meters), 0, Rotation3d.kZero));
     leftMotor.setTargetPosition(inches);
     rightMotor.setTargetPosition(inches);
   }
@@ -181,7 +190,9 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   public void setTargetPosition(double inches, ClimbSide side) {
-    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/TargetInches", inches);
+    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/Target/Inches", inches);
+    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/Target/Pose3d",
+        new Pose3d(0, Inches.of(inches).in(Meters), 0, Rotation3d.kZero));
     if (side == ClimbSide.Left) {
       leftMotor.setTargetPosition(inches);
     } else {
