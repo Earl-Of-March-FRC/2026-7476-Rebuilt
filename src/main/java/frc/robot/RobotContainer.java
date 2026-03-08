@@ -39,6 +39,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
@@ -108,9 +109,11 @@ public class RobotContainer {
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigLeft),
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigRight));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
@@ -161,9 +164,11 @@ public class RobotContainer {
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigLeft),
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigRight));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
