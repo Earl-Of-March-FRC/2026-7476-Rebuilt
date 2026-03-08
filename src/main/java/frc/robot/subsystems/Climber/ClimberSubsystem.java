@@ -4,6 +4,9 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -13,15 +16,25 @@ import com.revrobotics.spark.SparkMax;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimberConstants;
+import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.UnitHelpers;
 
 public class ClimberSubsystem extends SubsystemBase {
 
@@ -81,7 +94,13 @@ public class ClimberSubsystem extends SubsystemBase {
   // TalonFX motor implementation
   public static class TalonFXClimberMotor implements ClimberMotorInterface {
     private final TalonFX talonFX;
+    private final TalonFXSimState talonFXSimState;
     private final PositionVoltage positionRequest = new PositionVoltage(0);
+
+    // Percent flags/variables are for simulation purposes
+    private boolean usingPercent = false;
+    private double percent = 0;
+    private double lastSimulationSeconds = 0; // Kept as double for simulation efficency
 
     public TalonFXClimberMotor(TalonFX talonFX) {
       this.talonFX = talonFX;
@@ -94,15 +113,20 @@ public class ClimberSubsystem extends SubsystemBase {
       config.CurrentLimits.StatorCurrentLimitEnable = true;
       config.Feedback.SensorToMechanismRatio = ClimberConstants.kSensorToMechanismRatio;
       talonFX.getConfigurator().apply(config);
+
+      this.talonFXSimState = talonFX.getSimState();
     }
 
     @Override
     public void setPercentOutput(double percent) {
+      this.percent = MathUtil.clamp(percent, -1, 1);
+      usingPercent = true;
       talonFX.set(percent);
     }
 
     @Override
     public void setTargetPosition(double inches) {
+      usingPercent = false;
       talonFX.setControl(positionRequest.withPosition(inches));
     }
 
@@ -130,6 +154,32 @@ public class ClimberSubsystem extends SubsystemBase {
     public double getCurrent() {
       return talonFX.getStatorCurrent().getValueAsDouble();
     }
+
+    @Override
+    public void simulationPeriodic() {
+      final double currentTime = Timer.getFPGATimestamp();
+      final double deltaTime = currentTime - lastSimulationSeconds; // In seconds
+      talonFXSimState
+          .setSupplyVoltage(RobotController.getBatteryVoltage());
+
+      // Calculate velocity
+      final AngularVelocity rotorVelocity;
+      if (usingPercent) {
+        rotorVelocity = SimulationConstants.kSimulatedMaxClimberSpeed.times(percent);
+      } else {
+        final double errorPosition = positionRequest.Position * ClimberConstants.kRotationsToInchesConversion
+            - getPosition();
+        final AngularVelocity desiredVelocity = RotationsPerSecond.of(errorPosition / deltaTime);
+        rotorVelocity = (AngularVelocity) UnitHelpers.clamp(desiredVelocity,
+            SimulationConstants.kSimulatedMaxClimberSpeed.times(-1),
+            SimulationConstants.kSimulatedMaxClimberSpeed);
+      }
+      talonFXSimState.setRotorVelocity(rotorVelocity);
+      talonFXSimState
+          .setRawRotorPosition(Math.max(getPosition() + (rotorVelocity.in(RotationsPerSecond) * deltaTime), 0));
+
+      lastSimulationSeconds = currentTime;
+    }
   }
 
   // Main Climber Subsystem
@@ -145,14 +195,14 @@ public class ClimberSubsystem extends SubsystemBase {
   public void periodic() {
     Logger.recordOutput("Climber/Left/Measured/Position/Inches", leftMotor.getPosition());
     Logger.recordOutput("Climber/Left/Measured/Position/Pose3d",
-        new Pose3d(0, Inches.of(leftMotor.getPosition()).in(Meters), 0, Rotation3d.kZero));
+        new Pose3d(0, 0, Inches.of(leftMotor.getPosition()).in(Meters), Rotation3d.kZero));
     Logger.recordOutput("Climber/Left/Measured/VelocityInchesPerSec", leftMotor.getVelocity());
     Logger.recordOutput("Climber/Left/Measured/AppliedOutput", leftMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Left/Measured/CurrentAmps", leftMotor.getCurrent());
 
     Logger.recordOutput("Climber/Right/Measured/Position/Inches", rightMotor.getPosition());
     Logger.recordOutput("Climber/Right/Measured/Position/Pose3d",
-        new Pose3d(0, Inches.of(rightMotor.getPosition()).in(Meters), 0, Rotation3d.kZero));
+        new Pose3d(0, 0, Inches.of(rightMotor.getPosition()).in(Meters), Rotation3d.kZero));
     Logger.recordOutput("Climber/Right/Measured/VelocityInchesPerSec", rightMotor.getVelocity());
     Logger.recordOutput("Climber/Right/Measured/AppliedOutput", rightMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Right/Measured/CurrentAmps", rightMotor.getCurrent());
@@ -206,5 +256,11 @@ public class ClimberSubsystem extends SubsystemBase {
     } else {
       return InchesPerSecond.of(rightMotor.getVelocity());
     }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    leftMotor.simulationPeriodic();
+    rightMotor.simulationPeriodic();
   }
 }

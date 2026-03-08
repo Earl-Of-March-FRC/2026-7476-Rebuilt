@@ -606,8 +606,16 @@ public final class Constants {
     // NOTE: drivetrainConfig depends on SwerveConfig which is set at runtime,
     // so it is built lazily in RobotContainer rather than here as a static final.
 
-    // TODO: Mesure this value
+    // TODO: Measure this value
     public static final AngularVelocity kSimulatedMaxLauncherSpeed = RPM.of(6000);
+
+    // Climbers
+    // TODO: Measure this value
+    /**
+     * Max speed of climber motors AFTER motor reductions
+     */
+    public static final AngularVelocity kSimulatedMaxClimberSpeed = RotationsPerSecond.of(5)
+        .div(ClimberConstants.kSensorToMechanismRatio);
   }
 
   public static final class PhotonConstants {
