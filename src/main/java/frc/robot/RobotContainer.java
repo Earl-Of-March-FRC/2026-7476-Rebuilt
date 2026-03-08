@@ -375,10 +375,9 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    // driverController.povUp().and(() -> driveSub.getCurrentBotZone() ==
-    // FieldZones.Launch).onTrue(
-    // driveAndManualShootCmd);
-    driverController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).whileTrue(
+    operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+        driveAndManualShootCmd);
+    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).whileTrue(
         driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control
