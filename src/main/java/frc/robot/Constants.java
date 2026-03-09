@@ -611,11 +611,9 @@ public final class Constants {
 
     // Climbers
     // TODO: Measure this value
-    /**
-     * Max speed of climber motors AFTER motor reductions
-     */
-    public static final AngularVelocity kSimulatedMaxClimberSpeed = RotationsPerSecond.of(5)
-        .div(ClimberConstants.kSensorToMechanismRatio);
+    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
+    public static final Distance kSimulatedMaxClimberHeight = Inches.of(10);
+    public static final DCMotor kSimulatedSparkMaxClimberMotor = DCMotor.getNEO(1);
   }
 
   public static final class PhotonConstants {

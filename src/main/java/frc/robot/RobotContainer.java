@@ -26,7 +26,6 @@ import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
@@ -161,10 +160,10 @@ public class RobotContainer {
               Constants.SimulationConstants.kSimulatedMaxLauncherSpeed));
 
       climberSub = new ClimberSubsystem(
-          new ClimberSubsystem.TalonFXClimberMotor(
-              new TalonFX(Constants.ClimberConstants.kLeftId)),
-          new ClimberSubsystem.TalonFXClimberMotor(
-              new TalonFX(Constants.ClimberConstants.kRightId)));
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+          new ClimberSubsystem.SparkMaxClimberMotor(
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));

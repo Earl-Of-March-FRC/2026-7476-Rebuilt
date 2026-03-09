@@ -4,29 +4,22 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.Seconds;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
+import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkMax;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
@@ -45,6 +38,12 @@ public class ClimberSubsystem extends SubsystemBase {
   // SparkMax motor implementation
   public static class SparkMaxClimberMotor implements ClimberMotorInterface {
     private final SparkMax sparkMax;
+    private final SparkMaxSim sparkMaxSim;
+
+    // Percent flags/variables are for simulation purposes
+    private boolean usingPercent = false;
+    private double setpoint = 0;
+    private double lastSimulationSeconds = 0; // Kept as double for simulation efficency
 
     public SparkMaxClimberMotor(SparkMax sparkMax) {
       this.sparkMax = sparkMax;
@@ -52,15 +51,24 @@ public class ClimberSubsystem extends SubsystemBase {
           PersistMode.kNoPersistParameters);
       sparkMax.configure(ClimberConstants.kConfigRight, ResetMode.kResetSafeParameters,
           PersistMode.kNoPersistParameters);
+      if (RobotBase.isSimulation()) {
+        this.sparkMaxSim = new SparkMaxSim(sparkMax, SimulationConstants.kSimulatedSparkMaxClimberMotor);
+      } else {
+        this.sparkMaxSim = null;
+      }
     }
 
     @Override
     public void setPercentOutput(double percent) {
       sparkMax.set(percent);
+      usingPercent = true;
+      setpoint = percent;
     }
 
     @Override
     public void setTargetPosition(double inches) {
+      usingPercent = false;
+      setpoint = inches;
       sparkMax.getClosedLoopController().setSetpoint(inches, SparkMax.ControlType.kPosition,
           ClosedLoopSlot.kSlot0);
     }
@@ -72,11 +80,17 @@ public class ClimberSubsystem extends SubsystemBase {
 
     @Override
     public double getVelocity() {
+      if (RobotBase.isSimulation() && sparkMaxSim != null) {
+        return sparkMaxSim.getVelocity();
+      }
       return sparkMax.getEncoder().getVelocity();
     }
 
     @Override
     public double getPosition() {
+      if (RobotBase.isSimulation() && sparkMaxSim != null) {
+        return sparkMaxSim.getPosition();
+      }
       return sparkMax.getEncoder().getPosition();
     }
 
@@ -89,18 +103,45 @@ public class ClimberSubsystem extends SubsystemBase {
     public double getCurrent() {
       return sparkMax.getOutputCurrent();
     }
+
+    @Override
+    public void simulationPeriodic() {
+      if (sparkMaxSim == null) {
+        return;
+      }
+
+      final double currentTime = Timer.getFPGATimestamp();
+      double deltaTime = currentTime - lastSimulationSeconds; // In seconds
+      if (deltaTime <= 0) {
+        deltaTime = 0.02; // Default 20ms
+      }
+      sparkMaxSim.setBusVoltage(RobotController.getBatteryVoltage());
+
+      // Calculate velocity
+      final LinearVelocity velocity;
+
+      if (usingPercent) {
+        velocity = SimulationConstants.kSimulatedMaxClimberSpeed.times(setpoint);
+      } else {
+        final double errorPosition = setpoint - getPosition();
+        final LinearVelocity desiredVelocity = InchesPerSecond.of(errorPosition / deltaTime);
+        velocity = (LinearVelocity) UnitHelpers.clamp(desiredVelocity,
+            SimulationConstants.kSimulatedMaxClimberSpeed.times(-1),
+            SimulationConstants.kSimulatedMaxClimberSpeed);
+      }
+      sparkMaxSim.setVelocity(velocity.in(InchesPerSecond));
+      sparkMaxSim
+          .setPosition(MathUtil.clamp(sparkMaxSim.getPosition() + (velocity.in(InchesPerSecond) * deltaTime), 0,
+              SimulationConstants.kSimulatedMaxClimberHeight.in(Inches)));
+
+      lastSimulationSeconds = currentTime;
+    }
   }
 
   // TalonFX motor implementation
   public static class TalonFXClimberMotor implements ClimberMotorInterface {
     private final TalonFX talonFX;
-    private final TalonFXSimState talonFXSimState;
     private final PositionVoltage positionRequest = new PositionVoltage(0);
-
-    // Percent flags/variables are for simulation purposes
-    private boolean usingPercent = false;
-    private double percent = 0;
-    private double lastSimulationSeconds = 0; // Kept as double for simulation efficency
 
     public TalonFXClimberMotor(TalonFX talonFX) {
       this.talonFX = talonFX;
@@ -113,20 +154,15 @@ public class ClimberSubsystem extends SubsystemBase {
       config.CurrentLimits.StatorCurrentLimitEnable = true;
       config.Feedback.SensorToMechanismRatio = ClimberConstants.kSensorToMechanismRatio;
       talonFX.getConfigurator().apply(config);
-
-      this.talonFXSimState = talonFX.getSimState();
     }
 
     @Override
     public void setPercentOutput(double percent) {
-      this.percent = MathUtil.clamp(percent, -1, 1);
-      usingPercent = true;
       talonFX.set(percent);
     }
 
     @Override
     public void setTargetPosition(double inches) {
-      usingPercent = false;
       talonFX.setControl(positionRequest.withPosition(inches));
     }
 
@@ -157,28 +193,8 @@ public class ClimberSubsystem extends SubsystemBase {
 
     @Override
     public void simulationPeriodic() {
-      final double currentTime = Timer.getFPGATimestamp();
-      final double deltaTime = currentTime - lastSimulationSeconds; // In seconds
-      talonFXSimState
-          .setSupplyVoltage(RobotController.getBatteryVoltage());
-
-      // Calculate velocity
-      final AngularVelocity rotorVelocity;
-      if (usingPercent) {
-        rotorVelocity = SimulationConstants.kSimulatedMaxClimberSpeed.times(percent);
-      } else {
-        final double errorPosition = positionRequest.Position * ClimberConstants.kRotationsToInchesConversion
-            - getPosition();
-        final AngularVelocity desiredVelocity = RotationsPerSecond.of(errorPosition / deltaTime);
-        rotorVelocity = (AngularVelocity) UnitHelpers.clamp(desiredVelocity,
-            SimulationConstants.kSimulatedMaxClimberSpeed.times(-1),
-            SimulationConstants.kSimulatedMaxClimberSpeed);
-      }
-      talonFXSimState.setRotorVelocity(rotorVelocity);
-      talonFXSimState
-          .setRawRotorPosition(Math.max(getPosition() + (rotorVelocity.in(RotationsPerSecond) * deltaTime), 0));
-
-      lastSimulationSeconds = currentTime;
+      System.err.println(
+          "Climber simulation with TalonFX is not supported right now. Please use the SparkMax implementation instead.");
     }
   }
 
