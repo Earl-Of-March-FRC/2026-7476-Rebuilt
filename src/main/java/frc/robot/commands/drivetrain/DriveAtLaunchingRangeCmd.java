@@ -4,13 +4,11 @@
 
 package frc.robot.commands.drivetrain;
 
-import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -18,14 +16,16 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.PoseHelpers;
+import frc.robot.util.launcher.LaunchHelpers;
+import frc.robot.util.launcher.LaunchHelpers.LaunchSetpoints;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -83,6 +83,8 @@ public class DriveAtLaunchingRangeCmd extends Command {
 
     Translation2d toHub = driveSub.getHubTranslation2dBotRelative();
 
+    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub, leadShots);
+
     // Handle edge case where robot is exactly at the hub
     double toHubNorm = toHub.getNorm();
     if (toHubNorm < 1e-6) {
@@ -99,10 +101,7 @@ public class DriveAtLaunchingRangeCmd extends Command {
 
     // Invert for red alliance to maintain consistent controls, this must be done
     // before projection
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-      joystickInput = joystickInput.times(-1);
-    }
+    joystickInput = joystickInput.times(PoseHelpers.getAlliance() == Alliance.Red ? -1 : 1);
 
     Translation2d projectedInput = perpendicularUnitVelocity.times(
         joystickInput.dot(perpendicularUnitVelocity) * SwerveConfig.kMaxSpeed.in(MetersPerSecond));
@@ -120,31 +119,23 @@ public class DriveAtLaunchingRangeCmd extends Command {
     }
 
     // Get current velocity
-    ChassisSpeeds currentChassisSpeeds = driveSub.getChassisSpeedsRobotRelative();
-    // Convert to field-relative speeds
-    currentChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(currentChassisSpeeds,
-        driveSub.getPose().getRotation());
+    ChassisSpeeds currentChassisSpeeds = driveSub.getChassisSpeedsFieldRelative();
     Translation2d velocity = new Translation2d(currentChassisSpeeds.vxMetersPerSecond,
         currentChassisSpeeds.vyMetersPerSecond);
 
-    // Get heading correction to face the hub
-    Translation2d targetBotRelative = toHub;
-    if (leadShots) {
-      targetBotRelative = targetBotRelative.minus(velocity.times(LauncherAndIntakeConstants.kBallAirTime.in(Seconds)));
-    }
-
-    Rotation2d desiredHeading = targetBotRelative.getAngle();
-    double omega = driveSub.getHeadingCorrectionOmega(desiredHeading).in(RadiansPerSecond);
+    Rotation2d desiredHeading = launchSetpoints.botHeading();
+    AngularVelocity omega = driveSub.getHeadingCorrectionOmega(desiredHeading);
 
     // Predict future pose 6 command cycles ahead with 10 substeps
     Pose2d futurePose = futurePoseWithSubSteps(atLimit ? finalVelocity : velocity, 0.12, 20);
 
     // Only drive if still in launching zone
     if (driveSub.getPoseZone(futurePose) == FieldZones.Launch) {
-      driveSub.runVelocity(new ChassisSpeeds(finalVelocity.getX(), finalVelocity.getY(), omega), true, false);
+      driveSub.runVelocity(new ChassisSpeeds(finalVelocity.getX(), finalVelocity.getY(), omega.in(RadiansPerSecond)),
+          true, false);
       atLimit = false;
     } else {
-      driveSub.runVelocity(new ChassisSpeeds(0, 0, omega), true, false);
+      driveSub.runVelocity(new ChassisSpeeds(0, 0, omega.in(RadiansPerSecond)), true, false);
       atLimit = true;
     }
 
@@ -154,8 +145,10 @@ public class DriveAtLaunchingRangeCmd extends Command {
         Math.abs(toHub.getNorm() - launchingRange.in(Meters)));
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/DesiredHeading", desiredHeading);
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/HubPoseBotRelative", toHub);
-    Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/LeadCorrection", targetBotRelative.minus(toHub));
-    Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/TargetBotRelative", targetBotRelative);
+    // Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/LeadCorrection",
+    // targetBotRelative.minus(toHub));
+    // Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/TargetBotRelative",
+    // targetBotRelative);
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/NextPose", futurePose);
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/AtLimit", atLimit);
     Logger.recordOutput("Drivetrain/DriveAtLaunchingRange/RadialCorrection",

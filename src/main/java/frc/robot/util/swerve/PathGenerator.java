@@ -34,7 +34,6 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.PoseHelpers;
-
 import java.util.Arrays;
 
 /**
@@ -179,16 +178,7 @@ public class PathGenerator {
       return new InstantCommand();
     }
 
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
-
-    if (alliance.isPresent()) {
-      SmartDashboard.putString("Drivetrain/Alliance",
-          isBlueAlliance ? "Blue" : "Red");
-    } else {
-      SmartDashboard.putString("Drivetrain/Alliance",
-          "Unknown");
-    }
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
 
     Translation2d[] neutralBumpTranslation2ds = isBlueAlliance
         ? new Translation2d[] { FieldConstants.kBumpPathWaypoints[4], FieldConstants.kBumpPathWaypoints[5] }
@@ -239,16 +229,7 @@ public class PathGenerator {
       return new InstantCommand();
     }
 
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
-
-    if (alliance.isPresent()) {
-      SmartDashboard.putString("Drivetrain/Alliance",
-          isBlueAlliance ? "Blue" : "Red");
-    } else {
-      SmartDashboard.putString("Drivetrain/Alliance",
-          "Unknown");
-    }
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
 
     Translation2d[] neutralTrenchTranslation2ds = isBlueAlliance
         ? new Translation2d[] { FieldConstants.kTrenchPathWaypoints[4], FieldConstants.kTrenchPathWaypoints[5] }

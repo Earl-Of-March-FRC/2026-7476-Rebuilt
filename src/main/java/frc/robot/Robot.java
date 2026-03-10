@@ -40,6 +40,7 @@ public class Robot extends LoggedRobot {
   private final GameModel gameModel = new GameModel();
 
   private Command autonomousCommand;
+  private boolean simulateFuel = false;
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -177,14 +178,22 @@ public class Robot extends LoggedRobot {
   @Override
   public void simulationInit() {
     SmartDashboard.putNumber("ClimberModelTest", SmartDashboard.getNumber("ClimberModelTest", 0));
+    simulateFuel = SmartDashboard.getBoolean("FieldSimulation/SimulateFuel", false);
+    if (simulateFuel) {
+      SimulatedArena.getInstance().resetFieldForAuto();
+    } else {
+      SmartDashboard.putBoolean("FieldSimulation/SimulateFuel", false);
+    }
   }
 
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {
     SimulatedArena.getInstance().simulationPeriodic();
-    Logger.recordOutput("FieldSimulation/Fuel",
-        SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
+    if (simulateFuel) {
+      Logger.recordOutput("FieldSimulation/Fuel",
+          SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
+    }
 
     // Test the height of the climbers
     Logger.recordOutput("FieldSimulation/Extra/ClimberModelTest",
