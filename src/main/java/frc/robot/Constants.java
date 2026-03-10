@@ -170,11 +170,11 @@ public final class Constants {
     public static final double kPIDLauncherControllerI = 0;
     public static final double kPIDLauncherControllerD = 1e-4;
     public static final double kPIDLauncherControllerFF = (1.0
-        / (NeoMotorConstants.kFreeSpeed.in(RPM) * kMotorReduction)) * 1.022;
+        / (NeoMotorConstants.kFreeSpeed.in(RPM) * kMotorReduction)) * 1.03;
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
-    public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(400);
+    public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
@@ -462,8 +462,11 @@ public final class Constants {
     public static final double kWheelStoreIndexPercent = 0.5;
 
     // Treadmill pulse timing
-    public static final double kPulseOnSeconds = 0.15;
-    public static final double kPulseOffSeconds = 0.05;
+    public static final double kPulseDutyCycle = 0.9;
+    public static final double kPulsePeriod = 0.2;
+
+    public static final double kPulseOnSeconds = kPulsePeriod * kPulseDutyCycle;
+    public static final double kPulseOffSeconds = kPulsePeriod * (1 - kPulseDutyCycle);
 
     public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();

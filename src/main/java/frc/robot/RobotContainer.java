@@ -273,13 +273,17 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
+    Command intakeToHopperCmd = new PulsingTreadmillCmd(indexerSub, IndexerConstants.kWheelSpeed,
+        IndexerConstants.kTreadmillSpeed)
+        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
+
     driveSub.setDefaultCommand(driveCmd);
 
     indexerSub.setDefaultCommand(
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    testController.a().whileTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(400)));
+    testController.a().whileTrue(intakeToHopperCmd);
 
     testController.b().onTrue(autoLaunchCmd);
 
