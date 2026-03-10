@@ -759,6 +759,11 @@ public final class Constants {
     public static final Distance kCrossNeutralWaypointX = kAllianceZoneXLength
         .plus(SwerveConfig.kBumperWidth.div(2.0)).plus(kBumpWidth);
 
+    public static final Translation3d kBlueHubTranslation3d = new Translation3d();
+    public static final Translation3d kRedHubTranslation3d = new Translation3d();
+    public static final Translation2d kBlueHubTranslation2d = new Translation2d();
+    public static final Translation2d kRedHubTranslation2d = new Translation2d();
+
     // Desired positions on either side of the 4 trenches, used for path finding
     // kTrenchPathWaypoints[i] and kTrenchPathWaypoints[i + 4] are always opposite
     public static final Translation2d[] kTrenchPathWaypoints = new Translation2d[] {
