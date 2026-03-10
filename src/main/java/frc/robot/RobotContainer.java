@@ -214,6 +214,8 @@ public class RobotContainer {
         new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimbSide.Left));
     NamedCommands.registerCommand("Pull Climber (Right)",
         new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimbSide.Right));
+    NamedCommands.registerCommand("Cross Bump", PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints));
+    NamedCommands.registerCommand("Cross Trench", PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints));
 
     configureBindings();
     configureAutos();
@@ -466,7 +468,7 @@ public class RobotContainer {
             () -> 0.0,
             Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
             true).until(() -> driveSub.isRadialControllerAtSetpoint()),
-        new InstantCommand().withTimeout(5), // Change to launch command when finished
+        new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM),
         Commands.defer(
             () -> new NearestClimbCmd(driveSub, climberSub),
             Set.of(driveSub, climberSub))));

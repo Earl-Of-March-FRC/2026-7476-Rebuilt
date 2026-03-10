@@ -9,6 +9,12 @@
           "data": {
             "pathName": "Outpost(L1 Climb)"
           }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": null
+          }
         }
       ]
     }
