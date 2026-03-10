@@ -12,11 +12,9 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
-import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
@@ -28,10 +26,8 @@ import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -43,6 +39,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
@@ -53,11 +50,13 @@ import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.climber.PullClimberCmd;
+import frc.robot.commands.drivetrain.AlignTowerCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
+import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -80,6 +79,8 @@ public class RobotContainer {
   public final Gyro gyro;
   private final CommandXboxController driverController = new CommandXboxController(
       OIConstants.kDriverControllerPort);
+  private final CommandXboxController operatorController = new CommandXboxController(
+      OIConstants.kOperatorControllerPort);
   private final CommandXboxController testController = new CommandXboxController(
       OIConstants.kTestControllerPort);
 
@@ -108,9 +109,11 @@ public class RobotContainer {
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigLeft),
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigRight));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
@@ -161,9 +164,11 @@ public class RobotContainer {
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigLeft),
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigRight));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
@@ -268,13 +273,17 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
+    Command intakeToHopperCmd = new PulsingTreadmillCmd(indexerSub, IndexerConstants.kWheelSpeed,
+        IndexerConstants.kTreadmillSpeed)
+        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
+
     driveSub.setDefaultCommand(driveCmd);
 
     indexerSub.setDefaultCommand(
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    testController.a().whileTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(400)));
+    testController.a().whileTrue(intakeToHopperCmd);
 
     testController.b().onTrue(autoLaunchCmd);
 
@@ -299,11 +308,27 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> IndexerConstants.kWheelSpeed,
-        () -> IndexerConstants.kTreadmillSpeed));
+    // driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
+    // IndexerConstants.kWheelSpeed,
+    // () -> IndexerConstants.kTreadmillSpeed));
 
-    driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () -> -IndexerConstants.kWheelSpeed,
-        () -> -IndexerConstants.kTreadmillSpeed));
+    // driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
+    // -IndexerConstants.kWheelSpeed,
+    // () -> -IndexerConstants.kTreadmillSpeed));
+
+    driverController.leftBumper().toggleOnTrue(
+        new PulsingTreadmillCmd(indexerSub,
+            -IndexerConstants.kWheelSpeed,
+            -IndexerConstants.kTreadmillSpeed));
+
+    driverController.rightBumper().toggleOnTrue(
+        new PulsingTreadmillCmd(indexerSub,
+            IndexerConstants.kWheelSpeed,
+            IndexerConstants.kTreadmillSpeed));
+
+    driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1250)));
+
+    driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(2780)));
 
     driverController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
@@ -359,9 +384,9 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+    operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
         driveAndManualShootCmd);
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).whileTrue(
         driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control

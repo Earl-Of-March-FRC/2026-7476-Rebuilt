@@ -66,6 +66,7 @@ import frc.robot.util.vision.CameraProfile;
 public final class Constants {
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
+    public static final int kOperatorControllerPort = 1;
     public static final int kTestControllerPort = 2;
     public static final double kDriveDeadband = 0.05;
     // Threshld when using trigger axis as a button
@@ -80,7 +81,7 @@ public final class Constants {
   }
 
   public static final class ModuleConstants {
-    // The MAXSwerve module can be configured with one of three pinion gears: 12T,
+    // The MAXSwerve module canf be configured with one of three pinion gears: 12T,
     // 13T, or 14T. This changes the drive speed of the module (a pinion gear with
     // more teeth will result in a robot that drives faster).
     public static final int kDrivingMotorPinionTeeth = 13;
@@ -144,12 +145,12 @@ public final class Constants {
     public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
 
     // Found using polynomial regression (degree 2)
-    private static final double a = 43.5;
-    private static final double b = 119;
-    private static final double c = 2372;
+    private static final double kRPMCurveA = 43.5;
+    private static final double kRPMCurveB = 119;
+    private static final double kRPMCurveC = 2372;
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
-      double rpm = a * d * d + b * d + c;
+      double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm);
     };
 
@@ -168,12 +169,12 @@ public final class Constants {
     public static final double kPIDLauncherControllerP = 1.2e-4;
     public static final double kPIDLauncherControllerI = 0;
     public static final double kPIDLauncherControllerD = 1e-4;
-    public static final double kPIDLauncherControllerFF = 2.1e-4;
-
+    public static final double kPIDLauncherControllerFF = (1.0
+        / (NeoMotorConstants.kFreeSpeed.in(RPM) * kMotorReduction)) * 1.03;
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
-    public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(400);
+    public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
@@ -187,9 +188,9 @@ public final class Constants {
       kLeaderConfig
           .idleMode(IdleMode.kCoast)
           .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
-          .inverted(true);
+          .inverted(true)
+          .voltageCompensation(12.0);
       kLeaderConfig.encoder
-          // Use wheel RPM
           .velocityConversionFactor(kMotorReduction);
       kLeaderConfig.closedLoop
           .pid(kPIDLauncherControllerP, kPIDLauncherControllerI,
@@ -200,7 +201,8 @@ public final class Constants {
       kFollowerConfig
           .smartCurrentLimit((int) kSmartCurrentLimit.magnitude())
           .idleMode(IdleMode.kCoast)
-          .inverted(false);
+          .inverted(false)
+          .voltageCompensation(12.0);
       kFollowerConfig.follow(kLeaderCanSparkId, true);
     }
   }
@@ -459,6 +461,13 @@ public final class Constants {
     public static final double kWheelLaunchIndexPercent = 0.5;
     public static final double kWheelStoreIndexPercent = 0.5;
 
+    // Treadmill pulse timing
+    public static final double kPulseDutyCycle = 0.9;
+    public static final double kPulsePeriod = 0.2;
+
+    public static final double kPulseOnSeconds = kPulsePeriod * kPulseDutyCycle;
+    public static final double kPulseOffSeconds = kPulsePeriod * (1 - kPulseDutyCycle);
+
     public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
 
@@ -619,8 +628,14 @@ public final class Constants {
     // NOTE: drivetrainConfig depends on SwerveConfig which is set at runtime,
     // so it is built lazily in RobotContainer rather than here as a static final.
 
-    // TODO: Mesure this value
+    // TODO: Measure this value
     public static final AngularVelocity kSimulatedMaxLauncherSpeed = RPM.of(6000);
+
+    // Climbers
+    // TODO: Measure this value
+    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
+    public static final Distance kSimulatedMaxClimberHeight = Inches.of(10);
+    public static final DCMotor kSimulatedSparkMaxClimberMotor = DCMotor.getNEO(1);
   }
 
   public static final class PhotonConstants {

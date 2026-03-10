@@ -3,22 +3,31 @@ package frc.robot.subsystems.Climber;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
+import static edu.wpi.first.units.Units.Meters;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
+import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkMax;
-
+import com.revrobotics.spark.config.SparkMaxConfig;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimberConstants;
+import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.UnitHelpers;
 
 public class ClimberSubsystem extends SubsystemBase {
 
@@ -29,22 +38,35 @@ public class ClimberSubsystem extends SubsystemBase {
   // SparkMax motor implementation
   public static class SparkMaxClimberMotor implements ClimberMotorInterface {
     private final SparkMax sparkMax;
+    private final SparkMaxSim sparkMaxSim;
 
-    public SparkMaxClimberMotor(SparkMax sparkMax) {
+    // Percent flags/variables are for simulation purposes
+    private boolean usingPercent = false;
+    private double setpoint = 0;
+    private double lastSimulationSeconds = 0; // Kept as double for simulation efficency
+
+    public SparkMaxClimberMotor(SparkMax sparkMax, SparkMaxConfig config) {
       this.sparkMax = sparkMax;
-      sparkMax.configure(ClimberConstants.kConfigLeft, ResetMode.kResetSafeParameters,
+      sparkMax.configure(config, ResetMode.kResetSafeParameters,
           PersistMode.kNoPersistParameters);
-      sparkMax.configure(ClimberConstants.kConfigRight, ResetMode.kResetSafeParameters,
-          PersistMode.kNoPersistParameters);
+      if (RobotBase.isSimulation()) {
+        this.sparkMaxSim = new SparkMaxSim(sparkMax, SimulationConstants.kSimulatedSparkMaxClimberMotor);
+      } else {
+        this.sparkMaxSim = null;
+      }
     }
 
     @Override
     public void setPercentOutput(double percent) {
       sparkMax.set(percent);
+      usingPercent = true;
+      setpoint = percent;
     }
 
     @Override
     public void setTargetPosition(double inches) {
+      usingPercent = false;
+      setpoint = inches;
       sparkMax.getClosedLoopController().setSetpoint(inches, SparkMax.ControlType.kPosition,
           ClosedLoopSlot.kSlot0);
     }
@@ -56,11 +78,17 @@ public class ClimberSubsystem extends SubsystemBase {
 
     @Override
     public double getVelocity() {
+      if (RobotBase.isSimulation() && sparkMaxSim != null) {
+        return sparkMaxSim.getVelocity();
+      }
       return sparkMax.getEncoder().getVelocity();
     }
 
     @Override
     public double getPosition() {
+      if (RobotBase.isSimulation() && sparkMaxSim != null) {
+        return sparkMaxSim.getPosition();
+      }
       return sparkMax.getEncoder().getPosition();
     }
 
@@ -72,6 +100,39 @@ public class ClimberSubsystem extends SubsystemBase {
     @Override
     public double getCurrent() {
       return sparkMax.getOutputCurrent();
+    }
+
+    @Override
+    public void simulationPeriodic() {
+      if (sparkMaxSim == null) {
+        return;
+      }
+
+      final double currentTime = Timer.getFPGATimestamp();
+      double deltaTime = currentTime - lastSimulationSeconds; // In seconds
+      if (deltaTime <= 0) {
+        deltaTime = 0.02; // Default 20ms
+      }
+      sparkMaxSim.setBusVoltage(RobotController.getBatteryVoltage());
+
+      // Calculate velocity
+      final LinearVelocity velocity;
+
+      if (usingPercent) {
+        velocity = SimulationConstants.kSimulatedMaxClimberSpeed.times(setpoint);
+      } else {
+        final double errorPosition = setpoint - getPosition();
+        final LinearVelocity desiredVelocity = InchesPerSecond.of(errorPosition / deltaTime);
+        velocity = (LinearVelocity) UnitHelpers.clamp(desiredVelocity,
+            SimulationConstants.kSimulatedMaxClimberSpeed.times(-1),
+            SimulationConstants.kSimulatedMaxClimberSpeed);
+      }
+      sparkMaxSim.setVelocity(velocity.in(InchesPerSecond));
+      sparkMaxSim
+          .setPosition(MathUtil.clamp(sparkMaxSim.getPosition() + (velocity.in(InchesPerSecond) * deltaTime), 0,
+              SimulationConstants.kSimulatedMaxClimberHeight.in(Inches)));
+
+      lastSimulationSeconds = currentTime;
     }
   }
 
@@ -127,6 +188,12 @@ public class ClimberSubsystem extends SubsystemBase {
     public double getCurrent() {
       return talonFX.getStatorCurrent().getValueAsDouble();
     }
+
+    @Override
+    public void simulationPeriodic() {
+      System.err.println(
+          "Climber simulation with TalonFX is not supported right now. Please use the SparkMax implementation instead.");
+    }
   }
 
   // Main Climber Subsystem
@@ -140,12 +207,16 @@ public class ClimberSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    Logger.recordOutput("Climber/Left/Measured/PositionInches", leftMotor.getPosition());
+    Logger.recordOutput("Climber/Left/Measured/Position/Inches", leftMotor.getPosition());
+    Logger.recordOutput("Climber/Left/Measured/Position/Pose3d",
+        new Pose3d(0, 0, Inches.of(leftMotor.getPosition()).in(Meters), Rotation3d.kZero));
     Logger.recordOutput("Climber/Left/Measured/VelocityInchesPerSec", leftMotor.getVelocity());
     Logger.recordOutput("Climber/Left/Measured/AppliedOutput", leftMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Left/Measured/CurrentAmps", leftMotor.getCurrent());
 
-    Logger.recordOutput("Climber/Right/Measured/PositionInches", rightMotor.getPosition());
+    Logger.recordOutput("Climber/Right/Measured/Position/Inches", rightMotor.getPosition());
+    Logger.recordOutput("Climber/Right/Measured/Position/Pose3d",
+        new Pose3d(0, 0, Inches.of(rightMotor.getPosition()).in(Meters), Rotation3d.kZero));
     Logger.recordOutput("Climber/Right/Measured/VelocityInchesPerSec", rightMotor.getVelocity());
     Logger.recordOutput("Climber/Right/Measured/AppliedOutput", rightMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Right/Measured/CurrentAmps", rightMotor.getCurrent());
@@ -158,7 +229,9 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   public void setTargetPosition(double inches) {
-    Logger.recordOutput("Climber/Setpoint/TargetInches", inches);
+    Logger.recordOutput("Climber/Setpoint/Target/Inches", inches);
+    Logger.recordOutput("Climber/Setpoint/Target/Pose3d",
+        new Pose3d(0, Inches.of(inches).in(Meters), 0, Rotation3d.kZero));
     leftMotor.setTargetPosition(inches);
     rightMotor.setTargetPosition(inches);
   }
@@ -181,7 +254,9 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   public void setTargetPosition(double inches, ClimbSide side) {
-    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/TargetInches", inches);
+    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/Target/Inches", inches);
+    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/Target/Pose3d",
+        new Pose3d(0, Inches.of(inches).in(Meters), 0, Rotation3d.kZero));
     if (side == ClimbSide.Left) {
       leftMotor.setTargetPosition(inches);
     } else {
@@ -195,5 +270,11 @@ public class ClimberSubsystem extends SubsystemBase {
     } else {
       return InchesPerSecond.of(rightMotor.getVelocity());
     }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    leftMotor.simulationPeriodic();
+    rightMotor.simulationPeriodic();
   }
 }

@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.commands.indexer.IndexerCmd;
+import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
@@ -33,7 +34,7 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
    */
   public LaunchAndIndexCmd(IndexerSubsystem indexerSub, LauncherAndIntakeSubsystem launcherAndIntakeSub,
       BooleanSupplier launchSupplier, boolean leadShots) {
-    addCommands(new IndexerCmd(
+    addCommands(new PulsingTreadmillCmd(
         indexerSub,
         () -> launchSupplier.getAsBoolean()
             ? IndexerConstants.kWheelLaunchIndexPercent
