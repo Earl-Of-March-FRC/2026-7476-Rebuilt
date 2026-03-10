@@ -21,9 +21,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimbSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
@@ -59,21 +61,21 @@ public class NearestClimbCmd extends SequentialCommandGroup {
     SmartDashboard.putNumber("field width", FieldConstants.kFieldWidthY.div(2).in(Meters));
 
     PathPlannerPath climberPath;
-    boolean usesLeftMotor;
+    ClimbSide climbSide;
 
     if (drivetrain.getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-      usesLeftMotor = false;
+      climbSide = ClimbSide.Right;
       climberPath = isBlueAlliance ? AutoConstants.outpostClimbPath : AutoConstants.depotClimbPath;
 
     } else {
-      usesLeftMotor = true;
+      climbSide = ClimbSide.Left;
       climberPath = isBlueAlliance ? AutoConstants.depotClimbPath : AutoConstants.outpostClimbPath;
     }
 
-    alignAndRaiseClimber.addCommands(new RaiseClimberCmd(climber, usesLeftMotor),
+    alignAndRaiseClimber.addCommands(new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition),
         AutoBuilder.pathfindThenFollowPath(climberPath, AutoConstants.L1ClimbConstraints));
 
-    pullClimber = new PullClimberCmd(climber, usesLeftMotor);
+    pullClimber = new PullClimberCmd(climber, () -> ClimberConstants.kMotorHookSpeed, climbSide);
 
     addCommands(alignAndRaiseClimber);
     addCommands(pullClimber);

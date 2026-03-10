@@ -42,6 +42,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OTBIntakeConstants;
@@ -199,10 +200,13 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
         true).until(() -> driveSub.isRadialControllerAtSetpoint()));
 
-    NamedCommands.registerCommand("Launch", new LauncherCmd(launcherSub, AutoConstants.kLauncherRPM));
+    NamedCommands.registerCommand("Launch", new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM));
     NamedCommands.registerCommand("Nearest Climb", PathGenerator.loadL1ClimbCommand());
-    NamedCommands.registerCommand("Raise Climber", new RaiseClimberCmd(climberSub, true)); // ??
-    NamedCommands.registerCommand("Pull Climber", new PullClimberCmd(climberSub, true)); // ??
+    NamedCommands.registerCommand("Raise Climber", new RaiseClimberCmd(climberSub, ClimberConstants.kRaisePosition));
+    NamedCommands.registerCommand("Pull Climber (Left)",
+        new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimbSide.Left));
+    NamedCommands.registerCommand("Pull Climber (Right)",
+        new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimbSide.Right));
 
     configureBindings();
     configureAutos();

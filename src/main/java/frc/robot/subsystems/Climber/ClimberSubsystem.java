@@ -30,11 +30,10 @@ import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.UnitHelpers;
 
 public class ClimberSubsystem extends SubsystemBase {
-  public boolean isClimberAtBottom = true;
 
-  public static boolean ClimbMotor;
-  // True = Left
-  // False = Right
+  public static enum ClimbSide {
+    Left, Right
+  }
 
   // SparkMax motor implementation
   public static class SparkMaxClimberMotor implements ClimberMotorInterface {
@@ -204,7 +203,6 @@ public class ClimberSubsystem extends SubsystemBase {
   public ClimberSubsystem(ClimberMotorInterface leftMotor, ClimberMotorInterface rightMotor) {
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
-
   }
 
   @Override
@@ -235,23 +233,20 @@ public class ClimberSubsystem extends SubsystemBase {
     Logger.recordOutput("Climber/Setpoint/Target/Pose3d",
         new Pose3d(0, Inches.of(inches).in(Meters), 0, Rotation3d.kZero));
     leftMotor.setTargetPosition(inches);
-
-  }
-
-  public void setTargetPositionRight(double inches) {
-    Logger.recordOutput("Climber/Setpoint/TargetInchesRight", inches);
-
     rightMotor.setTargetPosition(inches);
-
   }
 
   public void stop() {
     setPercentOutput(0);
   }
 
-  public void setPercentOutput(double percent, boolean isLeftSide) {
-    Logger.recordOutput("Climber/" + (isLeftSide ? "right" : "left") + "/Setpoint/PercentOutput", percent);
-    if (isLeftSide == true) {
+  public double getVelocity() {
+    return leftMotor.getVelocity();
+  }
+
+  public void setPercentOutput(double percent, ClimbSide side) {
+    Logger.recordOutput("Climber/" + side.name() + "/Setpoint/PercentOutput", percent);
+    if (side == ClimbSide.Left) {
       leftMotor.setPercentOutput(percent);
     } else {
       rightMotor.setPercentOutput(percent);
@@ -265,12 +260,12 @@ public class ClimberSubsystem extends SubsystemBase {
     if (side == ClimbSide.Left) {
       leftMotor.setTargetPosition(inches);
     } else {
-      rightMotor.setTargetPosition(ticks);
+      rightMotor.setTargetPosition(inches);
     }
   }
 
-  public LinearVelocity getVelocity(boolean isLeftSide) {
-    if (isLeftSide == true) {
+  public LinearVelocity getVelocity(ClimbSide side) {
+    if (side == ClimbSide.Left) {
       return InchesPerSecond.of(leftMotor.getVelocity());
     } else {
       return InchesPerSecond.of(rightMotor.getVelocity());

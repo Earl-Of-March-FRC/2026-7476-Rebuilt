@@ -9,6 +9,7 @@ import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.ClimbSide;
 
 public class PullClimberCmd extends Command {
+
   private final ClimberSubsystem climber;
   private final DoubleSupplier speed;
   public final ClimbSide side;
@@ -40,17 +41,6 @@ public class PullClimberCmd extends Command {
 
   @Override
   public boolean isFinished() {
-
-    return climber.isClimberAtBottom;
-
-    // // Checking if we are within the tolerance range
-    // double errorLeft = Math
-    // .abs(climber.getPosition(ClimberSubsystem.ClimbSide.Left) -
-    // ClimberConstants.kStowPosition.in(Inches));
-    // double errorRight = Math
-    // .abs(climber.getPosition(ClimberSubsystem.ClimbSide.Right) -
-    // ClimberConstants.kStowPosition.in(Inches));
-    // return ((errorLeft < ClimberConstants.kPositionTolerance.in(Inches))
-    // && errorRight < ClimberConstants.kPositionTolerance.in(Inches));
+    return false;
   }
 }
