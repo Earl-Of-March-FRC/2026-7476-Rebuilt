@@ -19,13 +19,13 @@ public class AlignAndClimbCmd extends SequentialCommandGroup { // Commands that 
     ParallelCommandGroup pullClimberCmds = new ParallelCommandGroup(); // If it ain't broke, don't fix it
 
     if (usesLeftMotor.getAsBoolean()) {
-      raiseClimberCmds.addCommands(new RaiseClimberCmd(climber, true));
-      pullClimberCmds.addCommands(new PullClimberCmd(climber, true));
+      raiseClimberCmds.addCommands(new RaiseClimberCmd(climber, () -> true));
+      pullClimberCmds.addCommands(new PullClimberCmd(climber, () -> true));
     }
 
     if (usesRightMotor.getAsBoolean()) {
-      raiseClimberCmds.addCommands(new RaiseClimberCmd(climber, false));
-      pullClimberCmds.addCommands(new PullClimberCmd(climber, false));
+      raiseClimberCmds.addCommands(new RaiseClimberCmd(climber, () -> false));
+      pullClimberCmds.addCommands(new PullClimberCmd(climber, () -> false));
     }
 
     raiseClimberCmds.addCommands(new AlignTowerCmd(drive, usesLeftMotor.getAsBoolean(), usesRightMotor.getAsBoolean())

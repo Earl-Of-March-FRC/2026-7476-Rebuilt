@@ -2,6 +2,7 @@ package frc.robot.commands.climber;
 
 import static edu.wpi.first.units.Units.Inches;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -12,9 +13,9 @@ import frc.robot.subsystems.Climber.ClimberSubsystem; // Direct class import
 
 public class PullClimberCmd extends Command {
   private final ClimberSubsystem climber;
-  private final boolean isLeftSide;
+  private final BooleanSupplier isLeftSide;
 
-  public PullClimberCmd(ClimberSubsystem climber, boolean isLeftSide) {
+  public PullClimberCmd(ClimberSubsystem climber, BooleanSupplier isLeftSide) {
     this.climber = climber;
     this.isLeftSide = isLeftSide;
     addRequirements(climber);
@@ -22,7 +23,7 @@ public class PullClimberCmd extends Command {
 
   @Override
   public void initialize() {
-    climber.setTargetPosition(ClimberConstants.kClimberRaisePositionInches.in(Inches), isLeftSide);
+    climber.setTargetPosition(ClimberConstants.kClimberRaisePositionInches.in(Inches), isLeftSide.getAsBoolean());
   }
 
   @Override
