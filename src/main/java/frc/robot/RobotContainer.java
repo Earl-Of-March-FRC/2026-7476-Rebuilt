@@ -26,6 +26,7 @@ import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
+import com.fasterxml.jackson.databind.util.Named;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
@@ -201,6 +202,12 @@ public class RobotContainer {
         true).until(() -> driveSub.isRadialControllerAtSetpoint()));
 
     NamedCommands.registerCommand("Launch", new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM));
+    NamedCommands.registerCommand("Drive to Launch", new DriveAtLaunchingRangeCmd(
+        driveSub,
+        () -> 0.0,
+        () -> 0.0,
+        Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
+        true).until(() -> driveSub.isRadialControllerAtSetpoint()));
     NamedCommands.registerCommand("Nearest Climb", PathGenerator.loadL1ClimbCommand());
     NamedCommands.registerCommand("Raise Climber", new RaiseClimberCmd(climberSub, ClimberConstants.kRaisePosition));
     NamedCommands.registerCommand("Pull Climber (Left)",
