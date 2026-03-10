@@ -9,6 +9,7 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,16 +20,74 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.ClimbAlignmentConstants;
 import frc.robot.Constants.FieldConstants;
 
-/**
- * Passive climb alignment indicator that publishes GO/NO-GO status and
- * diagnostic data to the driver dashboard. Computes how close the robot is
- * to an ideal Tower climbing position and whether the expected AprilTags
- * are visible with acceptable quality.
- *
- * Does not control any motors or subsystems.
- */
 public class ClimbAlignmentIndicator {
 
+  // Enums
+  public enum TagQuality {
+    NONE(0.0),
+    POOR(0.0),
+    MARGINAL(0.5),
+    GOOD(1.0);
+
+    // Weight applied to the quality component of the alignment score.
+    public final double scoreWeight;
+
+    TagQuality(double scoreWeight) {
+      this.scoreWeight = scoreWeight;
+    }
+
+    /**
+     * Classify tag quality from raw photon metrics.
+     *
+     * @param tagsSeen  number of expected tower tags currently visible
+     * @param ambiguity best (lowest) pose ambiguity across visible tags
+     * @param area      best (highest) tag area across visible tags
+     */
+    public static TagQuality classify(int tagsSeen, double ambiguity, double area) {
+      if (tagsSeen == 0)
+        return NONE;
+      if (ambiguity < ClimbAlignmentConstants.kMaxAmbiguity
+          && area > ClimbAlignmentConstants.kMinTagArea)
+        return GOOD;
+      if (ambiguity < ClimbAlignmentConstants.kMaxAmbiguity * 2)
+        return MARGINAL;
+      return POOR;
+    }
+  }
+
+  public enum PostSide {
+    LEFT, RIGHT;
+
+    // Human-readable label for elastic display.
+    public String label() {
+      return name().charAt(0) + name().substring(1).toLowerCase(); // Left/Right
+    }
+  }
+
+  public enum AlignmentStatus {
+    GO, NO_GO;
+
+    public boolean isGo() {
+      return this == GO;
+    }
+  }
+
+  // One alignment evaluation cycle.
+  public record AlignmentResult(
+      AlignmentStatus status,
+      PostSide nearestPost,
+      double translationErrorMeters,
+      double headingErrorDegrees,
+      int tagsSeen,
+      int tagsExpected,
+      TagQuality tagQuality,
+      double alignmentScore,
+      Pose2d idealPose,
+      String reason) {
+  }
+
+  // Fields
+  // [0] = left post, [1] = right post for each alliance.
   private final Pose2d[] blueClimbPoses;
   private final Pose2d[] redClimbPoses;
 
@@ -38,54 +97,56 @@ public class ClimbAlignmentIndicator {
   }
 
   /**
-   * Derive two ideal climb poses (left-post and right-post) from the Tower
-   * AprilTag positions in the field layout.
+   * Derive two ideal climb poses from the two Tower AprilTag positions.
+   * Each tag independently gives one post position so that left ≠ right
+   * even when the tags are at different heights / lateral offsets.
    *
-   * @param towerTagIds the two Tower tag IDs for the relevant alliance
-   * @return array of two Pose2d: [0] = left post, [1] = right post
+   * @param towerTagIds two Tower tag IDs for the relevant alliance: [0] ->
+   *                    left-post tag, [1] -> right-post tag
+   * @return [0] = left post pose, [1] = right post pose
    */
   private Pose2d[] computeClimbPoses(int[] towerTagIds) {
-    Optional<Pose3d> tagPoseOpt = FieldConstants.kfieldLayout.getTagPose(towerTagIds[0]);
-    if (tagPoseOpt.isEmpty()) {
-      return new Pose2d[] { new Pose2d(), new Pose2d() };
+    Pose2d[] poses = new Pose2d[2];
+    for (int i = 0; i < 2; i++) {
+      Optional<Pose3d> tagPoseOpt = FieldConstants.kfieldLayout.getTagPose(towerTagIds[i]);
+      if (tagPoseOpt.isEmpty()) {
+        poses[i] = new Pose2d();
+        continue;
+      }
+
+      Pose3d tagPose3d = tagPoseOpt.get();
+      Translation2d towerPos = tagPose3d.toPose2d().getTranslation();
+
+      double tagYaw = tagPose3d.getRotation().getZ();
+      Translation2d facingDir = new Translation2d(Math.cos(tagYaw), Math.sin(tagYaw));
+
+      // Stand off along the tag's facing direction
+      Translation2d standoffPos = towerPos.plus(
+          facingDir.times(ClimbAlignmentConstants.kStandoffDistanceMeters));
+
+      // Robot faces the tower (opposite of tag-facing direction)
+      Rotation2d robotHeading = new Rotation2d(tagYaw + Math.PI);
+
+      poses[i] = new Pose2d(standoffPos, robotHeading);
     }
-
-    Pose3d tagPose3d = tagPoseOpt.get();
-    Translation2d towerPos = tagPose3d.toPose2d().getTranslation();
-
-    // Tag yaw gives the direction the tag faces (toward field center)
-    double tagYaw = tagPose3d.getRotation().getZ();
-    Translation2d facingDir = new Translation2d(Math.cos(tagYaw), Math.sin(tagYaw));
-
-    // Perpendicular: 90° counter-clockwise from facing direction
-    Translation2d perpDir = new Translation2d(-facingDir.getY(), facingDir.getX());
-
-    // Base position: standoff distance along the tag facing direction
-    Translation2d basePos = towerPos.plus(
-        facingDir.times(ClimbAlignmentConstants.kStandoffDistanceMeters));
-
-    // Robot heading: face the Tower (opposite of tag facing direction)
-    Rotation2d robotHeading = new Rotation2d(tagYaw + Math.PI);
-
-    Translation2d leftPos = basePos.plus(
-        perpDir.times(ClimbAlignmentConstants.kHookLateralOffsetMeters));
-    Translation2d rightPos = basePos.plus(
-        perpDir.times(-ClimbAlignmentConstants.kHookLateralOffsetMeters));
-
-    return new Pose2d[] {
-        new Pose2d(leftPos, robotHeading),
-        new Pose2d(rightPos, robotHeading)
-    };
+    return poses;
   }
 
   /**
-   * Evaluate climb alignment and publish results to SmartDashboard and
+   * Evaluate climb alignment and publish results to SmartDashboard /
    * AdvantageScope. Call once per periodic cycle from DrivetrainSubsystem.
    *
-   * @param currentPose the robot's current field-relative pose
+   * @param currentPose field-relative robot pose
    * @param cameras     all PhotonCamera instances on the robot
+   * @return the full alignment result for this cycle
    */
-  public void update(Pose2d currentPose, PhotonCamera[] cameras) {
+  public AlignmentResult update(Pose2d currentPose, PhotonCamera[] cameras) {
+    AlignmentResult result = evaluate(currentPose, cameras);
+    publish(result);
+    return result;
+  }
+
+  private AlignmentResult evaluate(Pose2d currentPose, PhotonCamera[] cameras) {
     Optional<Alliance> alliance = DriverStation.getAlliance();
     boolean isRed = alliance.isPresent() && alliance.get() == Alliance.Red;
 
@@ -94,29 +155,30 @@ public class ClimbAlignmentIndicator {
         ? ClimbAlignmentConstants.kRedTowerTagIds
         : ClimbAlignmentConstants.kBlueTowerTagIds;
 
-    // --- Nearest ideal pose ---
-    double distLeft = currentPose.getTranslation().getDistance(climbPoses[0].getTranslation());
-    double distRight = currentPose.getTranslation().getDistance(climbPoses[1].getTranslation());
-    boolean leftCloser = distLeft <= distRight;
+    // Nearest post
+    double distLeft = currentPose.getTranslation().getDistance(climbPoses[PostSide.LEFT.ordinal()].getTranslation());
+    double distRight = currentPose.getTranslation().getDistance(climbPoses[PostSide.RIGHT.ordinal()].getTranslation());
+    PostSide nearestPost = distLeft <= distRight ? PostSide.LEFT : PostSide.RIGHT;
+    Pose2d idealPose = climbPoses[nearestPost.ordinal()];
 
-    Pose2d idealPose = leftCloser ? climbPoses[0] : climbPoses[1];
-    String nearestPost = leftCloser ? "Left" : "Right";
-
-    // --- Pose error ---
+    // Pose error
     double translationError = currentPose.getTranslation().getDistance(idealPose.getTranslation());
-    double headingErrorDeg = Math.toDegrees(
-        currentPose.getRotation().minus(idealPose.getRotation()).getRadians());
 
-    // --- Tag visibility across all cameras ---
+    // Normalize heading error to [-180, 180]
+    double headingErrorDeg = MathUtil.inputModulus(
+        currentPose.getRotation().minus(idealPose.getRotation()).getDegrees(),
+        -180.0, 180.0);
+
+    // Tag visibility
     List<Integer> seenExpectedTags = new ArrayList<>();
     double bestAmbiguity = Double.MAX_VALUE;
     double bestArea = 0;
 
     for (PhotonCamera camera : cameras) {
       PhotonPipelineResult result = camera.getLatestResult();
-      if (!result.hasTargets()) {
+      if (!result.hasTargets())
         continue;
-      }
+
       for (PhotonTrackedTarget target : result.getTargets()) {
         for (int expectedId : expectedTagIds) {
           if (target.fiducialId == expectedId && !seenExpectedTags.contains(expectedId)) {
@@ -128,77 +190,82 @@ public class ClimbAlignmentIndicator {
       }
     }
 
-    int tagsExpected = expectedTagIds.length;
     int tagsSeen = seenExpectedTags.size();
+    int tagsExpected = expectedTagIds.length;
+    TagQuality tagQuality = TagQuality.classify(tagsSeen, bestAmbiguity, bestArea);
 
-    // --- Tag quality ---
-    String tagQuality;
-    if (tagsSeen == 0) {
-      tagQuality = "None";
-    } else if (bestAmbiguity < ClimbAlignmentConstants.kMaxAmbiguity
-        && bestArea > ClimbAlignmentConstants.kMinTagArea) {
-      tagQuality = "Good";
-    } else if (bestAmbiguity < ClimbAlignmentConstants.kMaxAmbiguity * 2) {
-      tagQuality = "Marginal";
-    } else {
-      tagQuality = "Poor";
-    }
+    // Alignment score (0–100)
+    // Pose component: decays linearly with translation error (zero at 2 m) and
+    // heading error (zero at 30 deg). Clamped to [0, 1].
+    double poseFactor = Math.max(0.0, 1.0 - translationError / 2.0)
+        * Math.max(0.0, 1.0 - Math.abs(headingErrorDeg) / 30.0);
+    double tagFactor = tagsExpected > 0 ? (double) tagsSeen / tagsExpected : 0.0;
 
-    // --- Alignment score (0-100) ---
-    double poseComponent = Math.max(0, 1.0 - translationError / 2.0)
-        * Math.max(0, 1.0 - Math.abs(headingErrorDeg) / 30.0);
-    double tagComponent = (double) tagsSeen / tagsExpected;
-    double qualityComponent = tagQuality.equals("Good") ? 1.0
-        : tagQuality.equals("Marginal") ? 0.5 : 0.0;
+    double rawScore = poseFactor * 50.0
+        + tagFactor * 30.0
+        + tagQuality.scoreWeight * 20.0;
+    double alignmentScore = MathUtil.clamp(Math.round(rawScore), 0, 100);
 
-    double alignmentScore = Math.round(poseComponent * 50 + tagComponent * 30 + qualityComponent * 20);
-    alignmentScore = Math.max(0, Math.min(100, alignmentScore));
-
-    // --- GO / NO-GO ---
+    // GO / NO-GO
     boolean positionOk = translationError < ClimbAlignmentConstants.kTranslationToleranceMeters;
     boolean headingOk = Math.abs(headingErrorDeg) < ClimbAlignmentConstants.kHeadingToleranceDegrees;
     boolean tagsOk = tagsSeen >= 1;
-    boolean isGo = positionOk && headingOk && tagsOk;
 
-    String reason;
-    if (isGo) {
-      reason = "GO: Aligned to " + nearestPost + " Post";
-    } else {
-      List<String> issues = new ArrayList<>();
-      if (!positionOk) {
-        issues.add(String.format("%.2fm off", translationError));
-      }
-      if (!headingOk) {
-        issues.add(String.format("heading %.1f\u00B0 out", Math.abs(headingErrorDeg)));
-      }
-      if (!tagsOk) {
-        issues.add("no Tower tags visible");
-      }
-      reason = "NO-GO: " + String.join(", ", issues);
+    AlignmentStatus status = (positionOk && headingOk && tagsOk)
+        ? AlignmentStatus.GO
+        : AlignmentStatus.NO_GO;
+
+    String reason = buildReason(status, nearestPost, positionOk, headingOk, tagsOk,
+        translationError, headingErrorDeg);
+
+    return new AlignmentResult(
+        status, nearestPost, translationError, headingErrorDeg,
+        tagsSeen, tagsExpected, tagQuality, alignmentScore, idealPose, reason);
+  }
+
+  private static String buildReason(
+      AlignmentStatus status, PostSide post,
+      boolean positionOk, boolean headingOk, boolean tagsOk,
+      double translationError, double headingErrorDeg) {
+
+    if (status == AlignmentStatus.GO) {
+      return "GO: Aligned to " + post.label() + " Post";
     }
 
-    // ── Primary outputs (keep) ──
-    SmartDashboard.putBoolean("Climb/GO", isGo);
-    SmartDashboard.putString("Climb/Reason", reason);
+    List<String> issues = new ArrayList<>();
+    if (!positionOk)
+      issues.add(String.format("%.2fm off", translationError));
+    if (!headingOk)
+      issues.add(String.format("heading %.1f° out", Math.abs(headingErrorDeg)));
+    if (!tagsOk)
+      issues.add("no Tower tags visible");
+    return "NO-GO: " + String.join(", ", issues);
+  }
 
-    // ── Diagnostic outputs — trim these after testing is complete ──
-    SmartDashboard.putNumber("Climb/AlignmentScore", alignmentScore);
-    SmartDashboard.putString("Climb/NearestPost", nearestPost);
-    SmartDashboard.putNumber("Climb/TranslationErrorMeters", translationError);
-    SmartDashboard.putNumber("Climb/HeadingErrorDeg", headingErrorDeg);
-    SmartDashboard.putString("Climb/TagsSeenRatio", tagsSeen + "/" + tagsExpected);
-    SmartDashboard.putString("Climb/TagQuality", tagQuality);
+  // Elastic and logger publishing
+  private static void publish(AlignmentResult r) {
+    // Primary outputs
+    SmartDashboard.putBoolean("Climb/GO", r.status().isGo());
+    SmartDashboard.putString("Climb/Reason", r.reason());
 
-    // ── AdvantageScope logging (always keep for post-match analysis) ──
-    Logger.recordOutput("Climb/GO", isGo);
-    Logger.recordOutput("Climb/Reason", reason);
-    Logger.recordOutput("Climb/AlignmentScore", alignmentScore);
-    Logger.recordOutput("Climb/NearestPost", nearestPost);
-    Logger.recordOutput("Climb/TranslationErrorMeters", translationError);
-    Logger.recordOutput("Climb/HeadingErrorDeg", headingErrorDeg);
-    Logger.recordOutput("Climb/TagsSeen", tagsSeen);
-    Logger.recordOutput("Climb/TagsExpected", tagsExpected);
-    Logger.recordOutput("Climb/TagQuality", tagQuality);
-    Logger.recordOutput("Climb/IdealPose", idealPose);
+    // Diagnostics; trim after testing
+    SmartDashboard.putNumber("Climb/AlignmentScore", r.alignmentScore());
+    SmartDashboard.putString("Climb/NearestPost", r.nearestPost().label());
+    SmartDashboard.putNumber("Climb/TranslationErrorMeters", r.translationErrorMeters());
+    SmartDashboard.putNumber("Climb/HeadingErrorDeg", r.headingErrorDegrees());
+    SmartDashboard.putString("Climb/TagsSeenRatio", r.tagsSeen() + "/" + r.tagsExpected());
+    SmartDashboard.putString("Climb/TagQuality", r.tagQuality().name());
+
+    // AdvantageScope; always keep
+    Logger.recordOutput("Climb/GO", r.status().isGo());
+    Logger.recordOutput("Climb/Reason", r.reason());
+    Logger.recordOutput("Climb/AlignmentScore", r.alignmentScore());
+    Logger.recordOutput("Climb/NearestPost", r.nearestPost().name());
+    Logger.recordOutput("Climb/TranslationErrorMeters", r.translationErrorMeters());
+    Logger.recordOutput("Climb/HeadingErrorDeg", r.headingErrorDegrees());
+    Logger.recordOutput("Climb/TagsSeen", r.tagsSeen());
+    Logger.recordOutput("Climb/TagsExpected", r.tagsExpected());
+    Logger.recordOutput("Climb/TagQuality", r.tagQuality().name());
+    Logger.recordOutput("Climb/IdealPose", r.idealPose());
   }
 }
