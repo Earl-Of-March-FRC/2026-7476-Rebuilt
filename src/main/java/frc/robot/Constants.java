@@ -548,6 +548,25 @@ public final class Constants {
 
   }
 
+  public static final class ClimbAlignmentConstants {
+    public static final int[] kBlueTowerTagIds = { 31, 32 };
+    public static final int[] kRedTowerTagIds = { 15, 16 };
+
+    // TODO: Measure on real field — approach distance from Tower face to robot center at hook engagement
+    public static final double kStandoffDistanceMeters = 0.6;
+
+    // TODO: Measure on real robot — lateral distance from robot center to side hook contact point
+    public static final double kHookLateralOffsetMeters = 0.25;
+
+    // GO thresholds
+    public static final double kTranslationToleranceMeters = 0.15;
+    public static final double kHeadingToleranceDegrees = 5.0;
+
+    // Tag detection quality thresholds
+    public static final double kMinTagArea = 0.1;
+    public static final double kMaxAmbiguity = 0.5;
+  }
+
   public static final class GameModelConstants {
     /** Match time thresholds for phase transitions */
     public static final int AUTO_END = 140;
