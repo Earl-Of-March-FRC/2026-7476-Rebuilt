@@ -235,6 +235,8 @@ public class RobotContainer {
       }
     };
 
+    Logger.recordOutput("DriveTrain/LockSupplier", distanceLockSupplier.getAsBoolean());
+
     // Drive while tracking hub and automatically launching balls if we think they
     // will
     // go in, an additional trigger can used to lock distance
@@ -285,7 +287,7 @@ public class RobotContainer {
 
     operatorController.a().whileTrue(intakeToHopperCmd);
 
-    operatorController.b().onTrue(autoLaunchCmd);
+    operatorController.b().toggleOnTrue(autoLaunchCmd);
 
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
@@ -384,9 +386,9 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+    operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
         driveAndManualShootCmd);
-    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
         driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control
