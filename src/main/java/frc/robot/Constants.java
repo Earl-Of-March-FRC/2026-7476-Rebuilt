@@ -577,7 +577,7 @@ public final class Constants {
           .outputRange(kOutputRangeMin, kOutputRangeMax);
     }
 
-    public static final Distance kRaisePosition = Inches.of(32.0);
+    public static final Distance kRaisePosition = Inches.of(9.0); // Was 32
 
     public static final Distance kPullPosition = Inches.of(0.0);
 

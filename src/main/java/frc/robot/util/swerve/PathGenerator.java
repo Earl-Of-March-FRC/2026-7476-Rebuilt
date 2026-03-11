@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveRequest.FieldCentric;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
@@ -315,6 +317,10 @@ public class PathGenerator {
         .andThen(new DriveLockedHeadingAndYCmd(driveSub, () -> 1.0 * directionMultiplier, // ?
             () -> PoseHelpers.nearestBumpY(start), targetHeading))
         .until(isCrossingFinished);
+  }
+
+  public static Command crossTrenchAuto() {
+    return crossTrenchAuto(FieldConstants.kTrenchPathWaypoints);
   }
 
   public static Command crossTrenchAuto(Translation2d[] trenchWaypoints) {

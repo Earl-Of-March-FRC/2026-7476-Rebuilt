@@ -348,7 +348,8 @@ public class RobotContainer {
 
     driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1250)));
 
-    driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(2780)));
+    driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub,
+        () -> RPM.of(2780)));
 
     driverController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
