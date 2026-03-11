@@ -332,12 +332,12 @@ public class RobotContainer {
 
     driverController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 0.3,
+            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
             ClimbSide.Left));
 
     driverController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 0.3,
+            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
             ClimbSide.Right));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
