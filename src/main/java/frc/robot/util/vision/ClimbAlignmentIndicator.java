@@ -195,10 +195,10 @@ public class ClimbAlignmentIndicator {
     TagQuality tagQuality = TagQuality.classify(tagsSeen, bestAmbiguity, bestArea);
 
     // Alignment score (0–100)
-    // Pose component: decays linearly with translation error (zero at 2 m) and
-    // heading error (zero at 30 deg). Clamped to [0, 1].
-    double poseFactor = Math.max(0.0, 1.0 - translationError / 2.0)
-        * Math.max(0.0, 1.0 - Math.abs(headingErrorDeg) / 30.0);
+    // Pose component: weighted average of translation and heading factors so
+    // that one good axis isn't crushed by a bad axis (was multiplicative).
+    double poseFactor = 0.6 * Math.max(0.0, 1.0 - translationError / 2.0)
+        + 0.4 * Math.max(0.0, 1.0 - Math.abs(headingErrorDeg) / 30.0);
     double tagFactor = tagsExpected > 0 ? (double) tagsSeen / tagsExpected : 0.0;
 
     double rawScore = poseFactor * 50.0
