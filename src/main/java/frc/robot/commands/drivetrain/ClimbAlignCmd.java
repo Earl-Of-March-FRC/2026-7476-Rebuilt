@@ -229,7 +229,7 @@ public class ClimbAlignCmd extends Command {
     Optional<Pose3d> rightTagOpt = FieldConstants.kfieldLayout.getTagPose(rightTagId);
 
     if (leftTagOpt.isEmpty() || rightTagOpt.isEmpty()) {
-      Logger.recordOutput("ClimbAlign/Status", "Tag poses not found in layout!");
+      Logger.recordOutput("Commands/ClimbAlign/Status", "Tag poses not found in layout!");
       return null;
     }
 
@@ -245,21 +245,21 @@ public class ClimbAlignCmd extends Command {
       useLeft = distLeft <= distRight;
     } else {
       useLeft = true;
-      Logger.recordOutput("ClimbAlign/Warning", "No robot pose provided, defaulting to left tag");
+      Logger.recordOutput("Commands/ClimbAlign/Warning", "No robot pose provided, defaulting to left tag");
     }
 
     Pose3d nearTag = useLeft ? leftTag : rightTag;
     Pose3d farTag = useLeft ? rightTag : leftTag;
 
-    Logger.recordOutput("ClimbAlign/NearestSide", useLeft ? "Left" : "Right");
-    Logger.recordOutput("ClimbAlign/NearTagId", useLeft ? leftTagId : rightTagId);
+    Logger.recordOutput("Commands/ClimbAlign/NearestSide", useLeft ? "Left" : "Right");
+    Logger.recordOutput("Commands/ClimbAlign/NearTagId", useLeft ? leftTagId : rightTagId);
 
     // 2. Compute outward unit vector (away from the other tag)
     double lateralDx = nearTag.getX() - farTag.getX();
     double lateralDy = nearTag.getY() - farTag.getY();
     double lateralNorm = Math.hypot(lateralDx, lateralDy);
     if (lateralNorm < 1e-6) {
-      Logger.recordOutput("ClimbAlign/Status", "Tags are at the same position - aborting");
+      Logger.recordOutput("Commands/ClimbAlign/Status", "Tags are at the same position - aborting");
       return null;
     }
     double outwardUnitX = lateralDx / lateralNorm;
@@ -277,7 +277,7 @@ public class ClimbAlignCmd extends Command {
     double targetY = refY + standoff * Math.sin(tagYaw);
 
     Pose2d result = new Pose2d(targetX, targetY, new Rotation2d(tagYaw));
-    Logger.recordOutput("ClimbAlign/TargetPose", result);
+    Logger.recordOutput("Commands/ClimbAlign/TargetPose", result);
     return result;
   }
 
