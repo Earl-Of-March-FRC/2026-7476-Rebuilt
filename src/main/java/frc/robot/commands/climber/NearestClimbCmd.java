@@ -77,8 +77,7 @@ public class NearestClimbCmd extends SequentialCommandGroup {
 
     pullClimber = new PullClimberCmd(climber, () -> ClimberConstants.kMotorHookSpeed, climbSide);
 
-    addCommands(alignAndRaiseClimber);
-    addCommands(pullClimber);
+    addCommands(alignAndRaiseClimber, pullClimber);
 
     addRequirements(drivetrain, climber);
   }
