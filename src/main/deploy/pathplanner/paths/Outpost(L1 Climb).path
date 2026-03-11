@@ -16,15 +16,15 @@
     },
     {
       "anchor": {
-        "x": 0.8173323823109842,
-        "y": 2.747603423680457
+        "x": 0.746,
+        "y": 2.981
       },
       "prevControl": {
-        "x": 1.594598590724452,
-        "y": 2.7527688202816303
+        "x": 0.996,
+        "y": 2.981
       },
       "nextControl": null,
-      "isLocked": false,
+      "isLocked": true,
       "linkedName": "ClimbOutpost"
     }
   ],
