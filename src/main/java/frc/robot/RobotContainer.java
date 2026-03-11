@@ -283,9 +283,9 @@ public class RobotContainer {
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    testController.a().whileTrue(intakeToHopperCmd);
+    operatorController.a().whileTrue(intakeToHopperCmd);
 
-    testController.b().onTrue(autoLaunchCmd);
+    operatorController.b().onTrue(autoLaunchCmd);
 
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
@@ -386,7 +386,7 @@ public class RobotContainer {
 
     operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
         driveAndManualShootCmd);
-    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).whileTrue(
+    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
         driveAndAutoShootCmd);
 
     // Cancel all driveSub commands, returning manual control

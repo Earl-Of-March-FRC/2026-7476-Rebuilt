@@ -999,6 +999,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Kinematics/AccelerationNorm", accelerationNorm);
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
+    Logger.recordOutput("Drivetrain/HubBotReative", getHubTranslation2dBotRelative());
 
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
@@ -1031,6 +1032,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Is Field Relative Real", isFieldRelativeReal);
 
     SmartDashboard.putBoolean("Is Radial PID at setpoint", isRadialControllerAtSetpoint());
+
+    SmartDashboard.putNumber("Translation from hub X", getHubTranslation2dBotRelative().getX());
+    SmartDashboard.putNumber("Translation from hub Y", getHubTranslation2dBotRelative().getY());
 
     climbAlignmentIndicator.update(getPose(), cameras);
   }
