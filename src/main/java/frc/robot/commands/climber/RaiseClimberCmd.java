@@ -31,13 +31,13 @@ public class RaiseClimberCmd extends Command {
   @Override
   public void initialize() {
     climber.setTargetPosition(target.in(Inches));
-    Logger.recordOutput("RaiseClimberCmd/TargetInches", target.in(Inches));
-    Logger.recordOutput("RaiseClimberCmd/Status", "Initialized");
+    Logger.recordOutput("Climber/Commands/RaiseClimberCmd/TargetInches", target.in(Inches));
+    Logger.recordOutput("Climber/Commands/RaiseClimberCmd/Status", "Initialized");
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("RaiseClimberCmd/MeasuredVelocityInchesPerSec", climber.getVelocity());
+    Logger.recordOutput("Climber/Commands/RaiseClimberCmd/MeasuredVelocityInchesPerSec", climber.getVelocity());
   }
 
   @Override
@@ -45,7 +45,7 @@ public class RaiseClimberCmd extends Command {
     // Hold position on completion; stop only if interrupted
     if (interrupted)
       climber.stop();
-    Logger.recordOutput("RaiseClimberCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Climber/Commands/RaiseClimberCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override

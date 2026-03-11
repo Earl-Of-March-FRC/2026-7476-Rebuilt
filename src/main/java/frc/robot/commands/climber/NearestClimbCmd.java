@@ -57,8 +57,9 @@ public class NearestClimbCmd extends SequentialCommandGroup {
           Arrays.copyOfRange(FieldConstants.kTrenchPathWaypoints, neutralZoneWaypointId, neutralZoneWaypointId + 2)));
     }
 
-    SmartDashboard.putNumber("Pose", drivetrain.getPose().getY());
-    SmartDashboard.putNumber("field width", FieldConstants.kFieldWidthY.div(2).in(Meters));
+    SmartDashboard.putNumber("Climber/Commands/NearestClimbCmd/RobotPoseY", drivetrain.getPose().getY());
+    SmartDashboard.putNumber("Climber/Commands/NearestClimbCmd/FieldHalfWidth",
+        FieldConstants.kFieldWidthY.div(2).in(Meters));
 
     PathPlannerPath climberPath;
     ClimbSide climbSide;
