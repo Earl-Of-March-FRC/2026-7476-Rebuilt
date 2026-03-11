@@ -151,9 +151,16 @@ public class RobotContainer {
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
     } else { // If the robot is simulated, make simulated subs :P
-      final Pose2d startPose = PoseHelpers.getAlliance() == Alliance.Blue ? SimulationConstants.kStartingPose
-          : new Pose2d(FieldConstants.kFieldLengthX.in(Meters) - SimulationConstants.kStartingPose.getX(),
-              FieldConstants.kFieldWidthY.in(Meters) - SimulationConstants.kStartingPose.getY(), Rotation2d.kZero);
+      final Pose2d startPose;
+      if (PoseHelpers.getAlliance() == Alliance.Blue) {
+        startPose = SimulationConstants.kStartingPose;
+      } else {
+        // Red alliance
+        double alternateX = FieldConstants.kFieldLengthX.in(Meters) - SimulationConstants.kStartingPose.getX();
+        double alternateY = FieldConstants.kFieldWidthY.in(Meters) - SimulationConstants.kStartingPose.getY();
+        Rotation2d alternateTheta = SimulationConstants.kStartingPose.getRotation().plus(Rotation2d.k180deg);
+        startPose = new Pose2d(alternateX, alternateY, alternateTheta);
+      }
       final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(
           DriveTrainSimulationConfig.Default()
               .withGyro(SimulationConstants.kSimulatedGyro)
