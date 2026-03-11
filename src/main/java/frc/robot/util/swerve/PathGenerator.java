@@ -415,7 +415,7 @@ public class PathGenerator {
     }
 
     Pose2d firstWaypoint = waypoints.get(0);
-    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), Rotation2d.k180deg);
+    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), Rotation2d.kZero);
 
     Logger.recordOutput("Commands/PathGenerator/driveToTowerFrontAuto/DesiredPose", desiredPose);
 
@@ -442,7 +442,7 @@ public class PathGenerator {
     }
 
     Pose2d lastWaypoint = waypoints.get(waypoints.size() - 1);
-    Pose2d desiredClimbPose = new Pose2d(lastWaypoint.getX(), lastWaypoint.getY(), Rotation2d.k180deg);
+    Pose2d desiredClimbPose = new Pose2d(lastWaypoint.getX(), lastWaypoint.getY(), Rotation2d.kZero);
 
     Logger.recordOutput("Commands/PathGenerator/driveToTowerSideAuto/DesiredPose", desiredClimbPose);
 

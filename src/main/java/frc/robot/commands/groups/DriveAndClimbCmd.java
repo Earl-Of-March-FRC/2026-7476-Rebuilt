@@ -27,7 +27,7 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
   /** Creates a new DriveAndClimbCmd. */
   public DriveAndClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem climber, TowerSide towerSide) {
 
-    final BooleanSupplier climberAtSetpoint = () -> climber.isAtPosition(towerSide.getCorrespondingClimberSide(true));
+    final BooleanSupplier climberAtSetpoint = () -> climber.isAtPosition(towerSide.getCorrespondingClimberSide(false));
 
     final Command moveToTowerFrontCmd = new ParallelCommandGroup(
         PathGenerator.driveToTowerFrontAuto(towerSide),
