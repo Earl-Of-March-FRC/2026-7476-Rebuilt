@@ -145,11 +145,11 @@ public class DriveTrackHubCmd extends Command {
 
     // Only drive if still in launching zone
     if (driveSub.getPoseZone(futurePose) == FieldZones.Launch) {
-      driveSub.runVelocity(speeds, true, false);
+      driveSub.runVelocity(speeds, true, !shouldLockRangeSupplier.getAsBoolean());
       atLimit = false;
     } else {
       driveSub.runVelocity(new ChassisSpeeds(MetersPerSecond.zero(),
-          MetersPerSecond.zero(), omega), true, false);
+          MetersPerSecond.zero(), omega), true, !shouldLockRangeSupplier.getAsBoolean());
       atLimit = true;
     }
 
