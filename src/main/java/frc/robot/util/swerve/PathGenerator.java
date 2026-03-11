@@ -396,6 +396,12 @@ public class PathGenerator {
     };
   }
 
+  /**
+   * Basic command that drives to the first waypoint of the L1 path
+   * 
+   * @param side Side of the tower relative to the driverstation
+   * @return Command
+   */
   public static Command driveToTowerFrontAuto(TowerSide side) {
     PathPlannerPath selectedPath = getTowerPathFromSide(side);
 
@@ -417,6 +423,12 @@ public class PathGenerator {
         .andThen(new DriveStopCmd(drive()));
   }
 
+  /**
+   * Basic command that drives to the last waypoint of the L1 path
+   * 
+   * @param side Side of the tower relative to the driverstation
+   * @return Command
+   */
   public static Command driveToTowerSideAuto(TowerSide side) {
     PathPlannerPath selectedPath = getTowerPathFromSide(side);
 
