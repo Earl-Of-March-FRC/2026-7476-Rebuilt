@@ -469,9 +469,7 @@ public class RobotContainer {
             Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
             true).until(() -> driveSub.isRadialControllerAtSetpoint()),
         new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM),
-        Commands.defer(
-            () -> new NearestClimbCmd(driveSub, climberSub),
-            Set.of(driveSub, climberSub))));
+        new NearestClimbCmd(driveSub, climberSub)));
 
     autoChooser.addOption("Align to Climb",
         Commands.defer(
@@ -479,9 +477,7 @@ public class RobotContainer {
             Set.of(driveSub)));
 
     autoChooser.addOption("Align to Tower Then Climb",
-        Commands.defer(
-            () -> new NearestClimbCmd(driveSub, climberSub),
-            Set.of(driveSub, climberSub)));
+        new NearestClimbCmd(driveSub, climberSub));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
