@@ -23,6 +23,9 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
+/**
+ * Drives to the corresponding tower side and climbs
+ */
 public class DriveAndClimbCmd extends SequentialCommandGroup {
   /** Creates a new DriveAndClimbCmd. */
   public DriveAndClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem climber, TowerSide towerSide) {
