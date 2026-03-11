@@ -6,15 +6,15 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ClimbSide;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberSide;
 
 public class PullClimberCmd extends Command {
 
   private final ClimberSubsystem climber;
   private final DoubleSupplier speed;
-  public final ClimbSide side;
+  public final ClimberSide side;
 
-  public PullClimberCmd(ClimberSubsystem climber, DoubleSupplier speed, ClimbSide climbSide) {
+  public PullClimberCmd(ClimberSubsystem climber, DoubleSupplier speed, ClimberSide climbSide) {
     this.climber = climber;
     this.speed = speed;
     this.side = climbSide;

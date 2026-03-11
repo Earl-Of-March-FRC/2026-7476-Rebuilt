@@ -289,6 +289,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
     resetPose(SimulationConstants.kStartingPose);
   }
 
+  public void stop() {
+    for (SwerveModule module : modules) {
+      module.setDesiredState(new SwerveModuleState(0, module.getState().angle));
+    }
+  }
+
   /**
    * Sets desired states for all swerve modules.
    * 

@@ -15,6 +15,8 @@ public interface ClimberMotorInterface {
 
   double getCurrent();
 
+  boolean isAtPosition();
+
   default void simulationPeriodic() {
   };
 }

@@ -523,7 +523,6 @@ public final class Constants {
     public static final double kMotorRaiseSpeed = 0.5;
     public static final double kMotorHookSpeed = 0.5;
 
-    public static final double kPositionToleranceInches = 0.5;
     public static final double kSettledVelocityThresholdInchesPerSec = 0.25; // arms have stopped moving into raise
                                                                              // position
     public static final double kStallVelocityThresholdInchesPerSec = 0.1; // arms have stalled on bar during pull
@@ -627,7 +626,7 @@ public final class Constants {
     public static final double kSimulatedCoefficentOfFriction = COTS.WHEELS.COLSONS.cof;
     public static final int kGearRatioLevel = 2;
 
-    public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromRotations(Math.PI));
+    public static final Pose2d kStartingPose = new Pose2d(4.4, 0.6, Rotation2d.fromRadians(Math.PI));
 
     // Whether the bump should have defined collision
     public static final boolean kSimBumpCollision = false;

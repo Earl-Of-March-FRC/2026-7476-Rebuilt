@@ -5,7 +5,8 @@
 package frc.robot;
 
 import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ClimbSide;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberSide;
+import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
@@ -15,6 +16,7 @@ import frc.robot.subsystems.Drivetrain.SwerveModule;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
@@ -31,8 +33,11 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -55,10 +60,12 @@ import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.climber.NearestClimbCmd;
 import frc.robot.commands.climber.PullClimberCmd;
 import frc.robot.commands.climber.RaiseClimberCmd;
+import frc.robot.commands.drivetrain.AlignTowerCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
@@ -144,13 +151,16 @@ public class RobotContainer {
               Constants.DriveConstants.kBackRightChassisAngularOffset)
       }, gyro);
     } else { // If the robot is simulated, make simulated subs :P
+      final Pose2d startPose = PoseHelpers.getAlliance() == Alliance.Blue ? SimulationConstants.kStartingPose
+          : new Pose2d(FieldConstants.kFieldLengthX.in(Meters) - SimulationConstants.kStartingPose.getX(),
+              FieldConstants.kFieldWidthY.in(Meters) - SimulationConstants.kStartingPose.getY(), Rotation2d.kZero);
       final SwerveDriveSimulation simulatedSwerveDrive = new SwerveDriveSimulation(
           DriveTrainSimulationConfig.Default()
               .withGyro(SimulationConstants.kSimulatedGyro)
               .withSwerveModule(SimulationConstants.kSwerveModuleSimConfig)
               .withTrackLengthTrackWidth(SwerveConfig.kWheelBase, SwerveConfig.kTrackWidth)
               .withBumperSize(SwerveConfig.kBumperLength, SwerveConfig.kBumperWidth),
-          SimulationConstants.kStartingPose);
+          startPose);
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
 
@@ -211,9 +221,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("Nearest Climb", PathGenerator.loadL1ClimbCommand());
     NamedCommands.registerCommand("Raise Climber", new RaiseClimberCmd(climberSub, ClimberConstants.kRaisePosition));
     NamedCommands.registerCommand("Pull Climber (Left)",
-        new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimbSide.Left));
+        new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimberSide.Left));
     NamedCommands.registerCommand("Pull Climber (Right)",
-        new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimbSide.Right));
+        new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimberSide.Right));
     NamedCommands.registerCommand("Cross Bump", PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints));
     NamedCommands.registerCommand("Cross Trench", PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints));
 
@@ -307,10 +317,12 @@ public class RobotContainer {
 
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3, ClimbSide.Left));
+            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3,
+            ClimberSide.Left));
     testController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3, ClimbSide.Right));
+            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3,
+            ClimberSide.Right));
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
         this::getDriverVx,
@@ -354,12 +366,12 @@ public class RobotContainer {
     driverController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
             () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
-            ClimbSide.Left));
+            ClimberSide.Left));
 
     driverController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
             () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
-            ClimbSide.Right));
+            ClimberSide.Right));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
@@ -477,8 +489,14 @@ public class RobotContainer {
             () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
             Set.of(driveSub)));
 
-    autoChooser.addOption("Align to Tower Then Climb",
-        new NearestClimbCmd(driveSub, climberSub));
+    // autoChooser.addOption("Align to Tower Then Climb",
+    // new NearestClimbCmd(driveSub, climberSub));
+
+    autoChooser.addOption("Align to Tower Left Then Climb",
+        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
+
+    autoChooser.addOption("Align to Tower Right Then Climb",
+        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }

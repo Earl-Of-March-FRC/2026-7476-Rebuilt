@@ -29,11 +29,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
+import frc.robot.commands.drivetrain.DriveStopCmd;
+import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.PoseHelpers;
 import java.util.Arrays;
@@ -376,6 +379,63 @@ public class PathGenerator {
 
     // Since AutoBuilder is configured, we can use it to build pathfinding commands
     return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, AutoConstants.L1ClimbConstraints);
+  }
+
+  /**
+   * Gets the corresponding path for the tower side
+   * 
+   * @param side Tower side relative to the driverstation
+   * @return {@code PathPlannerPath} containing waypoints to the tower
+   * @apiNote These paths are not on the fly. They are the premade paths made
+   *          using the Path Planner app
+   */
+  public static PathPlannerPath getTowerPathFromSide(TowerSide side) {
+    return switch (side) {
+      case Left -> AutoConstants.depotClimbPath;
+      case Right -> AutoConstants.outpostClimbPath;
+    };
+  }
+
+  public static Command driveToTowerFrontAuto(TowerSide side) {
+    PathPlannerPath selectedPath = getTowerPathFromSide(side);
+
+    if (selectedPath == null) {
+      return new PrintCommand("Selected path for driveToTowerSideAuto was null.");
+    }
+
+    List<Pose2d> waypoints = selectedPath.getPathPoses();
+    if (waypoints.isEmpty()) {
+      return new PrintCommand("Selected path for driveToTowerSideAuto was empty.");
+    }
+
+    Pose2d firstWaypoint = waypoints.get(0);
+    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), Rotation2d.k180deg);
+
+    Logger.recordOutput("Commands/PathGenerator/driveToTowerFrontAuto/DesiredPose", desiredPose);
+
+    return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  public static Command driveToTowerSideAuto(TowerSide side) {
+    PathPlannerPath selectedPath = getTowerPathFromSide(side);
+
+    if (selectedPath == null) {
+      return new PrintCommand("Selected path for driveToTowerSideAuto was null.");
+    }
+
+    List<Pose2d> waypoints = selectedPath.getPathPoses();
+    if (waypoints.isEmpty()) {
+      return new PrintCommand("Selected path for driveToTowerSideAuto was empty.");
+    }
+
+    Pose2d lastWaypoint = waypoints.get(waypoints.size() - 1);
+    Pose2d desiredClimbPose = new Pose2d(lastWaypoint.getX(), lastWaypoint.getY(), Rotation2d.k180deg);
+
+    Logger.recordOutput("Commands/PathGenerator/driveToTowerSideAuto/DesiredPose", desiredClimbPose);
+
+    return AutoBuilder.pathfindToPoseFlipped(desiredClimbPose, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
   }
 
   /**

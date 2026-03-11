@@ -81,10 +81,10 @@ public class ClimbAlignCmd extends Command {
       yController.setSetpoint(targetPose.getY());
       headingController.setSetpoint(targetPose.getRotation().getRadians());
 
-      Logger.recordOutput("ClimbAlign/TargetPose", targetPose);
-      Logger.recordOutput("ClimbAlign/Status", "Aligning");
+      Logger.recordOutput("Commands/ClimbAlign/TargetPose", targetPose);
+      Logger.recordOutput("Commands/ClimbAlign/Status", "Aligning");
     } else {
-      Logger.recordOutput("ClimbAlign/Status", "No target found");
+      Logger.recordOutput("Commands/ClimbAlign/Status", "No target found");
     }
   }
 
@@ -116,18 +116,18 @@ public class ClimbAlignCmd extends Command {
         false, // not manual X
         false); // not manual Y
 
-    Logger.recordOutput("ClimbAlign/CurrentPose", current);
-    Logger.recordOutput("ClimbAlign/TranslationError/X", targetPose.getX() - current.getX());
-    Logger.recordOutput("ClimbAlign/TranslationError/Y", targetPose.getY() - current.getY());
-    Logger.recordOutput("ClimbAlign/HeadingError",
+    Logger.recordOutput("Commands/ClimbAlign/CurrentPose", current);
+    Logger.recordOutput("Commands/ClimbAlign/TranslationError/X", targetPose.getX() - current.getX());
+    Logger.recordOutput("Commands/ClimbAlign/TranslationError/Y", targetPose.getY() - current.getY());
+    Logger.recordOutput("Commands/ClimbAlign/HeadingError",
         Math.toDegrees(targetPose.getRotation().getRadians() - current.getRotation().getRadians()));
-    Logger.recordOutput("ClimbAlign/AtSetpoint", isAtSetpoint());
+    Logger.recordOutput("Commands/ClimbAlign/AtSetpoint", isAtSetpoint());
   }
 
   @Override
   public void end(boolean interrupted) {
     driveSub.runVelocity(new ChassisSpeeds(0, 0, 0)); // Stop the robot
-    Logger.recordOutput("ClimbAlign/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/ClimbAlign/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override
