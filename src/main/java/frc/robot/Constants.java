@@ -313,13 +313,13 @@ public final class Constants {
         kTrenchAngularAcceleration);
 
     // To be used by PathPlanner
-    public static final double kPTranslationController = 1.5;
-    public static final double kITranslationController = 0.75;
-    public static final double kDTranslationController = 0.25;
+    public static final double kPTranslationController = 0.5;
+    public static final double kITranslationController = 0.01;
+    public static final double kDTranslationController = 0.0;
 
-    public static final double kPThetaController = 1;
+    public static final double kPThetaController = 5;
     public static final double kIThetaController = 0;
-    public static final double kDThetaController = 0;
+    public static final double kDThetaController = 0.15;
 
     // Angular offsets of the modules relative to the chassis in radians
     public static final Angle kFrontLeftChassisAngularOffset = Radians.of(-Math.PI / 2);

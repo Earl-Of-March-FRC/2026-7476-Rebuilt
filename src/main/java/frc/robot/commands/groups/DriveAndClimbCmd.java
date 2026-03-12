@@ -29,6 +29,8 @@ import frc.robot.util.swerve.PathGenerator;
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 /**
  * Drives to the corresponding tower side and climbs
+ * 
+ * @deprecated This command is currently put on hold.
  */
 public class DriveAndClimbCmd extends SequentialCommandGroup {
   /** Creates a new DriveAndClimbCmd. */
