@@ -18,6 +18,7 @@ import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Rotation;
 
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -31,6 +32,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.fasterxml.jackson.databind.util.Named;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathfindThenFollowPath;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -234,6 +236,22 @@ public class RobotContainer {
         new PullClimberCmd(climberSub, () -> ClimberConstants.kMotorHookSpeed, ClimberSide.Right));
     NamedCommands.registerCommand("Cross Bump", PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints));
     NamedCommands.registerCommand("Cross Trench", PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints));
+
+    // NamedCommands.registerCommand("Launch Once Connecting Path",
+    // AutoBuilder.pathfindToPose(
+    // new Pose2d(AutoConstants.depotStartPoint, new Rotation2d(0, 0)),
+    // AutoConstants.L1ClimbConstraints));
+
+    NamedCommands.registerCommand("Intake Left Connecting Path",
+        Commands.defer(
+            () -> AutoBuilder.pathfindToPose(new Pose2d(AutoConstants.intakeLeftStartPoint, new Rotation2d(0, 0)),
+                AutoConstants.L1ClimbConstraints),
+            Set.of(driveSub)));
+
+    NamedCommands.registerCommand("Launch Once Connecting Path",
+        Commands.defer(
+            () -> AutoBuilder.pathfindThenFollowPath(AutoConstants.depotClimbPath, AutoConstants.L1ClimbConstraints),
+            Set.of(driveSub)));
 
     configureBindings();
     configureAutos();
