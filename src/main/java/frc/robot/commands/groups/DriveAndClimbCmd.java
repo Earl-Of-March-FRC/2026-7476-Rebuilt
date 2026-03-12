@@ -5,6 +5,9 @@
 package frc.robot.commands.groups;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -18,6 +21,7 @@ import frc.robot.commands.drivetrain.DriveStopCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
@@ -32,6 +36,19 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
 
     final BooleanSupplier climberAtSetpoint = () -> climber.isAtPosition(towerSide.getCorrespondingClimberSide(false));
 
+    final Supplier<FieldZones> currentBotZone = () -> {
+      Logger.recordOutput("Commands/DriveAndClimbCmd/MeasuredBotZone", drivetrain.getCurrentBotZone());
+      return drivetrain.getCurrentBotZone();
+    };
+
+    final BooleanSupplier canRaiseClimber = () -> currentBotZone.get() == FieldZones.Launch
+        || currentBotZone.get() == FieldZones.Alliance;
+
+    // Move into the alliance zone before trying to raise climbers
+    final Command moveIntoZoneAllianceZoneCmd = PathGenerator.driveToTowerFrontAuto(towerSide)
+        .onlyWhile(() -> !canRaiseClimber.getAsBoolean());
+
+    // Already in alliance zone, can start moving up climbers
     final Command moveToTowerFrontCmd = new ParallelDeadlineGroup(
         new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
             .until(climberAtSetpoint),
@@ -42,6 +59,7 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
         new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition));
 
     addCommands(
+        moveIntoZoneAllianceZoneCmd,
         moveToTowerFrontCmd,
         moveToTowerSideCmd,
         // new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)

@@ -20,6 +20,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
@@ -63,7 +64,8 @@ public class ClimberSubsystem extends SubsystemBase {
 
     // Percent flags/variables are for simulation purposes
     private boolean usingPercent = false;
-    private double setpoint = 0;
+    private double setpointPercent = 0;
+    private Distance setpoint = Inches.of(0);
     private double lastSimulationSeconds = 0; // Kept as double for simulation efficency
 
     public SparkMaxClimberMotor(SparkMax sparkMax, SparkMaxConfig config) {
@@ -81,20 +83,20 @@ public class ClimberSubsystem extends SubsystemBase {
     public void setPercentOutput(double percent) {
       sparkMax.set(percent);
       usingPercent = true;
-      setpoint = percent;
+      setpointPercent = percent;
     }
 
     @Override
     public void setTargetPosition(double inches) {
       usingPercent = false;
-      setpoint = inches;
+      setpoint = Inches.of(inches);
       sparkMax.getClosedLoopController().setSetpoint(inches, SparkMax.ControlType.kPosition,
           ClosedLoopSlot.kSlot0);
     }
 
     @Override
     public boolean isAtPosition() {
-      return Math.abs(getPosition() - setpoint) <= ClimberConstants.kPositionTolerance.in(Inches);
+      return getPosition().minus(setpoint).abs(Inches) <= ClimberConstants.kPositionTolerance.in(Inches);
     }
 
     @Override
@@ -103,19 +105,19 @@ public class ClimberSubsystem extends SubsystemBase {
     }
 
     @Override
-    public double getVelocity() {
+    public LinearVelocity getVelocity() {
       if (RobotBase.isSimulation() && sparkMaxSim != null) {
-        return sparkMaxSim.getVelocity();
+        return InchesPerSecond.of(sparkMaxSim.getVelocity());
       }
-      return sparkMax.getEncoder().getVelocity();
+      return InchesPerSecond.of(sparkMax.getEncoder().getVelocity());
     }
 
     @Override
-    public double getPosition() {
+    public Distance getPosition() {
       if (RobotBase.isSimulation() && sparkMaxSim != null) {
-        return sparkMaxSim.getPosition();
+        return Inches.of(sparkMaxSim.getPosition());
       }
-      return sparkMax.getEncoder().getPosition();
+      return Inches.of(sparkMax.getEncoder().getPosition());
     }
 
     @Override
@@ -145,10 +147,10 @@ public class ClimberSubsystem extends SubsystemBase {
       final LinearVelocity velocity;
 
       if (usingPercent) {
-        velocity = SimulationConstants.kSimulatedMaxClimberSpeed.times(setpoint);
+        velocity = SimulationConstants.kSimulatedMaxClimberSpeed.times(setpointPercent);
       } else {
-        final double errorPosition = setpoint - getPosition();
-        final LinearVelocity desiredVelocity = InchesPerSecond.of(errorPosition / deltaTime);
+        final Distance errorPosition = setpoint.minus(getPosition());
+        final LinearVelocity desiredVelocity = InchesPerSecond.of(errorPosition.in(Inches) / deltaTime);
         velocity = (LinearVelocity) UnitHelpers.clamp(desiredVelocity,
             SimulationConstants.kSimulatedMaxClimberSpeed.times(-1),
             SimulationConstants.kSimulatedMaxClimberSpeed);
@@ -201,13 +203,13 @@ public class ClimberSubsystem extends SubsystemBase {
     }
 
     @Override
-    public double getVelocity() {
-      return talonFX.getVelocity().getValueAsDouble();
+    public LinearVelocity getVelocity() {
+      return InchesPerSecond.of(talonFX.getVelocity().getValueAsDouble());
     }
 
     @Override
-    public double getPosition() {
-      return talonFX.getPosition().getValueAsDouble();
+    public Distance getPosition() {
+      return Inches.of(talonFX.getPosition().getValueAsDouble());
     }
 
     @Override
@@ -240,7 +242,7 @@ public class ClimberSubsystem extends SubsystemBase {
   public void periodic() {
     Logger.recordOutput("Climber/Left/Measured/Position/Inches", leftMotor.getPosition());
     Logger.recordOutput("Climber/Left/Measured/Position/Pose3d",
-        new Pose3d(0, 0, Inches.of(leftMotor.getPosition()).in(Meters), Rotation3d.kZero));
+        new Pose3d(0, 0, leftMotor.getPosition().in(Meters), Rotation3d.kZero));
     Logger.recordOutput("Climber/Left/Measured/VelocityInchesPerSec", leftMotor.getVelocity());
     Logger.recordOutput("Climber/Left/Measured/AppliedOutput", leftMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Left/Measured/CurrentAmps", leftMotor.getCurrent());
@@ -248,7 +250,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
     Logger.recordOutput("Climber/Right/Measured/Position/Inches", rightMotor.getPosition());
     Logger.recordOutput("Climber/Right/Measured/Position/Pose3d",
-        new Pose3d(0, 0, Inches.of(rightMotor.getPosition()).in(Meters), Rotation3d.kZero));
+        new Pose3d(0, 0, rightMotor.getPosition().in(Meters), Rotation3d.kZero));
     Logger.recordOutput("Climber/Right/Measured/VelocityInchesPerSec", rightMotor.getVelocity());
     Logger.recordOutput("Climber/Right/Measured/AppliedOutput", rightMotor.getAppliedOutput());
     Logger.recordOutput("Climber/Right/Measured/CurrentAmps", rightMotor.getCurrent());
@@ -284,10 +286,6 @@ public class ClimberSubsystem extends SubsystemBase {
     return leftMotor.isAtPosition() && rightMotor.isAtPosition();
   }
 
-  public double getVelocity() {
-    return leftMotor.getVelocity();
-  }
-
   public void setPercentOutput(double percent, ClimberSide side) {
     Logger.recordOutput("Climber/" + side.name() + "/Setpoint/PercentOutput", percent);
     if (side == ClimberSide.Left) {
@@ -310,9 +308,9 @@ public class ClimberSubsystem extends SubsystemBase {
 
   public LinearVelocity getVelocity(ClimberSide side) {
     if (side == ClimberSide.Left) {
-      return InchesPerSecond.of(leftMotor.getVelocity());
+      return leftMotor.getVelocity();
     } else {
-      return InchesPerSecond.of(rightMotor.getVelocity());
+      return rightMotor.getVelocity();
     }
   }
 

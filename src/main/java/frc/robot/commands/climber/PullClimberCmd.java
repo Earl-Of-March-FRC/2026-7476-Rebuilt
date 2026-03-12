@@ -23,14 +23,13 @@ public class PullClimberCmd extends Command {
 
   @Override
   public void initialize() {
-    Logger.recordOutput("Climber/Commands/PullClimberCmd/Status", "Initialized");
-    Logger.recordOutput("Climber/Commands/PullClimberCmd/TargetPercentOutput", speed);
+    Logger.recordOutput("Commands/PullClimberCmd/Status", "Initialized");
+    Logger.recordOutput("Commands/PullClimberCmd/TargetPercentOutput", speed);
   }
 
   @Override
   public void execute() {
     climber.setPercentOutput(speed.getAsDouble(), side);
-    Logger.recordOutput("Commands/PullClimberCmd/MeasuredVelocityInchesPerSec", climber.getVelocity());
   }
 
   @Override
