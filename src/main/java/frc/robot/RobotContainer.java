@@ -254,7 +254,7 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
     // Drive while tracking hub and launching balls based on an additional trigger
-    // an additional trigger can used to lock distance
+    // another trigger can used to lock distance
     Command driveAndManualShootCmd = new DriveAndLaunchCmd(
         driveSub,
         indexerSub,
@@ -316,11 +316,12 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    // driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
-    // IndexerConstants.kWheelSpeed,
-    // () -> IndexerConstants.kTreadmillSpeed));
+    operatorController.rightBumper().toggleOnTrue(
+        new PulsingTreadmillCmd(indexerSub, -IndexerConstants.kWheelSpeed,
+            -IndexerConstants.kTreadmillSpeed)
+            .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1))));
 
-    // driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
+    // operatorController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
     // -IndexerConstants.kWheelSpeed,
     // () -> -IndexerConstants.kTreadmillSpeed));
 
