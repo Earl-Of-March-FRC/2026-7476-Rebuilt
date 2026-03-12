@@ -8,11 +8,11 @@ import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
-import frc.robot.util.launcher.LaunchHelpers;
 
 public class PassAndIndexCmd extends ParallelCommandGroup {
   /**
@@ -33,6 +33,6 @@ public class PassAndIndexCmd extends ParallelCommandGroup {
             : 0,
         () -> -IndexerConstants.kTreadmillLaunchIndexPercent),
         new LauncherCmd(launcherAndIntakeSub,
-            () -> LaunchHelpers.calculatePassRPM()));
+            () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
   }
 }

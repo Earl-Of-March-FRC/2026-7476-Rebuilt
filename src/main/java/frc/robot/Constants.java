@@ -182,6 +182,8 @@ public final class Constants {
 
     public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
 
+    public static final AngularVelocity kPassRPMSetpoint = RPM.of(4500);
+
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
 
