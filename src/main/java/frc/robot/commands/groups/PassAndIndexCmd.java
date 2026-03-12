@@ -29,9 +29,9 @@ public class PassAndIndexCmd extends ParallelCommandGroup {
     addCommands(new PulsingTreadmillCmd(
         indexerSub,
         () -> launchSupplier.getAsBoolean()
-            ? IndexerConstants.kWheelLaunchIndexPercent
+            ? -IndexerConstants.kWheelLaunchIndexPercent
             : 0,
-        () -> IndexerConstants.kTreadmillLaunchIndexPercent),
+        () -> -IndexerConstants.kTreadmillLaunchIndexPercent),
         new LauncherCmd(launcherAndIntakeSub,
             () -> LaunchHelpers.calculatePassRPM()));
   }
