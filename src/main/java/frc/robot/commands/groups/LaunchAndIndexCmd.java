@@ -37,9 +37,9 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
     addCommands(new PulsingTreadmillCmd(
         indexerSub,
         () -> launchSupplier.getAsBoolean()
-            ? IndexerConstants.kWheelLaunchIndexPercent
+            ? -IndexerConstants.kWheelLaunchIndexPercent
             : 0,
-        () -> IndexerConstants.kTreadmillLaunchIndexPercent),
+        () -> -IndexerConstants.kTreadmillLaunchIndexPercent),
         new LauncherCmd(launcherAndIntakeSub,
             () -> LaunchHelpers.calculateHubLaunchSetpoints(leadShots).flywheelSpeed()));
   }

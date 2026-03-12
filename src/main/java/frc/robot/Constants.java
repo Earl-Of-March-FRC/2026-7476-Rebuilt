@@ -13,6 +13,8 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
@@ -148,10 +150,14 @@ public final class Constants {
     private static final double kRPMCurveA = 43.5;
     private static final double kRPMCurveB = 119;
     private static final double kRPMCurveC = 2372;
+    // For fine tuning due to small changes
+    // TODO replace with final value after testing
+    private static final LoggedNetworkNumber kRPMCurveMultiplier = new LoggedNetworkNumber("/Tuning/RPMCurveMultiplier",
+        1);
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
       double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
-      return RPM.of(rpm);
+      return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
     };
 
     public static final Distance kTestLaunchRadius = Meters.of(2.0);
@@ -167,14 +173,14 @@ public final class Constants {
     public static final Current kSmartCurrentLimit = Amps.of(40);
 
     public static final double kPIDLauncherControllerP = 1.2e-4;
-    public static final double kPIDLauncherControllerI = 0;
+    public static final double kPIDLauncherControllerI = 1e-10;
     public static final double kPIDLauncherControllerD = 1e-4;
     public static final double kPIDLauncherControllerFF = (1.0
-        / (NeoMotorConstants.kFreeSpeed.in(RPM) * kMotorReduction)) * 1.022;
+        / (NeoMotorConstants.kFreeSpeed.in(RPM) * kMotorReduction)) * 1.00;
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
-    public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(400);
+    public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
@@ -462,8 +468,11 @@ public final class Constants {
     public static final double kWheelStoreIndexPercent = 0.5;
 
     // Treadmill pulse timing
-    public static final double kPulseOnSeconds = 0.15;
-    public static final double kPulseOffSeconds = 0.05;
+    public static final double kPulseDutyCycle = 0.9;
+    public static final double kPulsePeriod = 0.2;
+
+    public static final double kPulseOnSeconds = kPulsePeriod * kPulseDutyCycle;
+    public static final double kPulseOffSeconds = kPulsePeriod * (1 - kPulseDutyCycle);
 
     public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
@@ -543,6 +552,27 @@ public final class Constants {
           .outputRange(kOutputRangeMin, kOutputRangeMax);
     }
 
+  }
+
+  public static final class ClimbAlignmentConstants {
+    public static final int[] kBlueTowerTagIds = { 31, 32 };
+    public static final int[] kRedTowerTagIds = { 15, 16 };
+
+    // TODO: Measure on real field — approach distance from Tower face to robot
+    // center at hook engagement
+    public static final double kStandoffDistanceMeters = 0.6;
+
+    // TODO: Measure on real robot — lateral distance from robot center to side hook
+    // contact point
+    public static final double kHookLateralOffsetMeters = 0.25;
+
+    // GO thresholds
+    public static final double kTranslationToleranceMeters = 0.15;
+    public static final double kHeadingToleranceDegrees = 5.0;
+
+    // Tag detection quality thresholds
+    public static final double kMinTagArea = 0.1;
+    public static final double kMaxAmbiguity = 0.5;
   }
 
   public static final class GameModelConstants {
@@ -708,7 +738,7 @@ public final class Constants {
     public static final Distance kAllianceZoneXLength = Inches.of(156.61);
     // Defines a zone starting from our driverstation where launching commands are
     // accepted (needs testing)
-    public static final Distance kAcceptedLaunchingZone = kAllianceZoneXLength.minus(Meters.of(1.0));
+    public static final Distance kAcceptedLaunchingZone = kAllianceZoneXLength.minus(Inches.of(27 / Math.sqrt(2)));
     // From drivestation wall to drivestation wall
     public static final Distance kFieldLengthX = Meter.of(kfieldLayout.getFieldLength());
     // Parallel distance from edge to edge

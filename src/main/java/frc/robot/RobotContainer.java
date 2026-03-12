@@ -39,6 +39,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
@@ -109,9 +110,11 @@ public class RobotContainer {
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigLeft),
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigRight));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
@@ -162,9 +165,11 @@ public class RobotContainer {
 
       climberSub = new ClimberSubsystem(
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType)),
+              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigLeft),
           new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType)));
+              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+              ClimberConstants.kConfigRight));
       indexerSub = new IndexerSubsystem(
           new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
           new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
@@ -231,6 +236,8 @@ public class RobotContainer {
       }
     };
 
+    Logger.recordOutput("DriveTrain/LockSupplier", distanceLockSupplier.getAsBoolean());
+
     BooleanSupplier launchSupplier = driverController
         .rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean;
 
@@ -274,15 +281,19 @@ public class RobotContainer {
 
     Command passCommand = new PassAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier);
 
+    Command intakeToHopperCmd = new PulsingTreadmillCmd(indexerSub, IndexerConstants.kWheelSpeed,
+        IndexerConstants.kTreadmillSpeed)
+        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
+
     driveSub.setDefaultCommand(driveCmd);
 
     indexerSub.setDefaultCommand(
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    testController.a().whileTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(400)));
+    operatorController.a().whileTrue(intakeToHopperCmd);
 
-    testController.b().onTrue(autoLaunchCmd);
+    operatorController.b().toggleOnTrue(autoLaunchCmd);
 
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
@@ -329,12 +340,12 @@ public class RobotContainer {
 
     driverController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 0.3,
+            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
             ClimbSide.Left));
 
     driverController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 0.3,
+            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
             ClimbSide.Right));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
@@ -381,9 +392,9 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).onTrue(
+    operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
         driveAndManualShootCmd);
-    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).whileTrue(
+    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
         driveAndAutoShootCmd);
 
     operatorController.leftBumper().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral)

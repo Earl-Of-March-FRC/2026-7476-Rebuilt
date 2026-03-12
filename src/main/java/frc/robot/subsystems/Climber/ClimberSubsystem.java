@@ -10,7 +10,7 @@ import com.revrobotics.ResetMode;
 import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkMax;
-
+import com.revrobotics.spark.config.SparkMaxConfig;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -45,11 +45,9 @@ public class ClimberSubsystem extends SubsystemBase {
     private double setpoint = 0;
     private double lastSimulationSeconds = 0; // Kept as double for simulation efficency
 
-    public SparkMaxClimberMotor(SparkMax sparkMax) {
+    public SparkMaxClimberMotor(SparkMax sparkMax, SparkMaxConfig config) {
       this.sparkMax = sparkMax;
-      sparkMax.configure(ClimberConstants.kConfigLeft, ResetMode.kResetSafeParameters,
-          PersistMode.kNoPersistParameters);
-      sparkMax.configure(ClimberConstants.kConfigRight, ResetMode.kResetSafeParameters,
+      sparkMax.configure(config, ResetMode.kResetSafeParameters,
           PersistMode.kNoPersistParameters);
       if (RobotBase.isSimulation()) {
         this.sparkMaxSim = new SparkMaxSim(sparkMax, SimulationConstants.kSimulatedSparkMaxClimberMotor);

@@ -69,6 +69,7 @@ import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
+import frc.robot.util.vision.ClimbAlignmentIndicator;
 import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
 
@@ -99,6 +100,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   // Current pose of the robot
   private Pose2d robotPose = new Pose2d();
   private Pose2d visionlessPose = new Pose2d();
+
+  private final ClimbAlignmentIndicator climbAlignmentIndicator = new ClimbAlignmentIndicator();
 
   public Supplier<Boolean> isUsingHighVelocities = () -> true;
 
@@ -1000,6 +1003,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Kinematics/AccelerationNorm", accelerationNorm);
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
+    Logger.recordOutput("Drivetrain/HubBotReative", getHubTranslation3dBotRelative());
 
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
@@ -1032,6 +1036,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Is Field Relative Real", isFieldRelativeReal);
 
     SmartDashboard.putBoolean("Is Radial PID at setpoint", isRadialControllerAtSetpoint());
+
+    SmartDashboard.putNumber("Translation from hub X", getHubTranslation3dBotRelative().getX());
+    SmartDashboard.putNumber("Translation from hub Y", getHubTranslation3dBotRelative().getY());
+
+    climbAlignmentIndicator.update(getPose(), cameras);
   }
 
   @Override
