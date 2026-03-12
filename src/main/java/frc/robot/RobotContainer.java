@@ -236,7 +236,7 @@ public class RobotContainer {
       }
     };
 
-    Logger.recordOutput("DriveTrain/LockSupplier", distanceLockSupplier.getAsBoolean());
+    Logger.recordOutput("Drivetrain/LockSupplier", distanceLockSupplier.getAsBoolean());
 
     BooleanSupplier launchSupplier = driverController
         .rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean;
