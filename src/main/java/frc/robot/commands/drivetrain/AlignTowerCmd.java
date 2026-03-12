@@ -20,6 +20,8 @@ import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 
 public class AlignTowerCmd extends Command {
 
+  private boolean leftSide;
+  private boolean rightSide;
   private final DrivetrainSubsystem driveSub;
 
   private final PIDController translationController = new PIDController(
@@ -38,6 +40,9 @@ public class AlignTowerCmd extends Command {
     this.driveSub = driveSub;
     addRequirements(driveSub);
 
+    this.leftSide = leftSide;
+    this.rightSide = rightSide;
+
     // Continuous input in radians — handles the -π/+π wraparound correctly
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
     rotationController.setTolerance(AutoConstants.kAlignRotationTolerance.in(Radians));
@@ -55,7 +60,9 @@ public class AlignTowerCmd extends Command {
   public void execute() {
     Pose2d currentPose = driveSub.getPose();
 
-    Pose2d targetPose = driveSub.getHubTargetPose(towerSide); // Replace to a
+    Pose2d targetPose;
+
+    targetPose = driveSub.getTowerTargetPose(leftSide, rightSide); // Replace to a
 
     // Calculate raw PID outputs
     double xOutput = translationController.calculate(currentPose.getX(), targetPose.getX());

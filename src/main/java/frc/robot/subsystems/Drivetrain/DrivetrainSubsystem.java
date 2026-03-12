@@ -9,6 +9,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import edu.wpi.first.math.Vector;
 
 import java.io.IOException;
@@ -1059,6 +1061,30 @@ public class DrivetrainSubsystem extends SubsystemBase {
     double targetY = currentPose.getY();
 
     return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));
+  }
+
+  public Pose2d getTowerTargetPose(boolean isLeftSide, boolean isRightSide) {
+
+    boolean isRedAlliance = PoseHelpers.getAlliance() == Alliance.Red;
+
+    Distance width = Inches.of(81);
+    Distance length = Inches.of(165);
+    Distance towerWidth = Inches.of(32.25);
+    Distance towerDepth = Inches.of(45);
+
+    Pose2d targetPose;
+
+    if (isRedAlliance) {
+
+      if (isLeftSide) {
+
+      }
+
+    }
+
+    targetPose = new Pose2d(width.in(Inches) / 2, length.in(Inches) - towerDepth.in(Inches),
+        new Rotation2d(Math.PI));
+    return targetPose;
   }
 
 }
