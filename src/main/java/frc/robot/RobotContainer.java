@@ -431,6 +431,9 @@ public class RobotContainer {
     operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
         driveAndAutoShootCmd);
 
+    testController.x().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
+    testController.b().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
+
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(
         Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
