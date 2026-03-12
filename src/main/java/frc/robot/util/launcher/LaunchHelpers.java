@@ -1,17 +1,14 @@
 package frc.robot.util.launcher;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.lang.reflect.Field;
 import java.util.Objects;
-
-import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,11 +16,13 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -160,34 +159,77 @@ public class LaunchHelpers {
    * @param targetDistance The distance from the hub in the X-Y plane
    * @return The ideal wheel speed
    */
-  public static AngularVelocity calculateWheelRPM(Distance targetDistance) {
-    // Use lookup table first, then polynomial regression
-    // int lookupIndex = -1;
-    // for (int i = 0; i < LauncherAndIntakeConstants.kLaunchDistancesLookup.length;
-    // i++) {
-    // Distance tableEntry = LauncherAndIntakeConstants.kLaunchDistancesLookup[i];
-    // double distance = Math.abs(tableEntry.in(Meters) -
-    // targetDistance.in(Meters));
-    // double minDistance = 0;
+  public static AngularVelocity calculateWheelRPM(Distance targetDistance, Distance targetHeight) {
 
-    // if (distance < LauncherAndIntakeConstants.kLaunchLookupTolerance.in(Meters)
-    // &&
-    // distance < minDistance) {
-    // lookupIndex = i;
-    // }
-    // }
+    // kDistanceToRPMCurve is tuned for a 6ft target (the hub), we can calulate the
+    // RPM for other heights if we ignore air resistance
 
-    return LauncherAndIntakeConstants.kDistanceToRPMCurve.apply(targetDistance);
+    // Required RPM for a hub height target
+    AngularVelocity omega0 = LauncherAndIntakeConstants.kDistanceToRPMCurve.apply(targetDistance);
+
+    if (targetHeight.isEquivalent(FieldConstants.kHubHeight)) {
+      return omega0;
+    }
+
+    // if the target is a different height, solve for height as a function of 2d
+    // displacement, and find the distance where the ball will be at hub height.
+    // This distance will result in the correct RPM to reach a height of 0 after the
+    // orignal target distance
+
+    Translation3d intitialVelocity = calculateBallLaunchVelocityVector(omega0);
+
+    double V2d = intitialVelocity.toTranslation2d().getNorm();
+    double Vz = intitialVelocity.getZ();
+
+    // Model z(x) as a quadratic (no air resistance or spin) and solve for the
+    // coefficients with kinematics, then solve z(x) = targetHeight.in(Meters) =>
+    // z(x) - targetHeight.in(Meters) = 0
+
+    double a = -9.81 / 2.0 / (V2d * V2d);
+    double b = Vz / V2d;
+    double c = -targetHeight.in(Meters);
+
+    double discriminant = b * b - 4 * a * c;
+
+    if (Double.isNaN(discriminant) || discriminant < 0) {
+      String msg = "Calculate Wheel RPM: Discriminant is NAN or less than 0: discriminant = " + discriminant;
+      DriverStation.reportError(msg, false);
+      return RPM.zero();
+    }
+
+    // Take larger root
+    double newDistanceMeters = (-b + Math.sqrt(discriminant)) / (2.0 * a);
+
+    return LauncherAndIntakeConstants.kDistanceToRPMCurve.apply(Meters.of(newDistanceMeters));
   }
 
   /**
-   * Calculate the correct RPM to launching at the hub from the <b>current</b>
+   * Calculate the correct RPM for launching at the hub from the <b>current</b>
    * distance
    * 
    * @return The ideal wheel speed
    */
-  public static AngularVelocity calculateWheelRPM() {
-    return calculateWheelRPM(drive().getHubDistance());
+  public static AngularVelocity calculateLaunchRPM() {
+    return calculateWheelRPM(drive().getHubDistance(), FieldConstants.kHubHeight);
+  }
+
+  /**
+   * Calculate the correct RPM for passing from the <b>current</b>
+   * distance
+   * 
+   * @return The ideal wheel speed
+   */
+  public static AngularVelocity calculatePassRPM() {
+    boolean isBlue = PoseHelpers.getAlliance() == Alliance.Blue;
+
+    Distance passTargetX = isBlue ? FieldConstants.kAllianceZoneXLength.div(2)
+        : FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength);
+
+    Distance passTargetDistance = drive().getPose().getMeasureX().minus(passTargetX);
+    // Take absolute value
+    passTargetDistance = Meters.of(Math.abs(passTargetDistance.in(Meters)));
+
+    return calculateWheelRPM(passTargetDistance, Meters.zero());
   }
 
   /**
@@ -207,9 +249,9 @@ public class LaunchHelpers {
     double discriminant = VzMPS * VzMPS - 2 * g * deltaHeightMeters;
 
     if (Double.isNaN(discriminant) || discriminant < 0) {
-      String msg = "Discriminant is NAN or less than 0: discriminant = " + discriminant;
+      String msg = "Calculate Ball Air Time: Discriminant is NAN or less than 0: discriminant = " + discriminant;
       DriverStation.reportError(msg, false);
-      return Seconds.of(0);
+      return Seconds.zero();
     }
 
     double tSeconds = (VzMPS + Math.sqrt(discriminant)) / g;
@@ -271,7 +313,7 @@ public class LaunchHelpers {
    * @return Ball linear velocity as a Translation3d, in mps
    */
   public static Translation3d calculateBallLaunchVelocityVector() {
-    return calculateBallLaunchVelocityVector(calculateWheelRPM());
+    return calculateBallLaunchVelocityVector(calculateLaunchRPM());
   }
 
   /**
@@ -325,17 +367,20 @@ public class LaunchHelpers {
    * Calculate the launch setpoints (flywheel speed and bot heading) to hit a
    * target, optionally applying lead to account for drivetrain velocity
    * 
-   * @param targetBotRelative The target translation relative to the bot
-   * @param applyLead         Whether to apply lead to account for drivetrain
-   *                          velocity
+   * @param targetBotRelative2d The target translation relative to the bot
+   * @param applyLead           Whether to apply lead to account for drivetrain
+   *                            velocity
    * @return The launch setpoints to hit the target
    */
-  public static LaunchSetpoints calculateLaunchSetpoints(Translation2d targetBotRelative, boolean applyLead) {
-    AngularVelocity flywheelSpeed = calculateWheelRPM(Meters.of(targetBotRelative.getNorm()));
+  public static LaunchSetpoints calculateLaunchSetpoints(Translation3d targetBotRelative, boolean applyLead) {
+    Translation2d targetBotRelative2d = targetBotRelative.toTranslation2d();
+
+    AngularVelocity flywheelSpeed = calculateWheelRPM(Meters.of(targetBotRelative2d.getNorm()),
+        targetBotRelative.getMeasureZ());
 
     if (!applyLead) {
       return new LaunchSetpoints(flywheelSpeed,
-          targetBotRelative.getAngle().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
+          targetBotRelative2d.getAngle().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
     }
 
     // Get current velocity
@@ -352,7 +397,7 @@ public class LaunchHelpers {
     // Override pitch to face target
     // Project to 2d, override rotation, then add back z component
     requiredVelocity = new Translation3d(
-        new Translation2d(requiredVelocity.toTranslation2d().getNorm(), targetBotRelative.getAngle()))
+        new Translation2d(requiredVelocity.toTranslation2d().getNorm(), targetBotRelative2d.getAngle()))
         .plus(new Translation3d(0, 0, requiredVelocity.getZ()));
 
     // Logger.recordOutput("Debug/requiredVelocity", requiredVelocity);
@@ -382,6 +427,6 @@ public class LaunchHelpers {
    * @return The launch setpoints to hit the target
    */
   public static LaunchSetpoints calculateHubLaunchSetpoints(boolean applyLead) {
-    return calculateLaunchSetpoints(drive().getHubTranslation2dBotRelative(), applyLead);
+    return calculateLaunchSetpoints(drive().getHubTranslation3dBotRelative(), applyLead);
   }
 }

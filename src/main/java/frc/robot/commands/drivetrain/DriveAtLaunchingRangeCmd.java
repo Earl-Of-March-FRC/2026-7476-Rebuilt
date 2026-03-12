@@ -15,6 +15,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -81,9 +82,11 @@ public class DriveAtLaunchingRangeCmd extends Command {
   @Override
   public void execute() {
 
-    Translation2d toHub = driveSub.getHubTranslation2dBotRelative();
+    Translation3d toHub3d = driveSub.getHubTranslation3dBotRelative();
 
-    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub, leadShots);
+    Translation2d toHub = toHub3d.toTranslation2d();
+
+    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
 
     // Handle edge case where robot is exactly at the hub
     double toHubNorm = toHub.getNorm();
@@ -193,7 +196,7 @@ public class DriveAtLaunchingRangeCmd extends Command {
     Translation2d position = currentPose.getTranslation();
 
     // Initial hub-relative vector
-    Translation2d toHub = driveSub.getHubTranslation2dBotRelative();
+    Translation2d toHub = driveSub.getHubTranslation3dBotRelative().toTranslation2d();
     double radius = toHub.getNorm();
     if (radius < 1e-6) {
       return currentPose;

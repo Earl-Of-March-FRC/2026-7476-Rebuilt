@@ -55,6 +55,7 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
+import frc.robot.commands.groups.PassAndIndexCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -235,7 +236,10 @@ public class RobotContainer {
       }
     };
 
-    Logger.recordOutput("DriveTrain/LockSupplier", distanceLockSupplier.getAsBoolean());
+    Logger.recordOutput("Drivetrain/LockSupplier", distanceLockSupplier.getAsBoolean());
+
+    BooleanSupplier launchSupplier = driverController
+        .rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean;
 
     // Drive while tracking hub and automatically launching balls if we think they
     // will
@@ -257,7 +261,7 @@ public class RobotContainer {
         launcherAndIntakeSub,
         this::getDriverVx,
         this::getDriverVy,
-        driverController.rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean,
+        launchSupplier,
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
@@ -274,6 +278,8 @@ public class RobotContainer {
         () -> true,
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
+
+    Command passCommand = new PassAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier);
 
     Command intakeToHopperCmd = new PulsingTreadmillCmd(indexerSub, IndexerConstants.kWheelSpeed,
         IndexerConstants.kTreadmillSpeed)
@@ -391,6 +397,9 @@ public class RobotContainer {
         driveAndManualShootCmd);
     operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
         driveAndAutoShootCmd);
+
+    operatorController.leftBumper().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral)
+        .toggleOnTrue(passCommand);
 
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(
