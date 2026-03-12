@@ -379,14 +379,14 @@ public class RobotContainer {
     driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub,
         () -> RPM.of(2780)));
 
-    driverController.povLeft()
+    operatorController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
+            () -> (operatorController.getLeftTriggerAxis() - operatorController.getRightTriggerAxis()) * 1,
             ClimberSide.Left));
 
-    driverController.povRight()
+    operatorController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis()) * 1,
+            () -> (operatorController.getLeftTriggerAxis() - operatorController.getRightTriggerAxis()) * 1,
             ClimberSide.Right));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
@@ -433,13 +433,17 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
-        driveAndManualShootCmd);
-    operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
-        driveAndAutoShootCmd);
+    // operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Launch).toggleOnTrue(
+    // driveAndManualShootCmd);
+    // operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() ==
+    // FieldZones.Launch).toggleOnTrue(
+    // driveAndAutoShootCmd);
 
     testController.x().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     testController.b().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
+    driverController.povLeft().whileTrue(new RaiseClimberCmd(climberSub, 0));
+    driverController.povRight().whileTrue(new RaiseClimberCmd(climberSub, ClimberConstants.kRaisePosition));
     operatorController.leftBumper().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral)
         .toggleOnTrue(passCommand);
 

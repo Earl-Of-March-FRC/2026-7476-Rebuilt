@@ -3,28 +3,28 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.5,
-        "y": 2.981
+        "x": 2.4476034236804565,
+        "y": 2.909
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.2360508686784404,
-        "y": 2.970486383402038
+        "x": 2.71176186109894,
+        "y": 2.909
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 0.746,
-        "y": 2.981
+        "x": 1.184,
+        "y": 2.909
       },
       "prevControl": {
-        "x": 0.996,
-        "y": 2.981
+        "x": 1.4772039942938655,
+        "y": 2.592339514978602
       },
       "nextControl": null,
-      "isLocked": true,
+      "isLocked": false,
       "linkedName": "ClimbOutpost"
     }
   ],
@@ -47,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": 0.0
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": 0.0
   },
   "useDefaultConstraints": true
 }

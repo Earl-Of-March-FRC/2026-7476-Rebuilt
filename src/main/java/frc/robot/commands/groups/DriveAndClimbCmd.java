@@ -50,13 +50,14 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
 
     // Already in alliance zone, can start moving up climbers
     final Command moveToTowerFrontCmd = new ParallelDeadlineGroup(
-        new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
-            .until(climberAtSetpoint),
+        // new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
+        // .until(climberAtSetpoint),
         PathGenerator.driveToTowerFrontAuto(towerSide));
 
     final Command moveToTowerSideCmd = new ParallelDeadlineGroup(
-        PathGenerator.driveToTowerSideAuto(towerSide),
-        new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition));
+        PathGenerator.driveToTowerSideAuto(towerSide)
+    // new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
+    );
 
     addCommands(
         moveIntoZoneAllianceZoneCmd,
@@ -64,7 +65,8 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
         moveToTowerSideCmd,
         // new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
         // .until(climberAtSetpoint),
-        new DriveStopCmd(drivetrain),
-        new RaiseClimberCmd(climber, 0));
+        new DriveStopCmd(drivetrain)
+    // new RaiseClimberCmd(climber, 0)
+    );
   }
 }
