@@ -49,6 +49,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -564,20 +565,23 @@ public class DrivetrainSubsystem extends SubsystemBase {
   /**
    * Gets the translation vector from the robot to the current alliance hub.
    * 
-   * @return Translation2d vector pointing from robot to hub
+   * @return Translation3d vector pointing from robot to hub
    */
-  public Translation2d getHubTranslation2dBotRelative() {
+  public Translation3d getHubTranslation3dBotRelative() {
     Pose2d currentPose = getPose();
 
-    Translation2d hubTranslation = PoseHelpers.getAllianceHubtTranslation2d();
+    Translation3d hubTranslation = PoseHelpers.getAllianceHubtTranslation3d();
 
-    Translation2d directionToHub = hubTranslation.minus(currentPose.getTranslation());
-    return directionToHub;
+    Translation2d hubTranslation2d = hubTranslation.toTranslation2d();
+
+    Translation2d directionToHub = hubTranslation2d.minus(currentPose.getTranslation());
+    // Add back the z component
+    return new Translation3d(directionToHub).plus(hubTranslation).minus(new Translation3d(hubTranslation2d));
   }
 
   /** @return The distance to the hub from current bot pose */
   public Distance getHubDistance() {
-    return Meters.of(getHubTranslation2dBotRelative().getNorm());
+    return Meters.of(getHubTranslation3dBotRelative().toTranslation2d().getNorm());
   }
 
   /**
@@ -588,7 +592,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return The linear velocity correction
    */
   public LinearVelocity getRadialDistanceCorrectionVelocity(Distance desiredDistance) {
-    Translation2d hubTranslation = getHubTranslation2dBotRelative();
+    Translation2d hubTranslation = getHubTranslation3dBotRelative().toTranslation2d();
 
     double currentDistance = hubTranslation.getNorm();
     return MetersPerSecond.of(MathUtil.clamp(
@@ -605,7 +609,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
    * @return The a Translation2d representing the correction vector
    */
   public Translation2d getRadialDistanceCorrectionVector(Distance desiredDistance) {
-    Translation2d hubTranslation = getHubTranslation2dBotRelative();
+    Translation2d hubTranslation = getHubTranslation3dBotRelative().toTranslation2d();
 
     double norm = hubTranslation.getNorm();
     if (norm < 1e-6) {
@@ -1012,7 +1016,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Kinematics/AccelerationNorm", accelerationNorm);
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
-    Logger.recordOutput("Drivetrain/HubBotReative", getHubTranslation2dBotRelative());
+    Logger.recordOutput("Drivetrain/HubBotReative", getHubTranslation3dBotRelative());
 
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
@@ -1046,8 +1050,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     SmartDashboard.putBoolean("Is Radial PID at setpoint", isRadialControllerAtSetpoint());
 
-    SmartDashboard.putNumber("Translation from hub X", getHubTranslation2dBotRelative().getX());
-    SmartDashboard.putNumber("Translation from hub Y", getHubTranslation2dBotRelative().getY());
+    SmartDashboard.putNumber("Translation from hub X", getHubTranslation3dBotRelative().getX());
+    SmartDashboard.putNumber("Translation from hub Y", getHubTranslation3dBotRelative().getY());
 
     climbAlignmentIndicator.update(getPose(), cameras);
   }

@@ -67,6 +67,7 @@ import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.NearestClimbCmd;
+import frc.robot.commands.groups.PassAndIndexCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -270,7 +271,10 @@ public class RobotContainer {
       }
     };
 
-    Logger.recordOutput("DriveTrain/LockSupplier", distanceLockSupplier.getAsBoolean());
+    Logger.recordOutput("Drivetrain/LockSupplier", distanceLockSupplier.getAsBoolean());
+
+    BooleanSupplier launchSupplier = driverController
+        .rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean;
 
     // Drive while tracking hub and automatically launching balls if we think they
     // will
@@ -285,14 +289,14 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
     // Drive while tracking hub and launching balls based on an additional trigger
-    // an additional trigger can used to lock distance
+    // another trigger can used to lock distance
     Command driveAndManualShootCmd = new DriveAndLaunchCmd(
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
         this::getDriverVx,
         this::getDriverVy,
-        driverController.rightTrigger(Constants.OIConstants.kTriggerThreshold)::getAsBoolean,
+        launchSupplier,
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
@@ -309,6 +313,8 @@ public class RobotContainer {
         () -> true,
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
+
+    Command passCommand = new PassAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier);
 
     Command intakeToHopperCmd = new PulsingTreadmillCmd(indexerSub, IndexerConstants.kWheelSpeed,
         IndexerConstants.kTreadmillSpeed)
@@ -349,11 +355,12 @@ public class RobotContainer {
 
     driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    // driverController.rightBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
-    // IndexerConstants.kWheelSpeed,
-    // () -> IndexerConstants.kTreadmillSpeed));
+    operatorController.rightBumper().toggleOnTrue(
+        new PulsingTreadmillCmd(indexerSub, -IndexerConstants.kWheelSpeed,
+            -IndexerConstants.kTreadmillSpeed)
+            .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1))));
 
-    // driverController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
+    // operatorController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
     // -IndexerConstants.kWheelSpeed,
     // () -> -IndexerConstants.kTreadmillSpeed));
 
@@ -433,6 +440,8 @@ public class RobotContainer {
 
     testController.x().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     testController.b().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
+    operatorController.leftBumper().and(() -> driveSub.getCurrentBotZone() == FieldZones.Neutral)
+        .toggleOnTrue(passCommand);
 
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(
