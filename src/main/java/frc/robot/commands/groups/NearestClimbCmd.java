@@ -2,12 +2,10 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.commands.climber;
+package frc.robot.commands.groups;
 
 import static edu.wpi.first.units.Units.Meters;
 
-import java.util.Arrays;
-import java.util.Optional;
 import java.util.Set;
 
 import org.littletonrobotics.junction.Logger;
@@ -15,21 +13,21 @@ import org.littletonrobotics.junction.Logger;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.commands.climber.PullClimberCmd;
+import frc.robot.commands.climber.RaiseClimberCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 
@@ -103,8 +101,8 @@ public class NearestClimbCmd extends SequentialCommandGroup {
       PathPlannerPath climberPath;
       ClimberSide climbSide;
 
-      Optional<Alliance> alliance = DriverStation.getAlliance();
-      boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+      Alliance alliance = PoseHelpers.getAlliance();
+      boolean isBlueAlliance = alliance == Alliance.Blue;
       if (drivetrain.getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
         climbSide = ClimberSide.Right;
         climberPath = isBlueAlliance ? AutoConstants.outpostClimbPath : AutoConstants.depotClimbPath;
