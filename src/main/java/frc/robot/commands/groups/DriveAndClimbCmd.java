@@ -32,10 +32,10 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
 
     final BooleanSupplier climberAtSetpoint = () -> climber.isAtPosition(towerSide.getCorrespondingClimberSide(false));
 
-    final Command moveToTowerFrontCmd = new ParallelCommandGroup(
-        PathGenerator.driveToTowerFrontAuto(towerSide),
+    final Command moveToTowerFrontCmd = new ParallelDeadlineGroup(
         new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
-            .until(climberAtSetpoint));
+            .until(climberAtSetpoint),
+        PathGenerator.driveToTowerFrontAuto(towerSide));
 
     final Command moveToTowerSideCmd = new ParallelDeadlineGroup(
         PathGenerator.driveToTowerSideAuto(towerSide),
