@@ -28,7 +28,7 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
    * @param indexerSub           The IndexerSubsystem to use
    * @param launcherAndIntakeSub The LauncherAndIntakeSubsystem to use
    * @param launchSupplier       A BooleanSupplier that determines whether to
-   *                             laucnh balls or not (controls the indexer wheel)
+   *                             launch balls or not (controls the indexer wheel)
    * @param leadShots            Whether to lead shots (affects effective target
    *                             distance)
    */

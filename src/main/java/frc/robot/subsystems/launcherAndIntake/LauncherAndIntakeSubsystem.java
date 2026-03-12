@@ -1,5 +1,6 @@
 package frc.robot.subsystems.launcherAndIntake;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -16,8 +17,16 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.util.PoseHelpers;
@@ -191,6 +200,14 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
         LaunchHelpers.calculateBallAirTime(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
     Logger.recordOutput("Launcher/Prediction/PredictedBallEndpointHubHeight",
         LaunchHelpers.predictBallEndpoint(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
+
+    Translation3d ballEndPointGroundHeight = LaunchHelpers.predictBallEndpoint(Meters.zero());
+
+    Logger.recordOutput("Launcher/Prediction/PredictedBallEndpointGroundHeight",
+        ballEndPointGroundHeight);
+    Logger.recordOutput("WillBallLeaveField",
+        !PoseHelpers.isInField(new Pose3d(ballEndPointGroundHeight, new Rotation3d())));
+
     Logger.recordOutput("Launcher/Prediction/BallLaunchVelocityMPS",
         LaunchHelpers.calculateBallLaunchVelocityVector());
     Logger.recordOutput("Launcher/Prediction/BallInitialVelocityMPS",

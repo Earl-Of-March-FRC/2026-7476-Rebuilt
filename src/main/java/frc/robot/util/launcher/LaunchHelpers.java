@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.lang.reflect.Field;
 import java.util.Objects;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -15,11 +16,13 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -201,13 +204,32 @@ public class LaunchHelpers {
   }
 
   /**
-   * Calculate the correct RPM to launching at the hub from the <b>current</b>
+   * Calculate the correct RPM for launching at the hub from the <b>current</b>
    * distance
    * 
    * @return The ideal wheel speed
    */
-  public static AngularVelocity calculateWheelRPM() {
+  public static AngularVelocity calculateLaunchRPM() {
     return calculateWheelRPM(drive().getHubDistance(), FieldConstants.kHubHeight);
+  }
+
+  /**
+   * Calculate the correct RPM for passing from the <b>current</b>
+   * distance
+   * 
+   * @return The ideal wheel speed
+   */
+  public static AngularVelocity calculatePassRPM() {
+    boolean isBlue = PoseHelpers.getAlliance() == Alliance.Blue;
+
+    Distance passTargetX = isBlue ? FieldConstants.kAllianceZoneXLength.div(2)
+        : FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceZoneXLength);
+
+    Distance passTargetDistance = drive().getPose().getMeasureX().minus(passTargetX);
+    // Take absolute value
+    passTargetDistance = Meters.of(Math.abs(passTargetDistance.in(Meters)));
+
+    return calculateWheelRPM(passTargetDistance, Meters.zero());
   }
 
   /**
@@ -291,7 +313,7 @@ public class LaunchHelpers {
    * @return Ball linear velocity as a Translation3d, in mps
    */
   public static Translation3d calculateBallLaunchVelocityVector() {
-    return calculateBallLaunchVelocityVector(calculateWheelRPM());
+    return calculateBallLaunchVelocityVector(calculateLaunchRPM());
   }
 
   /**
