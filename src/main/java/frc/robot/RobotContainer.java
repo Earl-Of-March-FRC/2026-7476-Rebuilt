@@ -5,6 +5,7 @@
 package frc.robot;
 
 import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.Drivetrain.Gyro;
 import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
@@ -466,9 +467,9 @@ public class RobotContainer {
     // FieldZones.Launch).toggleOnTrue(
     // driveAndAutoShootCmd);
 
-    // testController.x().whileTrue(new DriveToTowerSide(driveSub, TowerSide.Left));
-    // testController.b().whileTrue(new DriveToTowerSide(driveSub,
-    // TowerSide.Right));
+    testController.x().whileTrue(new DriveToTowerSide(driveSub, TowerSide.Left));
+    testController.b().whileTrue(new DriveToTowerSide(driveSub,
+        TowerSide.Right));
     // driverController.povLeft().whileTrue(new RaiseClimberCmd(climberSub, 0));
     // driverController.povRight().whileTrue(new RaiseClimberCmd(climberSub,
     // ClimberConstants.kRaisePosition));
@@ -547,11 +548,11 @@ public class RobotContainer {
     // autoChooser.addOption("Align to Tower Then Climb",
     // new NearestClimbCmd(driveSub, climberSub));
 
-    // autoChooser.addOption("Align to Tower Left Then Climb",
-    // new DriveToTowerSide(driveSub, TowerSide.Left));
+    autoChooser.addOption("Align to Tower Left",
+        new DriveToTowerSide(driveSub, TowerSide.Left));
 
-    // autoChooser.addOption("Align to Tower Right Then Climb",
-    // new DriveToTowerSide(driveSub, TowerSide.Right));
+    autoChooser.addOption("Align to Tower Right",
+        new DriveToTowerSide(driveSub, TowerSide.Right));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
