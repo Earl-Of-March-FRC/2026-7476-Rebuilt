@@ -380,6 +380,7 @@ public final class Constants {
     public static final AngularVelocity kLauncherRPM = RPM.of(0); // TODO replace with auto launch RPM
     public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
 
+    public static PathPlannerPath intakeLeftPath;
     public static PathPlannerPath depotClimbPath;
     public static PathPlannerPath outpostClimbPath;
     public static PathPlannerPath outpostPath;
@@ -387,6 +388,7 @@ public final class Constants {
 
     static {
       try {
+        intakeLeftPath = PathPlannerPath.fromPathFile("Intake Left");
         depotClimbPath = PathPlannerPath.fromPathFile("Depot(L1 Climb)");
         outpostClimbPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb)");
         outpostPath = PathPlannerPath.fromPathFile("Drive to Outpost");
@@ -399,6 +401,8 @@ public final class Constants {
 
     public static final Translation2d depotStartPoint = depotClimbPath.getAllPathPoints().get(0).position;
     public static final Translation2d outpostStartPoint = outpostClimbPath.getAllPathPoints().get(0).position;
+
+    public static final Translation2d intakeLeftStartPoint = intakeLeftPath.getAllPathPoints().get(0).position;
 
     public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
         new Translation2d(Meters.of(depotStartPoint.getX()).in(Meters), // Blue Alliance
