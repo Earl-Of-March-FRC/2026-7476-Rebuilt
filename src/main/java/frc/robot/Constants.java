@@ -526,21 +526,35 @@ public final class Constants {
   }
 
   public static final class ClimberConstants {
-    public static final int kLeftId = 13;
-    public static final int kRightId = 14;
+
+    // CAN IDs
+    public static final int kLeftId = 13; // leader
+    public static final int kRightId = 14; // follower
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
 
-    public static final double kMotorRaiseSpeed = 0.5;
-    public static final double kMotorHookSpeed = 0.5;
+    // DIO port for the bottom limit switch
+    public static final int kBottomLimitSwitchDIOPort = 0;
+
+    // Travel limits
+    public static final Distance kStowPosition = Inches.of(0);
+    public static final Distance kClimbPosition = Inches.of(32); // set 1 inch above max length
+
+    public static final Distance kMinLength = Inches.of(-1); // small under-travel buffer
+    public static final Distance kMaxLength = Inches.of(33);
 
     public static final double kSettledVelocityThresholdInchesPerSec = 0.25; // arms have stopped moving into raise
                                                                              // position
     public static final double kStallVelocityThresholdInchesPerSec = 0.1; // arms have stalled on bar during pull
 
-    // TODO: measure these values
-    public static final Distance kWhinchDrumDiameter = Inches.of(1);
+    // PID position tolerance
+    /** Encoder error below which atSetpoint() returns true. */
+    public static final Distance kPIDPositionTolerance = Inches.of(0.5);
+
+    // Winch / spool geometry
+    public static final Distance kWhinchDrumDiameter = Inches.of(1.625);
+    // Without
     public static final Distance kSpoolCableDiameter = Inches.of(0.25);
     public static final int kMaxSpoolLayers = 5;
     public static final int kMinSpoolLayers = 1;
@@ -550,42 +564,43 @@ public final class Constants {
 
     public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI;
 
-    public static final Distance kMinLength = Inches.of(-1);
-    public static final Distance kMaxLength = Inches.of(33);
-
+    // Current limits
     public static final Current kSmartCurrentLimit = Amps.of(40);
+    public static final Current kStatorCurrentLimit = Amps.of(40); // TalonFX only
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
-    // TalonFX-specific
-    public static final Current kStatorCurrentLimit = Amps.of(40);
-    public static final double kSensorToMechanismRatio = 1.0; // Update with real gear ratio
+    // TalonFX sensor ratio
+    public static final double kSensorToMechanismRatio = 1.0;
 
+    // PID gains
     public static final double kPIDClimberControllerP = 0.1;
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
 
-    public static final SparkMaxConfig kConfigLeft = new SparkMaxConfig();
-    public static final SparkMaxConfig kConfigRight = new SparkMaxConfig();
+    public static final double kStowCrawlSpeed = -0.15;
+
+    public static final Time kClimbDuration = Seconds.of(3.0);
+
+    // SparkMax configs
+    public static final SparkMaxConfig kConfigLeader = new SparkMaxConfig();
+    public static final SparkMaxConfig kConfigFollower = new SparkMaxConfig();
 
     static {
-      kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigLeft.closedLoop
+      // Leader
+      kConfigLeader.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigLeader.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigLeader.closedLoop
           .p(kPIDClimberControllerP)
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
 
-      kConfigRight.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps))
-          .inverted(true);
-      kConfigRight.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigRight.closedLoop
-          .p(kPIDClimberControllerP)
-          .i(kPIDClimberControllerI)
-          .d(kPIDClimberControllerD)
-          .outputRange(kOutputRangeMin, kOutputRangeMax);
+      // Follower: mirrors leader, inverted because motors face opposite directions
+      kConfigFollower
+          .smartCurrentLimit((int) kSmartCurrentLimit.in(Amps))
+          .follow(kLeftId, true);
     }
 
     public static final Distance kRaisePosition = Inches.of(7); // Was 32
@@ -682,11 +697,10 @@ public final class Constants {
     // TODO: Measure this value
     public static final AngularVelocity kSimulatedMaxLauncherSpeed = RPM.of(6000);
 
-    // Climbers
-    // TODO: Measure this value
-    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
-    public static final Distance kSimulatedMaxClimberHeight = Inches.of(10);
+    // Climber simulation
     public static final DCMotor kSimulatedSparkMaxClimberMotor = DCMotor.getNEO(1);
+    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(12.0);
+    public static final Distance kSimulatedMaxClimberHeight = Inches.of(10.0);
   }
 
   public static final class PhotonConstants {
