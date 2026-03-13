@@ -28,6 +28,10 @@ import frc.robot.Constants.SimulationConstants;
 
 public class ClimberSubsystem extends SubsystemBase {
 
+  public static enum TowerSide {
+    Left, Right
+  }
+
   /**
    * Wraps the <em>leader</em> SparkMax. The follower SparkMax is passed in
    * and configured to mirror the leader via {@code SparkMaxConfig.follow()};

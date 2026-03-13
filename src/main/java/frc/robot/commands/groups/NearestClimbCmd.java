@@ -1,124 +1,134 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// // Copyright (c) FIRST and other WPILib contributors.
+// // Open Source Software; you can modify and/or share it under the terms of
+// // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.commands.groups;
+// package frc.robot.commands.groups;
 
-import static edu.wpi.first.units.Units.Meters;
+// import static edu.wpi.first.units.Units.Meters;
 
-import java.util.Set;
+// import java.util.Set;
 
-import org.littletonrobotics.junction.Logger;
+// import org.littletonrobotics.junction.Logger;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathPlannerPath;
+// import com.pathplanner.lib.auto.AutoBuilder;
+// import com.pathplanner.lib.path.PathPlannerPath;
 
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.PrintCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.ClimberConstants;
-import frc.robot.Constants.FieldConstants;
-import frc.robot.commands.climber.PullClimberCmd;
-import frc.robot.commands.climber.RaiseClimberCmd;
-import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberSide;
-import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
-import frc.robot.util.PoseHelpers;
-import frc.robot.util.swerve.FieldZones;
-import frc.robot.util.swerve.PathGenerator;
+// import edu.wpi.first.wpilibj.DriverStation.Alliance;
+// import edu.wpi.first.wpilibj2.command.Command;
+// import edu.wpi.first.wpilibj2.command.Commands;
+// import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+// import edu.wpi.first.wpilibj2.command.PrintCommand;
+// import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+// import frc.robot.Constants.AutoConstants;
+// import frc.robot.Constants.ClimberConstants;
+// import frc.robot.Constants.FieldConstants;
+// import frc.robot.commands.climber.PullClimberCmd;
+// import frc.robot.commands.climber.RaiseClimberCmd;
+// import frc.robot.subsystems.Climber.ClimberSubsystem;
+// import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberSide;
+// import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+// import frc.robot.util.PoseHelpers;
+// import frc.robot.util.swerve.FieldZones;
+// import frc.robot.util.swerve.PathGenerator;
 
-// NOTE:  Consider using this command inline, rather than writing a subclass.  For more
-// information, see:
+// // NOTE: Consider using this command inline, rather than writing a subclass.
+// For more
+// // information, see:
+// //
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class NearestClimbCmd extends SequentialCommandGroup {
-  private final DrivetrainSubsystem drivetrain;
-  private final ClimberSubsystem climber;
+// public class NearestClimbCmd extends SequentialCommandGroup {
+// private final DrivetrainSubsystem drivetrain;
+// private final ClimberSubsystem climber;
 
-  /** Creates a new NearestClimbCmd. */
-  public NearestClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem climber) {
-    // Add your commands in the addCommands() call, e.g.
-    // addCommands(new FooCommand(), new BarCommand());
+// /** Creates a new NearestClimbCmd. */
+// public NearestClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem
+// climber) {
+// // Add your commands in the addCommands() call, e.g.
+// // addCommands(new FooCommand(), new BarCommand());
 
-    this.drivetrain = drivetrain;
-    this.climber = climber;
+// this.drivetrain = drivetrain;
+// this.climber = climber;
 
-    addRequirements(drivetrain, climber);
+// addRequirements(drivetrain, climber);
 
-    Logger.recordOutput("Commands/NearestClimbCmd/RobotPoseY", drivetrain.getPose().getY());
-    Logger.recordOutput("Commands/NearestClimbCmd/FieldHalfWidth",
-        FieldConstants.kFieldWidthY.div(2).in(Meters));
+// Logger.recordOutput("Commands/NearestClimbCmd/RobotPoseY",
+// drivetrain.getPose().getY());
+// Logger.recordOutput("Commands/NearestClimbCmd/FieldHalfWidth",
+// FieldConstants.kFieldWidthY.div(2).in(Meters));
 
-    addCommands(createDriveToZoneCommand(), createAlignAndClimbCommand());
-  }
+// addCommands(createDriveToZoneCommand(), createAlignAndClimbCommand());
+// }
 
-  /**
-   * Creates a command that moves the robot to its alliance zone through the
-   * trench, only if the robot is <b>not</b> already in the zone
-   * 
-   * @return {@code PrintCommand} if the robot is already in its alliance zone,
-   *         otherwise {@code Command} generated by PathPlanner using waypoints
-   *         from {@code FieldCOnstants.kTrenchPathWaypoints}.
-   * @apiNote Already wrapped in {@code Commands.defer()} for it to update
-   *          dynamically
-   */
-  public Command createDriveToZoneCommand() {
-    return Commands.defer(() -> {
-      // Optional<Alliance> alliance = DriverStation.getAlliance();
-      // boolean isBlueAlliance = !alliance.isPresent() || alliance.get() ==
-      // Alliance.Blue;
+// /**
+// * Creates a command that moves the robot to its alliance zone through the
+// * trench, only if the robot is <b>not</b> already in the zone
+// *
+// * @return {@code PrintCommand} if the robot is already in its alliance zone,
+// * otherwise {@code Command} generated by PathPlanner using waypoints
+// * from {@code FieldCOnstants.kTrenchPathWaypoints}.
+// * @apiNote Already wrapped in {@code Commands.defer()} for it to update
+// * dynamically
+// */
+// public Command createDriveToZoneCommand() {
+// return Commands.defer(() -> {
+// // Optional<Alliance> alliance = DriverStation.getAlliance();
+// // boolean isBlueAlliance = !alliance.isPresent() || alliance.get() ==
+// // Alliance.Blue;
 
-      if (drivetrain.getCurrentBotZone() == FieldZones.Neutral) {
-        // int neutralZoneWaypointId;
-        // if (isBlueAlliance) {
-        // neutralZoneWaypointId = 4;
-        // } else {
-        // neutralZoneWaypointId = 6;
-        // }
-        // return PathGenerator.crossTrenchAuto(
-        // Arrays.copyOfRange(FieldConstants.kTrenchPathWaypoints,
-        // neutralZoneWaypointId, neutralZoneWaypointId + 2));
-        return PathGenerator.crossTrenchAuto();
-      }
+// if (drivetrain.getCurrentBotZone() == FieldZones.Neutral) {
+// // int neutralZoneWaypointId;
+// // if (isBlueAlliance) {
+// // neutralZoneWaypointId = 4;
+// // } else {
+// // neutralZoneWaypointId = 6;
+// // }
+// // return PathGenerator.crossTrenchAuto(
+// // Arrays.copyOfRange(FieldConstants.kTrenchPathWaypoints,
+// // neutralZoneWaypointId, neutralZoneWaypointId + 2));
+// return PathGenerator.crossTrenchAuto();
+// }
 
-      return new PrintCommand("Bot isn't in the neutral zone, will skip trench path.");
-    }, Set.of(drivetrain));
-  }
+// return new PrintCommand("Bot isn't in the neutral zone, will skip trench
+// path.");
+// }, Set.of(drivetrain));
+// }
 
-  /**
-   * Creates a command that aligns the robot to the tower, and moves it to the
-   * nearest side
-   * 
-   * @return SequentialCommandGroup with drivetrain and climber commands.
-   * @apiNote Already wrapped in {@code Commands.defer()} for it to update
-   *          dynamically
-   */
-  private Command createAlignAndClimbCommand() {
-    return Commands.defer(() -> {
-      PathPlannerPath climberPath;
-      ClimberSide climbSide;
+// /**
+// * Creates a command that aligns the robot to the tower, and moves it to the
+// * nearest side
+// *
+// * @return SequentialCommandGroup with drivetrain and climber commands.
+// * @apiNote Already wrapped in {@code Commands.defer()} for it to update
+// * dynamically
+// */
+// private Command createAlignAndClimbCommand() {
+// return Commands.defer(() -> {
+// PathPlannerPath climberPath;
+// ClimberSide climbSide;
 
-      Alliance alliance = PoseHelpers.getAlliance();
-      boolean isBlueAlliance = alliance == Alliance.Blue;
-      if (drivetrain.getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-        climbSide = ClimberSide.Right;
-        climberPath = isBlueAlliance ? AutoConstants.outpostClimbPath : AutoConstants.depotClimbPath;
+// Alliance alliance = PoseHelpers.getAlliance();
+// boolean isBlueAlliance = alliance == Alliance.Blue;
+// if (drivetrain.getPose().getY() <=
+// FieldConstants.kFieldWidthY.div(2).in(Meters)) {
+// climbSide = ClimberSide.Right;
+// climberPath = isBlueAlliance ? AutoConstants.outpostClimbPath :
+// AutoConstants.depotClimbPath;
 
-      } else {
-        climbSide = ClimberSide.Left;
-        climberPath = isBlueAlliance ? AutoConstants.depotClimbPath : AutoConstants.outpostClimbPath;
-      }
+// } else {
+// climbSide = ClimberSide.Left;
+// climberPath = isBlueAlliance ? AutoConstants.depotClimbPath :
+// AutoConstants.outpostClimbPath;
+// }
 
-      ParallelDeadlineGroup alignAndRaiseClimber = new ParallelDeadlineGroup(
-          AutoBuilder.pathfindThenFollowPath(climberPath, AutoConstants.L1ClimbConstraints),
-          new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition));
+// ParallelDeadlineGroup alignAndRaiseClimber = new ParallelDeadlineGroup(
+// AutoBuilder.pathfindThenFollowPath(climberPath,
+// AutoConstants.L1ClimbConstraints),
+// new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition));
 
-      PullClimberCmd pullClimber = new PullClimberCmd(climber, () -> ClimberConstants.kMotorHookSpeed, climbSide);
+// PullClimberCmd pullClimber = new PullClimberCmd(climber, () ->
+// ClimberConstants.kMotorHookSpeed, climbSide);
 
-      return new SequentialCommandGroup(alignAndRaiseClimber, pullClimber);
-    }, Set.of(drivetrain, climber));
-  }
-}
+// return new SequentialCommandGroup(alignAndRaiseClimber, pullClimber);
+// }, Set.of(drivetrain, climber));
+// }
+// }

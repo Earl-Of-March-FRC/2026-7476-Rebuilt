@@ -65,7 +65,6 @@ import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSide;
-import frc.robot.commands.groups.NearestClimbCmd;
 import frc.robot.commands.groups.PassAndIndexCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
@@ -538,8 +537,7 @@ public class RobotContainer {
             () -> 0.0,
             Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
             true).until(() -> driveSub.isRadialControllerAtSetpoint()),
-        new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM),
-        new NearestClimbCmd(driveSub, climberSub)));
+        new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM)));
 
     autoChooser.addOption("Align to Climb",
         Commands.defer(
