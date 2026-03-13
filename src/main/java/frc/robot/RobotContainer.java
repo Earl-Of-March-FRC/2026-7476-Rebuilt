@@ -531,14 +531,17 @@ public class RobotContainer {
             () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
             Set.of(driveSub)));
 
-    autoChooser.addOption("Launch Then Climb", new SequentialCommandGroup(
-        new DriveAtLaunchingRangeCmd(
+    autoChooser.addOption("Launch Then Climb (temporarily no cliber commands)", new SequentialCommandGroup(
+        new DriveAndLaunchCmd(
             driveSub,
+            indexerSub,
+            launcherAndIntakeSub,
             () -> 0.0,
             () -> 0.0,
-            Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
-            true).until(() -> driveSub.isRadialControllerAtSetpoint()),
-        new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM)));
+            // Always lock distance in auto, since the driver isn't controlling movement
+            () -> true,
+            Constants.LauncherAndIntakeConstants.kLeadShots)
+            .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime)));
 
     autoChooser.addOption("Align to Climb",
         Commands.defer(
