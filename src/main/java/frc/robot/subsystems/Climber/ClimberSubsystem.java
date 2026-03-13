@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.SimulationConstants;
+import frc.robot.util.UnitHelpers;
 
 public class ClimberSubsystem extends SubsystemBase {
 
@@ -165,10 +166,8 @@ public class ClimberSubsystem extends SubsystemBase {
       leaderSim.setVelocity(velocity.in(InchesPerSecond));
 
       Distance newPos = getPosition().plus(Inches.of(velocity.in(InchesPerSecond) * dt));
-      Distance clampedPos = Inches.of(MathUtil.clamp(
-          newPos.in(Inches),
-          ClimberConstants.kMinLength.in(Inches),
-          SimulationConstants.kSimulatedMaxClimberHeight.in(Inches)));
+      Distance clampedPos = (Distance) UnitHelpers.clamp(newPos, ClimberConstants.kMinLength,
+          SimulationConstants.kSimulatedMaxClimberHeight);
       leaderSim.setPosition(clampedPos.in(Inches));
     }
   }
