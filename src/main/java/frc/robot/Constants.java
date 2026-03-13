@@ -535,7 +535,7 @@ public final class Constants {
     public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
 
     // DIO port for the bottom limit switch
-    public static final int kBottomLimitSwitchDIOPort = 0;
+    public static final int kBottomLimitSwitchDIOPort = 1;
 
     // Travel limits
     public static final Distance kStowPosition = Inches.of(0);

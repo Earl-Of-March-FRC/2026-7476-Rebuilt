@@ -58,6 +58,10 @@ import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
+import frc.robot.commands.climber.ClimbDownCmd;
+import frc.robot.commands.climber.ClimbUpCmd;
+import frc.robot.commands.climber.StowClimberCmd;
+import frc.robot.commands.climber.TimedAutoClimbCmd;
 import frc.robot.commands.drivetrain.AlignTowerCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
@@ -409,12 +413,13 @@ public class RobotContainer {
     // driverController.getRightTriggerAxis()) * 0.3,
     // ClimbSide.Right));
 
-    // operatorController.x().onTrue(new TimedAutoClimbCmd(climberSub)); // raise +
+    operatorController.x().onTrue(new ClimbUpCmd(climberSub));
     // hold timed
-    // operatorController.y().onTrue(new StowClimberCmd(climberSub)); // homing
+    operatorController.y().onTrue(new StowClimberCmd(climberSub)); // homing
     // crawl to limit switch
-    // operatorController.povDown().onTrue(new ClimbDownCmd(climberSub)); // PID
+    operatorController.povDown().onTrue(new ClimbDownCmd(climberSub)); // PID
     // stow (fast, needs zero first)
+    operatorController.b().onTrue(new TimedAutoClimbCmd(climberSub));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
