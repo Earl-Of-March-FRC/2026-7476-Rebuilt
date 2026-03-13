@@ -341,11 +341,11 @@ public class RobotContainer {
 
     testController.povLeft()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3,
+            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 1,
             ClimberSide.Left));
     testController.povRight()
         .whileTrue(new PullClimberCmd(climberSub,
-            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 0.3,
+            () -> (testController.getLeftTriggerAxis() - testController.getRightTriggerAxis()) * 1,
             ClimberSide.Right));
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,

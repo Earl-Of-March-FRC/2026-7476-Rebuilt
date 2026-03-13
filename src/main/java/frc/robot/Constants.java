@@ -536,8 +536,8 @@ public final class Constants {
     public static final double kStallVelocityThresholdInchesPerSec = 0.1; // arms have stalled on bar during pull
 
     // TODO: measure these values
-    public static final Distance kWhinchDrumDiameter = Inches.of(1);
-    public static final Distance kSpoolCableDiameter = Inches.of(0.25);
+    public static final Distance kWhinchDrumDiameter = Inches.of(0.75);
+    public static final Distance kSpoolCableDiameter = Inches.of(0.125);
     public static final int kMaxSpoolLayers = 5;
     public static final int kMinSpoolLayers = 1;
 
