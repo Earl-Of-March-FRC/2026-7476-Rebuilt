@@ -71,6 +71,7 @@ public final class Constants {
     public static final int kOperatorControllerPort = 1;
     public static final int kTestControllerPort = 2;
     public static final double kDriveDeadband = 0.05;
+    public static final double kTriggerDeadband = 0.1;
     // Threshld when using trigger axis as a button
     public static final double kTriggerThreshold = 0.5;
     public static final int kDriverControllerXAxis = 0;
@@ -80,6 +81,8 @@ public final class Constants {
 
     public static final double kDriverSlowModeMultiplier = 0.3;
     public static final double kDriverTurnSensitivity = 0.4;
+
+    public static final double kButtonPressDebounceSeconds = 0.1;
   }
 
   public static final class ModuleConstants {
@@ -166,10 +169,6 @@ public final class Constants {
     public static final boolean kLeadShots = true;
 
     public static final double kMotorReduction = 45.0 / 56.0;
-
-    public static final AngularVelocity kVelocityLowRPM = RPM.of(0);
-    public static final AngularVelocity kVelocityHighRPM = RPM.of(0); // Fill in actual value
-
     public static final Current kSmartCurrentLimit = Amps.of(40);
 
     public static final double kPIDLauncherControllerP = 1.2e-4;
@@ -180,9 +179,16 @@ public final class Constants {
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
 
+    // Setpoints
     public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
-
     public static final AngularVelocity kPassRPMSetpoint = RPM.of(4500);
+    // Visionless backup setpoints
+    public static final AngularVelocity kBumpRPMSetpoint = RPM.of(2750);
+    public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3390);
+    public static final AngularVelocity kTowerRPMSetpoint = RPM.of(3190);
+    public static final AngularVelocity kCornerRPMSetpoint = kDistanceToRPMCurve.apply(Meters.of(5.4539));
+    // RPM increment per second when doing manual offset
+    public static final AngularVelocity kManualRPMOffsetPerSecond = RPM.of(50);
 
     public static final ClosedLoopSlot kSlotHigh = ClosedLoopSlot.kSlot0;
     public static final ClosedLoopSlot kSlotLow = ClosedLoopSlot.kSlot1;
