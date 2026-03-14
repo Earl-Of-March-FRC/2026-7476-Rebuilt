@@ -232,6 +232,11 @@ public class ClimberSubsystem extends SubsystemBase {
       return leftAtPosition && rightAtPosition;
     }
 
+    @Override
+    public boolean isUsingPercentSetpoints() {
+      return usingPercent;
+    }
+
     /**
      * Returns the leader applied output as a fraction of bus voltage [-1, 1].
      * Both motors receive the same command so the leader is representative.
@@ -493,19 +498,27 @@ public class ClimberSubsystem extends SubsystemBase {
      * while descending. This keeps the two arms independently calibrated
      * regardless of which one reaches the bottom first.
      */
-    if (isLeftAtBottom() && leftVelocity.in(InchesPerSecond) < 0) {
+    if (isLeftAtBottom()) {
       motor.resetLeftEncoder();
-      // motor.stop();
+      if (motor.isUsingPercentSetpoints() && leftVelocity.in(InchesPerSecond) < 0) {
+        motor.stop();
+      }
     }
-    if (isRightAtBottom() && rightVelocity.in(InchesPerSecond) < 0) {
+    if (isRightAtBottom()) {
       motor.resetRightEncoder();
-      // motor.stop();
+      if (motor.isUsingPercentSetpoints() && rightVelocity.in(InchesPerSecond) < 0) {
+        motor.stop();
+      }
     }
 
     /* Stop both motors only once both arms have fully seated at the bottom. */
-    if (areBothAtBottom()) {
-      motor.stop();
-    }
+    // if (areBothAtBottom()) {
+    // if (motor.isUsingPercentSetpoints()) {
+    // motor.stop();
+    // } else {
+
+    // }
+    // }
 
     Logger.recordOutput("Climber/Measured/LeftPositionInches", leftPosition.in(Inches));
     Logger.recordOutput("Climber/Measured/RightPositionInches", rightPosition.in(Inches));

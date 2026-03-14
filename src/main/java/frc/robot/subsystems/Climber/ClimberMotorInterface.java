@@ -54,6 +54,8 @@ public interface ClimberMotorInterface {
    */
   void resetRightEncoder();
 
+  boolean isUsingPercentSetpoints();
+
   /** Override to provide simulation behaviour. No-op by default. */
   default void simulationPeriodic() {
   }
