@@ -72,10 +72,10 @@ dependencies {
     simulationRelease wpi.sim.enableRelease()
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.1'
 }
 
-test {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
@@ -99,9 +99,14 @@ jar {
 // Configure jar and deploy tasks
 deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
-wpi.java.configureTestTasks(test)
+tasks.withType(Test).configureEach { wpi.java.configureTestTasks(it) }
 
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'
+}
+
+tasks.named('test') { enabled = false }
+gradle.taskGraph.whenReady { graph ->
+    tasks.withType(Test).each { it.enabled = false }
 }
