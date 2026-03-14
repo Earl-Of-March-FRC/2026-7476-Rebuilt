@@ -37,6 +37,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
@@ -338,6 +339,12 @@ public final class Constants {
     public static final Pose2d kOutpostClimb = new Pose2d(Meters.of(0.746), Meters.of(2.981),
         Rotation2d.fromDegrees(180));
 
+    public static final SwerveModuleState[] kXLockModuleStates = {
+        new SwerveModuleState(0, Rotation2d.fromDegrees(45)),
+        new SwerveModuleState(0, Rotation2d.fromDegrees(-45)),
+        new SwerveModuleState(0, Rotation2d.fromDegrees(135)),
+        new SwerveModuleState(0, Rotation2d.fromDegrees(-135))
+    };
   }
 
   public static final class AutoConstants {
