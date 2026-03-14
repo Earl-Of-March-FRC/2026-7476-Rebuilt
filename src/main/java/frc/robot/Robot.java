@@ -58,12 +58,13 @@ public class Robot extends LoggedRobot {
     Logger.recordMetadata("ProjectName", "2026-7576-Rebuilt");
     Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
     // Only write log files if real & USB stick is plugged in
-    if (isReal() && new File("/u/").exists()) {
-      Logger.addDataReceiver(new WPILOGWriter("/u/logs"));
-    } else {
-      System.err
-          .println("No USB flashdrive was found in the RoboRIO's directory. WPILOGWriter and URCL not initiated.");
-    }
+    // if (isReal() && new File("/u/").exists()) {
+    Logger.addDataReceiver(new WPILOGWriter("/u/logs"));
+    // } else {
+    // System.err
+    // .println("No USB flashdrive was found in the RoboRIO's directory.
+    // WPILOGWriter and URCL not initiated.");
+    // }
     Logger.registerURCL(URCL.startExternal());
     Logger.start();
 
