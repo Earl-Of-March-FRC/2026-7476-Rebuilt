@@ -542,7 +542,8 @@ public final class Constants {
      * Time it takes to raise the climber to climbing position from the bottom
      * (where the limit switch returns true)
      */
-    public static final Time kTimeToRaiseToClimbingPosition = Seconds.of(2);
+    public static final Time kTimeFromBottomToRaisedPosition = Seconds.of(2);
+    public static final Time kTimeFromRaisedToClimbedPosition = kTimeFromBottomToRaisedPosition.times(0.75);
     public static final Distance kStowPosition = Inches.of(0);
     public static final Distance kClimbPosition = Inches.of(32); // set 1 inch above max length
 

@@ -17,7 +17,19 @@ import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class LaunchAndClimbCmd extends SequentialCommandGroup {
-  /** Creates a new LaunchAndClimbCmd. */
+  /**
+   * Creates a command that launches for a set amount of time
+   * ({@link LauncherAndIntakeConstants#kAutoLaunchTime}), and then climbs.
+   * 
+   * @param drivetrain        Drivetrain subsystem
+   * @param indexer           Indexer subsystem
+   * @param launcherAndIntake Launcher/Intake subsystem
+   * @param climber           Climber subsystem
+   * @param climbSide         Tower side to climb
+   * 
+   * @see {@link DriveAndLaunchCmd},
+   *      {@link LauncherAndIntakeConstants#kAutoLaunchTime}
+   */
   public LaunchAndClimbCmd(DrivetrainSubsystem drivetrain, IndexerSubsystem indexer,
       LauncherAndIntakeSubsystem launcherAndIntake, ClimberSubsystem climber, TowerSide climbSide) {
     addCommands(
@@ -30,7 +42,7 @@ public class LaunchAndClimbCmd extends SequentialCommandGroup {
             // Always lock distance in auto, since the driver isn't controlling movement
             () -> true,
             LauncherAndIntakeConstants.kLeadShots)
-            .withTimeout(LauncherAndIntakeConstants.kAutoLaunchTime), new ReturnClimbersToBottom(climber)),
+            .withTimeout(LauncherAndIntakeConstants.kAutoLaunchTime), new ReturnClimbersToBottomCmd(climber)),
         new DriveAndClimbCmd(drivetrain, climber, climbSide));
   }
 }

@@ -60,7 +60,7 @@ import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
-import frc.robot.commands.groups.DriveToTowerSide;
+import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.PassAndIndexCmd;
 import frc.robot.commands.indexer.IndexerCmd;
@@ -464,8 +464,8 @@ public class RobotContainer {
     // FieldZones.Launch).toggleOnTrue(
     // driveAndAutoShootCmd);
 
-    testController.x().whileTrue(new DriveToTowerSide(driveSub, TowerSide.Left));
-    testController.b().whileTrue(new DriveToTowerSide(driveSub,
+    testController.x().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Left));
+    testController.b().whileTrue(new DriveToTowerSideCmd(driveSub,
         TowerSide.Right));
     // driverController.povLeft().whileTrue(new RaiseClimberCmd(climberSub, 0));
     // driverController.povRight().whileTrue(new RaiseClimberCmd(climberSub,
@@ -544,10 +544,10 @@ public class RobotContainer {
     // new NearestClimbCmd(driveSub, climberSub));
 
     autoChooser.addOption("Align to Tower Left",
-        new DriveToTowerSide(driveSub, TowerSide.Left));
+        new DriveToTowerSideCmd(driveSub, TowerSide.Left));
 
     autoChooser.addOption("Align to Tower Right",
-        new DriveToTowerSide(driveSub, TowerSide.Right));
+        new DriveToTowerSideCmd(driveSub, TowerSide.Right));
 
     autoChooser.addOption("Align to Tower Left & Climb",
         new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));

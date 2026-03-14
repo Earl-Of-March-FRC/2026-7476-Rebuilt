@@ -12,9 +12,9 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class DriveToTowerSide extends SequentialCommandGroup {
+public class DriveToTowerSideCmd extends SequentialCommandGroup {
   /** Creates a new DriveToTowerSide. */
-  public DriveToTowerSide(DrivetrainSubsystem drivetrain, TowerSide towerSide) {
+  public DriveToTowerSideCmd(DrivetrainSubsystem drivetrain, TowerSide towerSide) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(

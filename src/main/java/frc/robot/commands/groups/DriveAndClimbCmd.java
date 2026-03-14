@@ -30,7 +30,15 @@ import frc.robot.util.swerve.PathGenerator;
  * Drives to the corresponding tower side and climbs
  */
 public class DriveAndClimbCmd extends SequentialCommandGroup {
-  /** Creates a new DriveAndClimbCmd. */
+  /**
+   * Create a command that drives to the corresponding tower side, and climbs.
+   * This command ensures that the climber is at the bottom before it fully
+   * commits to climbing
+   * 
+   * @param drivetrain Drivetrain subsystem
+   * @param climber    Climber subsystem
+   * @param towerSide  Tower side to climb
+   */
   public DriveAndClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem climber, TowerSide towerSide) {
     final Supplier<FieldZones> currentBotZone = () -> {
       Logger.recordOutput("Commands/DriveAndClimbCmd/MeasuredBotZone", drivetrain.getCurrentBotZone());
@@ -46,18 +54,18 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
 
     // Already in alliance zone, can start moving up climbers
     final Command moveToTowerFrontCmd = new ParallelDeadlineGroup(
-        new ReturnClimbersToBottom(climber)
+        new ReturnClimbersToBottomCmd(climber)
             .andThen(new ClimbPercentCmd(climber, () -> ClimberConstants.kOutputRangeMax)
-                .withTimeout(ClimberConstants.kTimeToRaiseToClimbingPosition)),
+                .withTimeout(ClimberConstants.kTimeFromBottomToRaisedPosition)),
         PathGenerator.driveToTowerFrontAuto(towerSide));
 
     addCommands(
         moveIntoZoneAllianceZoneCmd,
         moveToTowerFrontCmd,
-        new DriveToTowerSide(drivetrain, towerSide),
+        new DriveToTowerSideCmd(drivetrain, towerSide),
         new DriveStopCmd(drivetrain),
         new ClimbPercentCmd(climber, () -> ClimberConstants.kOutputRangeMin)
-            .withTimeout(ClimberConstants.kTimeToRaiseToClimbingPosition.times(0.75)));
+            .withTimeout(ClimberConstants.kTimeFromRaisedToClimbedPosition));
 
   }
 }

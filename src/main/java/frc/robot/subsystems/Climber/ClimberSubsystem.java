@@ -32,6 +32,9 @@ import frc.robot.util.UnitHelpers;
 
 public class ClimberSubsystem extends SubsystemBase {
 
+  /**
+   * Tower side relative to the driverstation
+   */
   public static enum TowerSide {
     Left, Right
   }

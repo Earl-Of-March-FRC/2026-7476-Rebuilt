@@ -14,9 +14,9 @@ import frc.robot.subsystems.Climber.ClimberSubsystem;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class ReturnClimbersToBottom extends SequentialCommandGroup {
+public class ReturnClimbersToBottomCmd extends SequentialCommandGroup {
   /** Creates a new ReturnClimbersToBottom. */
-  public ReturnClimbersToBottom(ClimberSubsystem climbers) {
+  public ReturnClimbersToBottomCmd(ClimberSubsystem climbers) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
