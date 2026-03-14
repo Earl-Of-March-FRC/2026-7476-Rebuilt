@@ -54,6 +54,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -96,6 +97,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private final PhotonCamera[] cameras;
   private final PhotonPoseEstimator[] photonPoseEstimators;
   private final VisionSystemSim simulatedVision;
+  private final double[] lastCameraUpdateTimestampSec;
+  private final double[] lastCameraSawTagTimestampSec;
+  private final double[] lastCameraPoseTimestampSec;
+  private final int[] latestCameraTargetCount;
+  private final double[] latestCameraBestArea;
+  private final double[] latestCameraBestAmbiguity;
 
   // Current pose of the robot
   private Pose2d robotPose = new Pose2d();
@@ -162,6 +169,19 @@ public class DrivetrainSubsystem extends SubsystemBase {
     // Initialize camera arrays with the correct size
     cameras = new PhotonCamera[SwerveConfig.kNumCameras];
     photonPoseEstimators = new PhotonPoseEstimator[SwerveConfig.kNumCameras];
+    lastCameraUpdateTimestampSec = new double[SwerveConfig.kNumCameras];
+    lastCameraSawTagTimestampSec = new double[SwerveConfig.kNumCameras];
+    lastCameraPoseTimestampSec = new double[SwerveConfig.kNumCameras];
+    latestCameraTargetCount = new int[SwerveConfig.kNumCameras];
+    latestCameraBestArea = new double[SwerveConfig.kNumCameras];
+    latestCameraBestAmbiguity = new double[SwerveConfig.kNumCameras];
+
+    for (int i = 0; i < SwerveConfig.kNumCameras; i++) {
+      lastCameraUpdateTimestampSec[i] = -1.0;
+      lastCameraSawTagTimestampSec[i] = -1.0;
+      lastCameraPoseTimestampSec[i] = -1.0;
+      latestCameraBestAmbiguity[i] = Double.POSITIVE_INFINITY;
+    }
 
     // Setup cameras to see april tags. Wow! That makes me really happy.
     for (int i = 0; i < SwerveConfig.kNumCameras; i++) {
@@ -685,6 +705,43 @@ public class DrivetrainSubsystem extends SubsystemBase {
     return gyro;
   }
 
+  public boolean isGyroConnected() {
+    return !gyroDisconnected;
+  }
+
+  public double getGyroRateDegreesPerSecond() {
+    return gyro.getRate();
+  }
+
+  public int getCameraCount() {
+    return cameras.length;
+  }
+
+  public CameraHealthSnapshot getCameraHealthSnapshot(int cameraIndex) {
+    if (cameraIndex < 0 || cameraIndex >= cameras.length) {
+      throw new IndexOutOfBoundsException("Invalid camera index: " + cameraIndex);
+    }
+
+    return new CameraHealthSnapshot(
+        cameras[cameraIndex].getName(),
+        lastCameraUpdateTimestampSec[cameraIndex],
+        lastCameraSawTagTimestampSec[cameraIndex],
+        lastCameraPoseTimestampSec[cameraIndex],
+        latestCameraTargetCount[cameraIndex],
+        latestCameraBestArea[cameraIndex],
+        latestCameraBestAmbiguity[cameraIndex]);
+  }
+
+  public record CameraHealthSnapshot(
+      String name,
+      double lastUpdateTimestampSec,
+      double lastSawTagTimestampSec,
+      double lastPoseTimestampSec,
+      int latestTargetCount,
+      double bestArea,
+      double bestAmbiguity) {
+  }
+
   /**
    * Get an estimate of the robot's pose using vision data from PhotonVisision.
    * This method will filter out invalid and unprobable results.
@@ -698,17 +755,36 @@ public class DrivetrainSubsystem extends SubsystemBase {
    *                               from the robot to the camera
    * @param prevEstimatedRobotPose The previous estimated pose object
    */
-  public List<EstimatedRobotPose> getEstimatedGlobalPose(PhotonPoseEstimator poseEstimator, PhotonCamera camera,
+  public List<EstimatedRobotPose> getEstimatedGlobalPose(int cameraIndex, PhotonPoseEstimator poseEstimator,
+      PhotonCamera camera,
       Transform3d robotToCam,
       Pose2d prevEstimatedRobotPose) {
     poseEstimator.setReferencePose(prevEstimatedRobotPose);
 
     List<EstimatedRobotPose> results = new ArrayList<>();
     List<PhotonPipelineResult> camResults = camera.getAllUnreadResults();
+    double nowSec = Timer.getFPGATimestamp();
+    int latestTargetCount = 0;
+    double bestArea = 0.0;
+    double bestAmbiguity = Double.POSITIVE_INFINITY;
+    boolean sawTargets = false;
+
+    if (!camResults.isEmpty()) {
+      lastCameraUpdateTimestampSec[cameraIndex] = nowSec;
+    }
 
     for (PhotonPipelineResult camResult : camResults) {
       if (!camResult.hasTargets()) {
         continue;
+      }
+
+      sawTargets = true;
+      latestTargetCount = camResult.getTargets().size();
+      bestArea = 0.0;
+      bestAmbiguity = Double.POSITIVE_INFINITY;
+      for (PhotonTrackedTarget target : camResult.getTargets()) {
+        bestArea = Math.max(bestArea, target.area);
+        bestAmbiguity = Math.min(bestAmbiguity, target.getPoseAmbiguity());
       }
 
       // check if the built in pose estimator pose is reasonable
@@ -839,6 +915,16 @@ public class DrivetrainSubsystem extends SubsystemBase {
                 PoseStrategy.CLOSEST_TO_REFERENCE_POSE));
       }
     }
+
+    if (!camResults.isEmpty()) {
+      latestCameraTargetCount[cameraIndex] = latestTargetCount;
+      latestCameraBestArea[cameraIndex] = sawTargets ? bestArea : 0.0;
+      latestCameraBestAmbiguity[cameraIndex] = sawTargets ? bestAmbiguity : Double.POSITIVE_INFINITY;
+      if (sawTargets) {
+        lastCameraSawTagTimestampSec[cameraIndex] = nowSec;
+      }
+    }
+
     return results;
   }
 
@@ -882,9 +968,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
       final Transform3d robotToCamera = currentCameraProfile.getRobotToCameraTransform();
 
       // Get all poses from camera
-      List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
+      List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(i, photonPoseEstimators[i], cameras[i],
           robotToCamera,
           robotPose);
+
+      if (!visionPoses.isEmpty()) {
+        lastCameraPoseTimestampSec[i] = Timer.getFPGATimestamp();
+      }
 
       List<Integer> fiducialIds = new ArrayList<>();
       List<Pose3d> fiducialIdPoses = new ArrayList<>();

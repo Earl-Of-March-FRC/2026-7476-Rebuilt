@@ -591,6 +591,13 @@ public final class Constants {
 
   }
 
+  public static final class SelfTestConstants {
+    // Keep the passive self-test short enough for pit use.
+    public static final double kRunDurationSeconds = 2.0;
+    public static final double kCameraFreshnessTimeoutSeconds = 0.5;
+    public static final double kGyroStillnessThresholdDegPerSec = 2.0;
+  }
+
   public static final class SimulationConstants {
     public static final Supplier<GyroSimulation> kSimulatedGyro = COTS.ofGenericGyro();
     public static final DCMotor kSimulatedDrivingMotor = DCMotor.getNEO(1);

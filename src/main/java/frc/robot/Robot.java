@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.util.LocalADStarAK;
+import frc.robot.util.SelfTestRunner;
 import frc.robot.util.swerve.ProfileSelector;
 
 /**
@@ -37,6 +38,7 @@ public class Robot extends LoggedRobot {
   private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
   private final GameModel gameModel = new GameModel();
+  private final SelfTestRunner selfTestRunner;
 
   private Command autonomousCommand;
   private boolean simulateFuel = false;
@@ -66,6 +68,7 @@ public class Robot extends LoggedRobot {
     Logger.start();
 
     m_robotContainer = new RobotContainer();
+    selfTestRunner = new SelfTestRunner(m_robotContainer.driveSub);
 
   }
 
@@ -169,11 +172,13 @@ public class Robot extends LoggedRobot {
   public void testInit() {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
+    selfTestRunner.enterTestMode();
   }
 
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
+    selfTestRunner.periodic();
   }
 
   /** This function is called once when the robot is first started up. */
