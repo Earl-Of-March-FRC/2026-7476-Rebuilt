@@ -299,7 +299,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
       LinearVelocity velocity;
       if (usingPercent) {
-        velocity = maxSpeed.times(simPercentSetpoint);
+        velocity = maxSpeed.times(simPercentSetpoint).times(ClimberConstants.kOutputUp);
       } else {
         Distance error = simSetpoint.minus(getPosition());
         double desiredInchesPerSec = error.in(Inches) / dt;

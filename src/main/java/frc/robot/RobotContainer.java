@@ -63,6 +63,7 @@ import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.PassAndIndexCmd;
+import frc.robot.commands.groups.ReturnClimbersToBottomCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -353,15 +354,12 @@ public class RobotContainer {
     // -IndexerConstants.kWheelSpeed,
     // () -> -IndexerConstants.kTreadmillSpeed));
 
-    driverController.rightBumper().toggleOnTrue(
+    driverController.rightBumper().onTrue(
         new ClimbPercentCmd(climberSub, () -> 1).withTimeout(ClimberConstants.kTimeFromRaisedToClimbedPosition));
-    driverController.leftBumper().toggleOnTrue(
+    driverController.leftBumper().onTrue(
         new ClimbPercentCmd(climberSub, () -> -1).withTimeout(ClimberConstants.kTimeFromBottomToRaisedPosition));
 
-    driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1250)));
-
-    driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub,
-        () -> RPM.of(2780)));
+    driverController.povDown().whileTrue(new ReturnClimbersToBottomCmd(climberSub));
 
     // driverController.povLeft()
     // .whileTrue(new PullClimberCmd(climberSub,
