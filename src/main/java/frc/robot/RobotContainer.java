@@ -349,14 +349,10 @@ public class RobotContainer {
 
     operatorController.b().toggleOnTrue(autoLaunchCmd);
 
-    // testController.povLeft()
-    // .whileTrue(new PullClimberCmd(climberSub,
-    // () -> (testController.getLeftTriggerAxis() -
-    // testController.getRightTriggerAxis()) * 0.3, ClimbSide.Left));
-    // testController.povRight()
-    // .whileTrue(new PullClimberCmd(climberSub,
-    // () -> (testController.getLeftTriggerAxis() -
-    // testController.getRightTriggerAxis()) * 0.3, ClimbSide.Right));
+    testController.povLeft()
+        .whileTrue(new ClimbPercentCmd(climberSub,
+            () -> (testController.getLeftTriggerAxis() -
+                testController.getRightTriggerAxis()) * 1));
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
         this::getDriverVx,
@@ -383,15 +379,10 @@ public class RobotContainer {
     // -IndexerConstants.kWheelSpeed,
     // () -> -IndexerConstants.kTreadmillSpeed));
 
-    driverController.leftBumper().toggleOnTrue(
-        new PulsingTreadmillCmd(indexerSub,
-            -IndexerConstants.kWheelSpeed,
-            -IndexerConstants.kTreadmillSpeed));
-
     driverController.rightBumper().toggleOnTrue(
-        new PulsingTreadmillCmd(indexerSub,
-            IndexerConstants.kWheelSpeed,
-            IndexerConstants.kTreadmillSpeed));
+        new ClimbPercentCmd(climberSub, () -> 1).withTimeout(ClimberConstants.kTimeFromRaisedToClimbedPosition));
+    driverController.leftBumper().toggleOnTrue(
+        new ClimbPercentCmd(climberSub, () -> -1).withTimeout(ClimberConstants.kTimeFromBottomToRaisedPosition));
 
     driverController.povDown().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(1250)));
 
