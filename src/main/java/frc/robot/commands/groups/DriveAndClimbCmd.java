@@ -64,7 +64,7 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
         moveToTowerFrontCmd,
         new DriveToTowerSideCmd(drivetrain, towerSide),
         new DriveStopCmd(drivetrain),
-        new ClimbPercentCmd(climber, () -> ClimberConstants.kOutputUp)
+        new ClimbPercentCmd(climber, () -> -ClimberConstants.kOutputUp)
             .withTimeout(ClimberConstants.kTimeFromRaisedToClimbedPosition));
 
   }
