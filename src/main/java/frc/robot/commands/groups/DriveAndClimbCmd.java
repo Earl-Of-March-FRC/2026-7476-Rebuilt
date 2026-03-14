@@ -12,6 +12,8 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.commands.climber.ClimbDownCmd;
+import frc.robot.commands.climber.ClimbUpCmd;
 import frc.robot.commands.drivetrain.DriveStopCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
@@ -30,9 +32,6 @@ import frc.robot.util.swerve.PathGenerator;
 public class DriveAndClimbCmd extends SequentialCommandGroup {
   /** Creates a new DriveAndClimbCmd. */
   public DriveAndClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem climber, TowerSide towerSide) {
-
-    final BooleanSupplier climberAtSetpoint = () -> climber.atSetpoint();
-
     final Supplier<FieldZones> currentBotZone = () -> {
       Logger.recordOutput("Commands/DriveAndClimbCmd/MeasuredBotZone", drivetrain.getCurrentBotZone());
       return drivetrain.getCurrentBotZone();
@@ -47,23 +46,14 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
 
     // Already in alliance zone, can start moving up climbers
     final Command moveToTowerFrontCmd = new ParallelDeadlineGroup(
-        // new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
-        // .until(climberAtSetpoint),
+        new ClimbUpCmd(climber),
         PathGenerator.driveToTowerFrontAuto(towerSide));
-
-    final Command moveToTowerSideCmd = new ParallelDeadlineGroup(
-        PathGenerator.driveToTowerSideAuto(towerSide)
-    // new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
-    );
 
     addCommands(
         moveIntoZoneAllianceZoneCmd,
         moveToTowerFrontCmd,
-        moveToTowerSideCmd,
-        // new RaiseClimberCmd(climber, ClimberConstants.kRaisePosition)
-        // .until(climberAtSetpoint),
-        new DriveStopCmd(drivetrain)
-    // new RaiseClimberCmd(climber, 0)
-    );
+        new DriveToTowerSide(drivetrain, towerSide),
+        new ClimbDownCmd(climber),
+        new DriveStopCmd(drivetrain));
   }
 }

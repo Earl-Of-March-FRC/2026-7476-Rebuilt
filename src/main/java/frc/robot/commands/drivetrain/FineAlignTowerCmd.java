@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 
-public class AlignTowerCmd extends Command {
+public class FineAlignTowerCmd extends Command {
 
   private final DrivetrainSubsystem driveSub;
 
@@ -34,7 +34,7 @@ public class AlignTowerCmd extends Command {
 
   // private final int towerSide;
 
-  public AlignTowerCmd(DrivetrainSubsystem driveSub, boolean leftSide, boolean rightSide) {
+  public FineAlignTowerCmd(DrivetrainSubsystem driveSub, boolean leftSide, boolean rightSide) {
     this.driveSub = driveSub;
     addRequirements(driveSub);
 
@@ -49,7 +49,7 @@ public class AlignTowerCmd extends Command {
 
   @Override
   public void initialize() {
-    Logger.recordOutput("AlignTower/Status", "Initialized");
+    Logger.recordOutput("Commands/AlignTower/Status", "Initialized");
   }
 
   @Override
@@ -77,13 +77,13 @@ public class AlignTowerCmd extends Command {
     driveSub.runVelocity(
         ChassisSpeeds.fromFieldRelativeSpeeds(xVel, yVel, omega, currentPose.getRotation()));
 
-    Logger.recordOutput("AlignTower/CurrentPose", currentPose);
-    Logger.recordOutput("AlignTower/TargetPose", targetPose);
-    Logger.recordOutput("AlignTower/Output/XVelMetersPerSec", xVel.in(MetersPerSecond));
-    Logger.recordOutput("AlignTower/Output/YVelMetersPerSec", yVel.in(MetersPerSecond));
-    Logger.recordOutput("AlignTower/Output/OmegaRadPerSec", omega.in(RadiansPerSecond));
-    Logger.recordOutput("AlignTower/AtTranslationGoal", translationController.atSetpoint());
-    Logger.recordOutput("AlignTower/AtRotationGoal", rotationController.atSetpoint());
+    Logger.recordOutput("Commands/AlignTower/CurrentPose", currentPose);
+    Logger.recordOutput("Commands/AlignTower/TargetPose", targetPose);
+    Logger.recordOutput("Commands/AlignTower/Output/XVelMetersPerSec", xVel.in(MetersPerSecond));
+    Logger.recordOutput("Commands/AlignTower/Output/YVelMetersPerSec", yVel.in(MetersPerSecond));
+    Logger.recordOutput("Commands/AlignTower/Output/OmegaRadPerSec", omega.in(RadiansPerSecond));
+    Logger.recordOutput("Commands/AlignTower/AtTranslationGoal", translationController.atSetpoint());
+    Logger.recordOutput("Commands/AlignTower/AtRotationGoal", rotationController.atSetpoint());
 
     /*
      *
@@ -140,7 +140,7 @@ public class AlignTowerCmd extends Command {
   @Override
   public void end(boolean interrupted) {
     driveSub.runVelocity(new ChassisSpeeds(0, 0, 0));
-    Logger.recordOutput("AlignTower/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/AlignTower/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   // Ends when both translation and rotation are within tolerance

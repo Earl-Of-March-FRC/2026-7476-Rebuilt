@@ -27,21 +27,21 @@ public class ClimbUpCmd extends Command {
   public void initialize() {
     climber.setTargetPosition(ClimberConstants.kClimbPosition);
 
-    Logger.recordOutput("ClimbUpCmd/Status", "Running");
-    Logger.recordOutput("ClimbUpCmd/TargetInches", ClimberConstants.kClimbPosition.in(Inches));
+    Logger.recordOutput("Commands/ClimbUpCmd/Status", "Running");
+    Logger.recordOutput("Commands/ClimbUpCmd/TargetInches", ClimberConstants.kClimbPosition.in(Inches));
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("ClimbUpCmd/PositionInches", climber.getPosition().in(Inches));
-    Logger.recordOutput("ClimbUpCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
-    Logger.recordOutput("ClimbUpCmd/AtSetpoint", climber.atSetpoint());
+    Logger.recordOutput("Commands/ClimbUpCmd/PositionInches", climber.getPosition().in(Inches));
+    Logger.recordOutput("Commands/ClimbUpCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
+    Logger.recordOutput("Commands/ClimbUpCmd/AtSetpoint", climber.atSetpoint());
   }
 
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    Logger.recordOutput("ClimbUpCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/ClimbUpCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override

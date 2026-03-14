@@ -35,23 +35,23 @@ public class TimedAutoClimbCmd extends Command {
     timer.start();
     climber.setTargetPosition(ClimberConstants.kClimbPosition);
 
-    Logger.recordOutput("TimedAutoClimbCmd/Status", "Running");
-    Logger.recordOutput("TimedAutoClimbCmd/TargetInches", ClimberConstants.kClimbPosition.in(Inches));
-    Logger.recordOutput("TimedAutoClimbCmd/TimeoutSecs", ClimberConstants.kClimbDuration.in(Seconds));
+    Logger.recordOutput("Commands/TimedAutoClimbCmd/Status", "Running");
+    Logger.recordOutput("Commands/TimedAutoClimbCmd/TargetInches", ClimberConstants.kClimbPosition.in(Inches));
+    Logger.recordOutput("Commands/TimedAutoClimbCmd/TimeoutSecs", ClimberConstants.kClimbDuration.in(Seconds));
 
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("TimedAutoClimbCmd/PositionInches", climber.getPosition().in(Inches));
-    Logger.recordOutput("TimedAutoClimbCmd/ElapsedSecs", timer.get());
-    Logger.recordOutput("TimedAutoClimbCmd/AtSetpoint", climber.atSetpoint());
+    Logger.recordOutput("Commands/TimedAutoClimbCmd/PositionInches", climber.getPosition().in(Inches));
+    Logger.recordOutput("Commands/TimedAutoClimbCmd/ElapsedSecs", timer.get());
+    Logger.recordOutput("Commands/TimedAutoClimbCmd/AtSetpoint", climber.atSetpoint());
   }
 
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    Logger.recordOutput("TimedAutoClimbCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/TimedAutoClimbCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override

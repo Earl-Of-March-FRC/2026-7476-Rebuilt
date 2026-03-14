@@ -59,10 +59,11 @@ import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.OTBIntake.PlowCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
+import frc.robot.commands.climber.ClimbPercentCmd;
 import frc.robot.commands.climber.ClimbUpCmd;
 import frc.robot.commands.climber.StowClimberCmd;
 import frc.robot.commands.climber.TimedAutoClimbCmd;
-import frc.robot.commands.drivetrain.AlignTowerCmd;
+import frc.robot.commands.drivetrain.FineAlignTowerCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
@@ -400,6 +401,10 @@ public class RobotContainer {
 
     driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub,
         () -> RPM.of(2780)));
+
+    driverController.povLeft().whileTrue(new ClimbPercentCmd(climberSub, () -> 0.5));
+
+    driverController.povRight().whileTrue(new ClimbPercentCmd(climberSub, () -> -0.5));
 
     // driverController.povLeft()
     // .whileTrue(new PullClimberCmd(climberSub,

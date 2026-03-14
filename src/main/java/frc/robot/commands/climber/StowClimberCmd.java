@@ -30,16 +30,16 @@ public class StowClimberCmd extends Command {
 
   @Override
   public void initialize() {
-    Logger.recordOutput("StowClimberCmd/Status", "Running");
+    Logger.recordOutput("Commands/StowClimberCmd/Status", "Running");
   }
 
   @Override
   public void execute() {
     climber.setPercentOutput(ClimberConstants.kStowCrawlSpeed);
 
-    Logger.recordOutput("StowClimberCmd/PositionInches", climber.getPosition().in(Inches));
-    Logger.recordOutput("StowClimberCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
-    Logger.recordOutput("StowClimberCmd/LimitSwitchTripped", climber.isAtBottom());
+    Logger.recordOutput("Commands/StowClimberCmd/PositionInches", climber.getPosition().in(Inches));
+    Logger.recordOutput("Commands/StowClimberCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
+    Logger.recordOutput("Commands/StowClimberCmd/LimitSwitchTripped", climber.isAtBottom());
   }
 
   @Override
@@ -47,9 +47,9 @@ public class StowClimberCmd extends Command {
     climber.stop();
     if (!interrupted) {
       climber.resetEncoder();
-      Logger.recordOutput("StowClimberCmd/EncoderZeroed", true);
+      Logger.recordOutput("Commands/StowClimberCmd/EncoderZeroed", true);
     }
-    Logger.recordOutput("StowClimberCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/StowClimberCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override

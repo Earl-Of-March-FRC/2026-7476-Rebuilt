@@ -31,15 +31,15 @@ public class ClimbDownCmd extends Command {
   public void initialize() {
     climber.setTargetPosition(ClimberConstants.kStowPosition);
 
-    Logger.recordOutput("ClimbDownCmd/Status", "Running");
-    Logger.recordOutput("ClimbDownCmd/TargetInches", ClimberConstants.kStowPosition.in(Inches));
+    Logger.recordOutput("Commands/ClimbDownCmd/Status", "Running");
+    Logger.recordOutput("Commands/ClimbDownCmd/TargetInches", ClimberConstants.kStowPosition.in(Inches));
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("ClimbDownCmd/PositionInches", climber.getPosition().in(Inches));
-    Logger.recordOutput("ClimbDownCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
-    Logger.recordOutput("ClimbDownCmd/LimitSwitchTripped", climber.isAtBottom());
+    Logger.recordOutput("Commands/ClimbDownCmd/PositionInches", climber.getPosition().in(Inches));
+    Logger.recordOutput("Commands/ClimbDownCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
+    Logger.recordOutput("Commands/ClimbDownCmd/LimitSwitchTripped", climber.isAtBottom());
   }
 
   @Override
@@ -48,7 +48,7 @@ public class ClimbDownCmd extends Command {
     if (!interrupted && climber.isAtBottom()) {
       climber.resetEncoder();
     }
-    Logger.recordOutput("ClimbDownCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/ClimbDownCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override
