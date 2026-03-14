@@ -503,7 +503,7 @@ public class ClimberSubsystem extends SubsystemBase {
     }
 
     /* Stop both motors only once both arms have fully seated at the bottom. */
-    if (areBothAtBottom() && avgVelocity.in(InchesPerSecond) < 0) {
+    if (areBothAtBottom()) {
       motor.stop();
     }
 

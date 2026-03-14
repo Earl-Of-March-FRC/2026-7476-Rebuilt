@@ -27,15 +27,18 @@ public class ClimbDownCmd extends Command {
 
   @Override
   public void initialize() {
-    climber.setTargetPosition(ClimberConstants.kStowPosition);
+    // climber.setTargetPosition(ClimberConstants.kStowPosition);
+    climber.setPercentOutput(ClimberConstants.kStowCrawlSpeed);
 
     Logger.recordOutput("Commands/ClimbDownCmd/Status", "Running");
-    Logger.recordOutput("Commands/ClimbDownCmd/TargetInches",
-        ClimberConstants.kStowPosition.in(Inches));
+    Logger.recordOutput("Commands/ClimbDownCmd/Mode", "PercentOutput");
+
   }
 
   @Override
   public void execute() {
+    climber.setPercentOutput(ClimberConstants.kStowCrawlSpeed);
+
     Logger.recordOutput("Commands/ClimbDownCmd/LeftPositionInches",
         climber.getLeftPosition().in(Inches));
     Logger.recordOutput("Commands/ClimbDownCmd/RightPositionInches",
