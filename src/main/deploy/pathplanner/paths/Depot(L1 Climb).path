@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.0,
-        "y": 7.25
+        "x": 2.5,
+        "y": 4.46
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.147884071780881,
-        "y": 6.160571737105015
+        "x": 2.7558924302210466,
+        "y": 4.46
       },
-      "isLocked": false,
+      "isLocked": true,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.0821466905187833,
-        "y": 4.805706618962433
+        "x": 1.166,
+        "y": 4.444
       },
       "prevControl": {
-        "x": 1.8000564116295097,
-        "y": 5.702088699435318
+        "x": 1.6797668568987523,
+        "y": 4.979298496792079
       },
       "nextControl": null,
-      "isLocked": false,
-      "linkedName": null
+      "isLocked": true,
+      "linkedName": "ClimbDepot"
     }
   ],
   "rotationTargets": [],
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.0,
+    "maxVelocity": 1.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -50,5 +50,5 @@
     "velocity": 0,
     "rotation": 0.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

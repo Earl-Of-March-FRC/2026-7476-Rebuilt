@@ -215,6 +215,39 @@ public final class Constants {
     }
   }
 
+  public static final class ClimbAlignConstants {
+    // AprilTag IDs for the climb towers
+    public static final int kBlueLeftTagId = 31;
+    public static final int kBlueRightTagId = 32;
+    public static final int kRedLeftTagId = 15;
+    public static final int kRedRightTagId = 16;
+
+    // How far forward from the wall (along tag facing direction) the robot stands.
+    // Measure: distance from the wall to where your hook needs to be to engage the
+    // rung.
+    public static final Distance kStandoffDistance = Meters.of(0.55); // TODO: TUNE
+
+    // How far outward (away from center) from the tag the robot targets on the
+    // rung.
+    public static final Distance kOuterRungOffset = Meters.of(0.254); // 10 inches (TUNE)
+
+    // Extra offset PathPlanner pathfinds to before the fine-align phase takes over
+    public static final Distance kCoarseApproachOffset = Meters.of(0.8);
+    public static final double kCoarseApproachEndVelocity = 0.5; // m/s into fine-align
+
+    // Fine-align PID (shared for X and Y)
+    public static final double kAlignP = 2.5;
+    public static final double kAlignI = 0.0;
+    public static final double kAlignD = 0.05;
+
+    // Settle tolerances
+    public static final Distance kTranslationTolerance = Meters.of(0.04);
+    public static final Angle kRotationTolerance = Radians.of(Math.toRadians(2.0));
+
+    // Max speed during final PID alignment phase
+    public static final LinearVelocity kAlignMaxSpeed = MetersPerSecond.of(1.2);
+  }
+
   public static final class DriveConstants {
 
     // Ratios between robot limits in teleop vs auto
@@ -280,19 +313,24 @@ public final class Constants {
         kTrenchAngularAcceleration);
 
     // To be used by PathPlanner
-    public static final double kPTranslationController = 1.5;
-    public static final double kITranslationController = 0.75;
-    public static final double kDTranslationController = 0.25;
+    public static final double kPTranslationController = 0.5;
+    public static final double kITranslationController = 0.01;
+    public static final double kDTranslationController = 0.0;
 
-    public static final double kPThetaController = 1;
+    public static final double kPThetaController = 5;
     public static final double kIThetaController = 0;
-    public static final double kDThetaController = 0;
+    public static final double kDThetaController = 0.15;
 
     // Angular offsets of the modules relative to the chassis in radians
     public static final Angle kFrontLeftChassisAngularOffset = Radians.of(-Math.PI / 2);
     public static final Angle kFrontRightChassisAngularOffset = Radians.of(0);
     public static final Angle kBackLeftChassisAngularOffset = Radians.of(Math.PI);
     public static final Angle kBackRightChassisAngularOffset = Radians.of(Math.PI / 2);
+
+    public static final Pose2d kDepotClimb = new Pose2d(Meters.of(0.746), Meters.of(4.193),
+        Rotation2d.fromDegrees(180));
+    public static final Pose2d kOutpostClimb = new Pose2d(Meters.of(0.746), Meters.of(2.981),
+        Rotation2d.fromDegrees(180));
 
   }
 
@@ -339,52 +377,45 @@ public final class Constants {
         3.0, 4.0,
         3 * Math.PI, 4 * Math.PI);
 
+    public static final AngularVelocity kLauncherRPM = RPM.of(0); // TODO replace with auto launch RPM
     public static final LinearVelocity crossingEndVelocity = MetersPerSecond.of(0); // To be updated
 
-    public static PathPlannerPath bumpLeftClimbPath;
-    public static PathPlannerPath bumpRightClimbPath;
-    public static PathPlannerPath trenchLeftClimbPath;
-    public static PathPlannerPath trenchRightClimbPath;
-    public static PathPlannerPath trenchLeftAuto;
+    public static PathPlannerPath intakeLeftPath;
+    public static PathPlannerPath depotClimbPath;
+    public static PathPlannerPath outpostClimbPath;
+    public static PathPlannerPath outpostPath;
+    public static PathConstraints kPathfindingConstraints;
 
     static {
       try {
-        bumpLeftClimbPath = PathPlannerPath.fromPathFile("Bump - Left(L1 Climb)");
-        bumpRightClimbPath = PathPlannerPath.fromPathFile("Bump - Right(L1 Climb)");
-        trenchLeftClimbPath = PathPlannerPath.fromPathFile("Trench - Left(L1 Climb)");
-        trenchRightClimbPath = PathPlannerPath.fromPathFile("Trench - Right(L1 Climb)");
-        trenchLeftAuto = PathPlannerPath.fromPathFile("trench left auto");
+        intakeLeftPath = PathPlannerPath.fromPathFile("Intake Left");
+        depotClimbPath = PathPlannerPath.fromPathFile("Depot(L1 Climb)");
+        outpostClimbPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb)");
+        outpostPath = PathPlannerPath.fromPathFile("Drive to Outpost");
       } catch (Exception e) {
         e.printStackTrace();
       }
     }
 
-    public static final PathPlannerPath[] climbPaths = { bumpLeftClimbPath, bumpRightClimbPath, trenchLeftClimbPath,
-        trenchRightClimbPath };
+    public static final PathPlannerPath[] climbPaths = { depotClimbPath, outpostClimbPath };
 
-    public static final Translation2d bumpLeftStartPoint = bumpLeftClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d bumpRightStartPoint = bumpRightClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d trenchLeftStartPoint = trenchLeftClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d trenchRightStartPoint = trenchRightClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d depotStartPoint = depotClimbPath.getAllPathPoints().get(0).position;
+    public static final Translation2d outpostStartPoint = outpostClimbPath.getAllPathPoints().get(0).position;
+
+    public static final Translation2d intakeLeftStartPoint = intakeLeftPath.getAllPathPoints().get(0).position;
 
     public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
-        new Translation2d(Meters.of(bumpLeftStartPoint.getX()).in(Meters), // Blue Alliance
-            Meters.of(bumpLeftStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(bumpRightStartPoint.getX()).in(Meters),
-            Meters.of(bumpRightStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(trenchLeftStartPoint.getX()).in(Meters),
-            Meters.of(trenchLeftStartPoint.getY()).in(Meters)),
-        new Translation2d(Meters.of(trenchRightStartPoint.getX()).in(Meters),
-            Meters.of(trenchRightStartPoint.getY()).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpLeftStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(bumpLeftStartPoint.getY())).in(Meters)), // Red Alliance
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(bumpRightStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(bumpRightStartPoint.getY())).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchLeftStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(trenchLeftStartPoint.getY())).in(Meters)),
-        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(trenchRightStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(trenchRightStartPoint.getY())).in(Meters)),
+        new Translation2d(Meters.of(depotStartPoint.getX()).in(Meters), // Blue Alliance
+            Meters.of(depotStartPoint.getY()).in(Meters)),
+        new Translation2d(Meters.of(outpostStartPoint.getX()).in(Meters),
+            Meters.of(outpostStartPoint.getY()).in(Meters)),
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(depotStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(depotStartPoint.getY())).in(Meters)), // Red Alliance
+        new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(outpostStartPoint.getX())).in(Meters),
+            FieldConstants.kFieldWidthY.minus(Meters.of(outpostStartPoint.getY())).in(Meters)),
     };
+
+    public static final double kAlignTowerTimeoutSeconds = 3;
 
   }
 
@@ -495,18 +526,46 @@ public final class Constants {
   }
 
   public static final class ClimberConstants {
-    public static final int kLeftId = 13;
-    public static final int kRightId = 14;
+
+    // CAN IDs
+    public static final int kLeftId = 13; // leader
+    public static final int kRightId = 14; // follower
     public static final MotorType kMotorType = MotorType.kBrushless;
 
+    public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
+
+    // DIO port for the bottom limit switch
+    public static final int kLeftBottomLimitSwitchDIOPort = 1;
+    public static final int kRightBottomLimitSwitchDIOPort = 0;
+
+    // Travel limits
+    /**
+     * Time it takes to raise the climber to climbing position from the bottom
+     * (where the limit switch returns true)
+     */
+    public static final Time kTimeFromBottomToRaisedPosition = Seconds.of(2);
+    /**
+     * Time it takes to pull the climber down from raised position, to make the
+     * robot climb
+     */
+    public static final Time kTimeFromRaisedToClimbedPosition = kTimeFromBottomToRaisedPosition.times(0.75);
     public static final Distance kStowPosition = Inches.of(0);
-    public static final Distance kClimbPosition = Inches.of(32);
+    public static final Distance kClimbPosition = Inches.of(5.75); // set 1 inch above max length
 
-    public static final double kMotorRaiseSpeed = 0.5;
-    public static final double kMotorHookSpeed = 0.5;
+    public static final Distance kMinLength = Inches.of(-1); // small under-travel buffer
+    public static final Distance kMaxLength = Inches.of(33);
 
-    // TODO: measure these values
-    public static final Distance kWhinchDrumDiameter = Inches.of(1);
+    public static final double kSettledVelocityThresholdInchesPerSec = 0.25; // arms have stopped moving into raise
+                                                                             // position
+    public static final double kStallVelocityThresholdInchesPerSec = 0.1; // arms have stalled on bar during pull
+
+    // PID position tolerance
+    /** Encoder error below which atSetpoint() returns true. */
+    public static final Distance kPIDPositionTolerance = Inches.of(0.5);
+
+    // Winch / spool geometry
+    public static final Distance kWhinchDrumDiameter = Inches.of(1.625);
+    // Without
     public static final Distance kSpoolCableDiameter = Inches.of(0.25);
     public static final int kMaxSpoolLayers = 5;
     public static final int kMinSpoolLayers = 1;
@@ -514,45 +573,56 @@ public final class Constants {
     public static final Distance kAverageEffectiveDiameter = kWhinchDrumDiameter
         .plus(kSpoolCableDiameter.times((kMaxSpoolLayers + kMinSpoolLayers) / 2.0));
 
-    public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI;
+    public static final double kGearReduction = 125.0;
 
-    public static final Distance kMinLength = Inches.of(-1);
-    public static final Distance kMaxLength = Inches.of(33);
-
+    public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI
+        / kGearReduction;
+    // Current limits
     public static final Current kSmartCurrentLimit = Amps.of(40);
+    public static final Current kStatorCurrentLimit = Amps.of(40); // TalonFX only
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
+    public static final double kOutputUp = -1.0;
 
-    // TalonFX-specific
-    public static final Current kStatorCurrentLimit = Amps.of(40);
-    public static final double kSensorToMechanismRatio = 1.0; // Update with real gear ratio
+    // TalonFX sensor ratio
+    public static final double kSensorToMechanismRatio = 1.0;
 
-    public static final double kPIDClimberControllerP = 0.1;
+    // PID gains
+    public static final double kPIDClimberControllerP = 10;
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
 
-    public static final SparkMaxConfig kConfigLeft = new SparkMaxConfig();
-    public static final SparkMaxConfig kConfigRight = new SparkMaxConfig();
+    public static final double kStowCrawlSpeed = -0.15;
+
+    // SparkMax configs
+    public static final SparkMaxConfig kConfigLeader = new SparkMaxConfig();
+    public static final SparkMaxConfig kConfigFollower = new SparkMaxConfig();
 
     static {
-      kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigLeft.closedLoop
+      kConfigLeader.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigLeader.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigLeader.closedLoop
           .p(kPIDClimberControllerP)
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
 
-      kConfigRight.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps))
-          .inverted(true);
-      kConfigRight.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigRight.closedLoop
+      kConfigFollower.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigFollower.inverted(true); // motors face opposite directions
+      kConfigFollower.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigFollower.closedLoop
           .p(kPIDClimberControllerP)
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
     }
+
+    public static final Distance kRaisePosition = Inches.of(17.6); // Was 32
+
+    public static final Distance kPullPosition = Inches.of(0.0);
+
+    public static final Distance kPositionTolerance = Inches.of(0.5);
 
   }
 
@@ -598,7 +668,8 @@ public final class Constants {
     public static final double kSimulatedCoefficentOfFriction = COTS.WHEELS.COLSONS.cof;
     public static final int kGearRatioLevel = 2;
 
-    public static final Pose2d kStartingPose = new Pose2d(7, 4, Rotation2d.fromRotations(Math.PI));
+    /** Starting pose when in blue alliance */
+    public static final Pose2d kStartingPose = new Pose2d(4.4, 0.6, Rotation2d.fromRadians(0));
 
     // Whether the bump should have defined collision
     public static final boolean kSimBumpCollision = false;
@@ -641,11 +712,13 @@ public final class Constants {
     // TODO: Measure this value
     public static final AngularVelocity kSimulatedMaxLauncherSpeed = RPM.of(6000);
 
-    // Climbers
-    // TODO: Measure this value
-    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
-    public static final Distance kSimulatedMaxClimberHeight = Inches.of(10);
+    // Climber simulation
     public static final DCMotor kSimulatedSparkMaxClimberMotor = DCMotor.getNEO(1);
+    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
+    public static final Distance kSimulatedMaxClimberHeight = Inches.of(10.0);
+    // When climbers are within this from 0, the simulated bottom limit switches
+    // will indicate that it's at the bottom
+    public static final Distance kSimulatedClimberBottomTolerance = kSimulatedMaxClimberHeight.times(0.05);
   }
 
   public static final class PhotonConstants {

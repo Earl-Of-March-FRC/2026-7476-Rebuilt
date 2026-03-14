@@ -13,8 +13,10 @@ import edu.wpi.first.math.Vector;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -57,8 +59,12 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Robot;
@@ -72,6 +78,7 @@ import frc.robot.util.vision.CameraProfile;
 import frc.robot.util.vision.ClimbAlignmentIndicator;
 import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
+import frc.robot.util.swerve.PathGenerator;
 
 public class DrivetrainSubsystem extends SubsystemBase {
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
@@ -281,6 +288,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
     this.simulatedSwerveDrive = simulatedSwerveDrive;
     SmartDashboard.putBoolean("Accurate Sim Odometry", accurateSimOdometry);
     resetPose(SimulationConstants.kStartingPose);
+  }
+
+  public void stop() {
+    for (SwerveModule module : modules) {
+      module.setDesiredState(new SwerveModuleState(0, module.getState().angle));
+    }
   }
 
   /**
@@ -1068,5 +1081,4 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
     return new Pose2d(targetX, targetY, new Rotation2d(targetAngle));
   }
-
 }
