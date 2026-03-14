@@ -100,7 +100,7 @@ public record SwerveDriveProfile(
           new CameraProfile(
               "Launcher",
               Degrees.of(0.0), // roll
-              Degrees.of(-17), // pitchs
+              Degrees.of(0), // pitchs
               Degrees.of(180.0), // yaw
               Meters.of(-0.2712041566), // x
               Meters.of(0.254), // y
@@ -112,7 +112,7 @@ public record SwerveDriveProfile(
               Degrees.of(-20), // pitch
               Degrees.of(0), // yaw
               Meters.of(0.3003719164), // x
-              Meters.of(-0.2467180994), // y
+              Meters.of(0.2467180994), // y
               Meters.of(0.4994001188), // z
               VecBuilder.fill(0.9, 0.9, 0.9)),
           new CameraProfile(
@@ -121,13 +121,13 @@ public record SwerveDriveProfile(
               Degrees.of(2), // pitch
               Degrees.of(0), // yaw
               Meters.of(0.300912657), // x
-              Meters.of(0.2467181248), // y
+              Meters.of(-0.2467181248), // y
               Meters.of(0.4994001188), // z
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
       true,
       SwerveDriveProfileID.COMP_BOT,
-      // Drive motor PID 
+      // Drive motor PID
       0.04, 0.0, 0.0,
       50,
       // Turn motor PID
