@@ -109,8 +109,8 @@ public class ClimberSubsystem extends SubsystemBase {
      */
     @Override
     public void setPercentOutput(double percent) {
-      leader.set(percent);
-      follower.set(percent);
+      leader.set(-percent);
+      follower.set(-percent);
       usingPercent = true;
       simPercentSetpoint = percent;
     }
@@ -495,11 +495,11 @@ public class ClimberSubsystem extends SubsystemBase {
      */
     if (isLeftAtBottom() && leftVelocity.in(InchesPerSecond) < 0) {
       motor.resetLeftEncoder();
-      motor.stop();
+      // motor.stop();
     }
     if (isRightAtBottom() && rightVelocity.in(InchesPerSecond) < 0) {
       motor.resetRightEncoder();
-      motor.stop();
+      // motor.stop();
     }
 
     /* Stop both motors only once both arms have fully seated at the bottom. */

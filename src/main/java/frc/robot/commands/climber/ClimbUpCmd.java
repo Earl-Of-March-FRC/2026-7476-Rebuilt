@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.InchesPerSecond;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
@@ -17,15 +18,17 @@ import frc.robot.subsystems.Climber.ClimberSubsystem;
 public class ClimbUpCmd extends Command {
 
   private final ClimberSubsystem climber;
+  private final Distance targetPositionInches;
 
-  public ClimbUpCmd(ClimberSubsystem climber) {
+  public ClimbUpCmd(ClimberSubsystem climber, Distance targetPositionInches) {
     this.climber = climber;
+    this.targetPositionInches = targetPositionInches;
     addRequirements(climber);
   }
 
   @Override
   public void initialize() {
-    climber.setTargetPosition(ClimberConstants.kClimbPosition);
+    climber.setTargetPosition(targetPositionInches);
 
     Logger.recordOutput("Commands/ClimbUpCmd/Status", "Running");
     Logger.recordOutput("Commands/ClimbUpCmd/TargetInches",

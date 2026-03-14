@@ -53,7 +53,9 @@ import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
+import frc.robot.commands.climber.ClimbUpCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
@@ -354,10 +356,12 @@ public class RobotContainer {
     // -IndexerConstants.kWheelSpeed,
     // () -> -IndexerConstants.kTreadmillSpeed));
 
-    driverController.rightBumper().onTrue(
-        new ClimbPercentCmd(climberSub, () -> 1).withTimeout(ClimberConstants.kTimeFromRaisedToClimbedPosition));
-    driverController.leftBumper().onTrue(
-        new ClimbPercentCmd(climberSub, () -> -1).withTimeout(ClimberConstants.kTimeFromBottomToRaisedPosition));
+    driverController.povDown().whileTrue(
+        new ClimbDownCmd(climberSub));
+    driverController.leftBumper().whileTrue(
+        new ClimbUpCmd(climberSub, ClimberConstants.kClimbPosition));
+    driverController.rightBumper().whileTrue(
+        new ClimbUpCmd(climberSub, ClimberConstants.kRaisePosition));
 
     driverController.povDown().whileTrue(new ReturnClimbersToBottomCmd(climberSub));
 
