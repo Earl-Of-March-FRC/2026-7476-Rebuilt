@@ -536,7 +536,7 @@ public final class Constants {
 
     // DIO port for the bottom limit switch
     public static final int kLeftBottomLimitSwitchDIOPort = 1;
-    public static final int kRightBottomLimitSwitchDIOPort = 2;
+    public static final int kRightBottomLimitSwitchDIOPort = 0;
 
     // Travel limits
     /**
