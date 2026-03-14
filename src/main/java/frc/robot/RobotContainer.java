@@ -61,6 +61,7 @@ import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSide;
+import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.PassAndIndexCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
@@ -527,22 +528,17 @@ public class RobotContainer {
             () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
             Set.of(driveSub)));
 
-    autoChooser.addOption("Launch Then Climb (temporarily no cliber commands)", new SequentialCommandGroup(
-        new DriveAndLaunchCmd(
-            driveSub,
-            indexerSub,
-            launcherAndIntakeSub,
-            () -> 0.0,
-            () -> 0.0,
-            // Always lock distance in auto, since the driver isn't controlling movement
-            () -> true,
-            Constants.LauncherAndIntakeConstants.kLeadShots)
-            .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime)));
+    autoChooser.addOption("Launch Then Climb Left",
+        new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Left));
 
-    autoChooser.addOption("Align to Climb",
-        Commands.defer(
-            () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity, "Bump"),
-            Set.of(driveSub)));
+    autoChooser.addOption("Launch Then Climb Right",
+        new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Right));
+
+    // autoChooser.addOption("Align to Climb",
+    // Commands.defer(
+    // () -> PathGenerator.findL1ClimbPath(AutoConstants.crossingEndVelocity,
+    // "Bump"),
+    // Set.of(driveSub)));
 
     // autoChooser.addOption("Align to Tower Then Climb",
     // new NearestClimbCmd(driveSub, climberSub));
