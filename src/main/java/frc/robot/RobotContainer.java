@@ -98,32 +98,27 @@ public class RobotContainer {
     SwerveDriveProfile activeProfile = ProfileSelector.getSelectedOrDefault(SwerveDriveProfile.COMP_BOT);
     SwerveConfig.applyProfile(activeProfile);
 
+    launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
+        new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
+            new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
+                Constants.LauncherAndIntakeConstants.kMotorType),
+            new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
+                Constants.LauncherAndIntakeConstants.kMotorType)));
+
+    climberSub = new ClimberSubsystem(
+        new ClimberSubsystem.SparkMaxClimberMotor(
+            new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+            Constants.ClimberConstants.kConfigLeader,
+            new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+            Constants.ClimberConstants.kConfigFollower),
+        new DigitalInput(Constants.ClimberConstants.kLeftBottomLimitSwitchDIOPort),
+        new DigitalInput(Constants.ClimberConstants.kRightBottomLimitSwitchDIOPort));
+    indexerSub = new IndexerSubsystem(
+        new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
+        new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
+
     if (Robot.isReal()) { // This is if the Robot is
       gyro = SwerveConfig.gyro;
-
-      // otbIntakeSub = new OTBIntakeSubsystem(
-      // new SparkMax(OTBIntakeConstants.kShoulderCanId,
-      // OTBIntakeConstants.kMotorType),
-      // new SparkMax(OTBIntakeConstants.kRollerCanId,
-      // OTBIntakeConstants.kMotorType));
-
-      launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
-          new LauncherAndIntakeSubsystem.SparkMaxLauncherAndIntakeMotor(
-              new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
-                  Constants.LauncherAndIntakeConstants.kMotorType),
-              new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
-                  Constants.LauncherAndIntakeConstants.kMotorType)));
-
-      climberSub = new ClimberSubsystem(
-          new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
-              Constants.ClimberConstants.kConfigLeader,
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
-              Constants.ClimberConstants.kConfigFollower),
-          new DigitalInput(Constants.ClimberConstants.kBottomLimitSwitchDIOPort));
-      indexerSub = new IndexerSubsystem(
-          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
-          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
 
       // RPM tuning interface — constructing registers the SmartDashboard key
       new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(SmartDashboard.getNumber("RPM", 0)));
@@ -165,30 +160,6 @@ public class RobotContainer {
           startPose);
 
       gyro = new SimulatedGyro(simulatedSwerveDrive.getGyroSimulation());
-
-      // otbIntakeSub = new OTBIntakeSubsystem(
-      // new SparkMax(OTBIntakeConstants.kShoulderCanId,
-      // OTBIntakeConstants.kMotorType),
-      // new SparkMax(OTBIntakeConstants.kRollerCanId,
-      // OTBIntakeConstants.kMotorType));
-
-      launcherAndIntakeSub = new LauncherAndIntakeSubsystem(
-          new LauncherAndIntakeSubsystem.SimSparkMaxLauncherAndIntakeMotor(
-              new SparkMax(Constants.LauncherAndIntakeConstants.kLeaderCanSparkId,
-                  Constants.LauncherAndIntakeConstants.kMotorType),
-              DCMotor.getNEO(2).withReduction(Constants.LauncherAndIntakeConstants.kMotorReduction),
-              Constants.SimulationConstants.kSimulatedMaxLauncherSpeed));
-
-      climberSub = new ClimberSubsystem(
-          new ClimberSubsystem.SparkMaxClimberMotor(
-              new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
-              Constants.ClimberConstants.kConfigLeader,
-              new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
-              Constants.ClimberConstants.kConfigFollower),
-          new DigitalInput(Constants.ClimberConstants.kBottomLimitSwitchDIOPort));
-      indexerSub = new IndexerSubsystem(
-          new SparkMax(Constants.IndexerConstants.kWheelCanId, Constants.IndexerConstants.kMotorType),
-          new SparkMax(Constants.IndexerConstants.kTreadmillCanId, Constants.IndexerConstants.kMotorType));
 
       // Override bump collision (on by default)
       SimulatedArena.overrideInstance(
@@ -257,7 +228,7 @@ public class RobotContainer {
     // Resets the climber encoders when the bottom limitswitch hits (won't do this
     // in simulation to avoid some issues with climber getting stuck at bottom)
     if (RobotBase.isReal()) {
-      new Trigger(() -> climberSub.isAtBottom()).whileTrue(Commands.run(() -> climberSub.resetEncoder()));
+      new Trigger(() -> climberSub.isLeftAtBottom()).whileTrue(Commands.run(() -> climberSub.resetEncoder()));
     }
 
     DriveCmd driveCmd = new DriveCmd(

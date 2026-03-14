@@ -4,8 +4,6 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 
-import java.util.function.BooleanSupplier;
-
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.sim.SparkMaxSim;
@@ -25,7 +23,6 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.UnitHelpers;
@@ -182,7 +179,8 @@ public class ClimberSubsystem extends SubsystemBase {
   private final ClimberMotorInterface motor;
 
   // Normally-open limit switch; closes (reads false) when at the bottom.
-  private final DigitalInput bottomLimitSwitch;
+  private final DigitalInput leftBottomLimitSwitch;
+  private final DigitalInput rightBottomLimitSwitch;
 
   // Last PID setpoint issued, used for atSetpoint() calculation.
   private Distance lastSetpoint = Inches.of(0);
@@ -192,9 +190,11 @@ public class ClimberSubsystem extends SubsystemBase {
    *                          configured inside via SparkMaxConfig.follow()).
    * @param bottomLimitSwitch DIO-wired limit switch at the bottom of travel.
    */
-  public ClimberSubsystem(ClimberMotorInterface motor, DigitalInput bottomLimitSwitch) {
+  public ClimberSubsystem(ClimberMotorInterface motor, DigitalInput leftBottomLimitSwitch,
+      DigitalInput rightBottomLimitSwitch) {
     this.motor = motor;
-    this.bottomLimitSwitch = bottomLimitSwitch;
+    this.leftBottomLimitSwitch = leftBottomLimitSwitch;
+    this.rightBottomLimitSwitch = rightBottomLimitSwitch;
   }
 
   /**
@@ -236,16 +236,29 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
-   * Check if the bottom limit switch was triggered
+   * Check if the left bottom limit switch was triggered
    * 
    * @return {@code true} when the bottom limit switch is triggered.
    */
-  public boolean isAtBottom() {
+  public boolean isLeftAtBottom() {
+    return limitSwitchFlaggedAtBottom(leftBottomLimitSwitch);
+  }
+
+  /**
+   * Check if the left bottom limit switch was triggered
+   * 
+   * @return {@code true} when the bottom limit switch is triggered.
+   */
+  public boolean isRightAtBottom() {
+    return limitSwitchFlaggedAtBottom(rightBottomLimitSwitch);
+  }
+
+  private boolean limitSwitchFlaggedAtBottom(DigitalInput limitSwitch) {
     // DigitalInput reads false when the circuit is closed (active-low wiring).
     // However, if the switch is active-high, remove the negation.
     boolean triggered;
     if (RobotBase.isReal()) {
-      triggered = !bottomLimitSwitch.get();
+      triggered = !limitSwitch.get();
     } else {
       triggered = getPosition().isNear(Inches.of(0), SimulationConstants.kSimulatedClimberBottomTolerance);
     }
@@ -283,10 +296,11 @@ public class ClimberSubsystem extends SubsystemBase {
     Logger.recordOutput("Climber/Measured/AppliedOutput", motor.getAppliedOutput());
     Logger.recordOutput("Climber/Measured/CurrentAmps", motor.getCurrent());
     Logger.recordOutput("Climber/AtSetpoint", atSetpoint());
-    Logger.recordOutput("Climber/Measured/LimitSwitch/AtBottom", isAtBottom());
+    Logger.recordOutput("Climber/Measured/LimitSwitch/LeftAtBottom", isLeftAtBottom());
+    Logger.recordOutput("Climber/Measured/LimitSwitch/RightAtBottom", isRightAtBottom());
 
     // Safety net: if the limit switch trips while descending, stop and zero.
-    if (isAtBottom() && velocity.in(InchesPerSecond) < 0) {
+    if ((isLeftAtBottom() || isRightAtBottom()) && velocity.in(InchesPerSecond) < 0) {
       motor.stop();
       motor.resetEncoder();
     }
