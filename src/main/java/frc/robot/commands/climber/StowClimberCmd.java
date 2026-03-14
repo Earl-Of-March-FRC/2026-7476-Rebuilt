@@ -39,7 +39,7 @@ public class StowClimberCmd extends Command {
 
     Logger.recordOutput("Commands/StowClimberCmd/PositionInches", climber.getPosition().in(Inches));
     Logger.recordOutput("Commands/StowClimberCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
-    Logger.recordOutput("Commands/StowClimberCmd/LimitSwitchTripped", climber.isAtBottom());
+    Logger.recordOutput("Commands/StowClimberCmd/LimitSwitchTripped", climber.isEitherAtBottom());
   }
 
   @Override
@@ -54,6 +54,6 @@ public class StowClimberCmd extends Command {
 
   @Override
   public boolean isFinished() {
-    return climber.isAtBottom();
+    return climber.isEitherAtBottom();
   }
 }

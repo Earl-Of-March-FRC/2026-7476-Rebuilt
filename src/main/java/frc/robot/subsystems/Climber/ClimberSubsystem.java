@@ -253,6 +253,15 @@ public class ClimberSubsystem extends SubsystemBase {
     return limitSwitchFlaggedAtBottom(rightBottomLimitSwitch);
   }
 
+  /**
+   * Check if the left bottom limit switch was triggered
+   * 
+   * @return {@code true} when either the bottom limit switch is triggered.
+   */
+  public boolean isEitherAtBottom() {
+    return isLeftAtBottom() || isRightAtBottom();
+  }
+
   private boolean limitSwitchFlaggedAtBottom(DigitalInput limitSwitch) {
     // DigitalInput reads false when the circuit is closed (active-low wiring).
     // However, if the switch is active-high, remove the negation.

@@ -39,13 +39,13 @@ public class ClimbDownCmd extends Command {
   public void execute() {
     Logger.recordOutput("Commands/ClimbDownCmd/PositionInches", climber.getPosition().in(Inches));
     Logger.recordOutput("Commands/ClimbDownCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
-    Logger.recordOutput("Commands/ClimbDownCmd/LimitSwitchTripped", climber.isAtBottom());
+    Logger.recordOutput("Commands/ClimbDownCmd/LimitSwitchTripped", climber.isEitherAtBottom());
   }
 
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    if (!interrupted && climber.isAtBottom()) {
+    if (!interrupted && climber.isEitherAtBottom()) {
       climber.resetEncoder();
     }
     Logger.recordOutput("Commands/ClimbDownCmd/Status", interrupted ? "Interrupted" : "Completed");
@@ -53,6 +53,6 @@ public class ClimbDownCmd extends Command {
 
   @Override
   public boolean isFinished() {
-    return climber.isAtBottom();
+    return climber.isEitherAtBottom();
   }
 }
