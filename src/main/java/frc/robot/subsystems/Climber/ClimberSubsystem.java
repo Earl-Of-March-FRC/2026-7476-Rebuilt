@@ -74,6 +74,16 @@ public class ClimberSubsystem extends SubsystemBase {
     /* FPGA timestamp of the previous simulationPeriodic() call. */
     private double lastSimSeconds = 0;
 
+    @Override
+    public void stopLeft() {
+      leader.stopMotor();
+    }
+
+    @Override
+    public void stopRight() {
+      follower.stopMotor();
+    }
+
     /**
      * Constructs the motor wrapper and applies configuration to both controllers.
      *
@@ -501,13 +511,13 @@ public class ClimberSubsystem extends SubsystemBase {
     if (isLeftAtBottom()) {
       motor.resetLeftEncoder();
       if (motor.isUsingPercentSetpoints() && leftVelocity.in(InchesPerSecond) < 0) {
-        motor.stop();
+        motor.stopLeft();
       }
     }
     if (isRightAtBottom()) {
       motor.resetRightEncoder();
       if (motor.isUsingPercentSetpoints() && rightVelocity.in(InchesPerSecond) < 0) {
-        motor.stop();
+        motor.stopRight();
       }
     }
 
