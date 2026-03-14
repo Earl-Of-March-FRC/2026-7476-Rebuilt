@@ -60,11 +60,11 @@ public class Robot extends LoggedRobot {
     // Only write log files if real & USB stick is plugged in
     if (isReal() && new File("/u/").exists()) {
       Logger.addDataReceiver(new WPILOGWriter("/u/logs"));
-      Logger.registerURCL(URCL.startExternal());
     } else {
       System.err
           .println("No USB flashdrive was found in the RoboRIO's directory. WPILOGWriter and URCL not initiated.");
     }
+    Logger.registerURCL(URCL.startExternal());
     Logger.start();
 
     m_robotContainer = new RobotContainer();
