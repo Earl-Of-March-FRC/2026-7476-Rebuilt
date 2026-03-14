@@ -245,7 +245,7 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
-   * Check if the left bottom limit switch was triggered
+   * Check if the right bottom limit switch was triggered
    * 
    * @return {@code true} when the bottom limit switch is triggered.
    */
@@ -254,7 +254,7 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
-   * Check if the left bottom limit switch was triggered
+   * Check if either bottom limit switches was triggered
    * 
    * @return {@code true} when either the bottom limit switch is triggered.
    */
