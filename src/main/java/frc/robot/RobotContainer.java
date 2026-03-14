@@ -60,11 +60,13 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.drivetrain.DriveXLockCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
+import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.groups.ReturnClimbersToBottomCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
@@ -437,7 +439,8 @@ public class RobotContainer {
 
     operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
         .and(operatorController.rightBumper())
-        .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(autoLaunchCmd);
+        .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub, launcherAndIntakeSub));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
@@ -451,6 +454,9 @@ public class RobotContainer {
 
     operatorController.a().whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
+
+    // TODO: Confirm button index
+    operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
 
     // Manual RPM offset (always active, and does not have any requirements)
     new Trigger(() -> true)
