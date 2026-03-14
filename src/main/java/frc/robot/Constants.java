@@ -572,8 +572,10 @@ public final class Constants {
     public static final Distance kAverageEffectiveDiameter = kWhinchDrumDiameter
         .plus(kSpoolCableDiameter.times((kMaxSpoolLayers + kMinSpoolLayers) / 2.0));
 
-    public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI;
+    public static final double kGearReduction = 125.0;
 
+    public static final double kRotationsToInchesConversion = kAverageEffectiveDiameter.in(Inches) * Math.PI
+        / kGearReduction;
     // Current limits
     public static final Current kSmartCurrentLimit = Amps.of(40);
     public static final Current kStatorCurrentLimit = Amps.of(40); // TalonFX only
