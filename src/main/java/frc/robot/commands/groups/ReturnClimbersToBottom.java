@@ -4,7 +4,7 @@
 
 package frc.robot.commands.groups;
 
-import java.util.function.BooleanSupplier;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.ClimberConstants;
@@ -17,10 +17,13 @@ import frc.robot.subsystems.Climber.ClimberSubsystem;
 public class ReturnClimbersToBottom extends SequentialCommandGroup {
   /** Creates a new ReturnClimbersToBottom. */
   public ReturnClimbersToBottom(ClimberSubsystem climbers) {
-    BooleanSupplier canRun = () -> !climbers.isAtBottom();
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
-        new ClimbPercentCmd(climbers, () -> ClimberConstants.kOutputRangeMin).onlyWhile(canRun));
+        new ClimbPercentCmd(climbers, () -> ClimberConstants.kOutputRangeMin).onlyWhile(() -> {
+          boolean can = !climbers.isAtBottom();
+          Logger.recordOutput("Commands/ReturnClimbersToBottom/CanRun", can);
+          return can;
+        }));
   }
 }

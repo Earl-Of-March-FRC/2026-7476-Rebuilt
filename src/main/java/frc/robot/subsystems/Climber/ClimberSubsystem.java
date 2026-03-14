@@ -244,9 +244,8 @@ public class ClimberSubsystem extends SubsystemBase {
     if (RobotBase.isReal()) {
       triggered = !bottomLimitSwitch.get();
     } else {
-      triggered = getPosition().in(Inches) == 0;
+      triggered = getPosition().isNear(Inches.of(0), SimulationConstants.kSimulatedClimberBottomTolerance);
     }
-    Logger.recordOutput("Climber/LimitSwitch/AtBottom", triggered);
     return triggered;
   }
 
@@ -281,6 +280,7 @@ public class ClimberSubsystem extends SubsystemBase {
     Logger.recordOutput("Climber/Measured/AppliedOutput", motor.getAppliedOutput());
     Logger.recordOutput("Climber/Measured/CurrentAmps", motor.getCurrent());
     Logger.recordOutput("Climber/AtSetpoint", atSetpoint());
+    Logger.recordOutput("Climber/Measured/LimitSwitch/AtBottom", isAtBottom());
 
     // Safety net: if the limit switch trips while descending, stop and zero.
     if (isAtBottom() && velocity.in(InchesPerSecond) < 0) {

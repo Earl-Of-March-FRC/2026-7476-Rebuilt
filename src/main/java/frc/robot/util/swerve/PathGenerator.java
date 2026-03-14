@@ -419,7 +419,7 @@ public class PathGenerator {
 
     Logger.recordOutput("Commands/PathGenerator/driveToTowerFrontAuto/DesiredPose", desiredPose);
 
-    return AutoBuilder.pathfindToPose(desiredPose, AutoConstants.L1ClimbConstraints)
+    return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
         .andThen(new DriveStopCmd(drive()));
   }
 

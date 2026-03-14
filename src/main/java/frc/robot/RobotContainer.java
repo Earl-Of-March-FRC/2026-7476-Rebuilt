@@ -35,6 +35,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -252,8 +253,11 @@ public class RobotContainer {
 
   private void configureBindings() {
 
-    // Resets the climber encoders when the bottom limitswitch hits
-    new Trigger(() -> climberSub.isAtBottom()).whileTrue(Commands.run(() -> climberSub.resetEncoder()));
+    // Resets the climber encoders when the bottom limitswitch hits (won't do this
+    // in simulation to avoid some issues with climber getting stuck at bottom)
+    if (RobotBase.isReal()) {
+      new Trigger(() -> climberSub.isAtBottom()).whileTrue(Commands.run(() -> climberSub.resetEncoder()));
+    }
 
     DriveCmd driveCmd = new DriveCmd(
         driveSub,
