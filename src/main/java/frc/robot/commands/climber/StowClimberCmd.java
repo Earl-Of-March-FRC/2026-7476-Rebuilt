@@ -37,23 +37,32 @@ public class StowClimberCmd extends Command {
   public void execute() {
     climber.setPercentOutput(ClimberConstants.kStowCrawlSpeed);
 
-    Logger.recordOutput("Commands/StowClimberCmd/PositionInches", climber.getPosition().in(Inches));
-    Logger.recordOutput("Commands/StowClimberCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
-    Logger.recordOutput("Commands/StowClimberCmd/LimitSwitchTripped", climber.isEitherAtBottom());
+    Logger.recordOutput("Commands/StowClimberCmd/LeftPositionInches",
+        climber.getLeftPosition().in(Inches));
+    Logger.recordOutput("Commands/StowClimberCmd/RightPositionInches",
+        climber.getRightPosition().in(Inches));
+    Logger.recordOutput("Commands/StowClimberCmd/LeftVelocityInchesPerSec",
+        climber.getLeftVelocity().in(InchesPerSecond));
+    Logger.recordOutput("Commands/StowClimberCmd/RightVelocityInchesPerSec",
+        climber.getRightVelocity().in(InchesPerSecond));
+    Logger.recordOutput("Commands/StowClimberCmd/LeftAtBottom", climber.isLeftAtBottom());
+    Logger.recordOutput("Commands/StowClimberCmd/RightAtBottom", climber.isRightAtBottom());
   }
 
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    if (!interrupted) {
-      climber.resetEncoder();
+    if (!interrupted && climber.areBothAtBottom()) {
+      climber.resetLeftEncoder();
+      climber.resetRightEncoder();
       Logger.recordOutput("Commands/StowClimberCmd/EncoderZeroed", true);
     }
-    Logger.recordOutput("Commands/StowClimberCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/StowClimberCmd/Status",
+        interrupted ? "Interrupted" : "Completed");
   }
 
   @Override
   public boolean isFinished() {
-    return climber.isEitherAtBottom();
+    return climber.areBothAtBottom();
   }
 }

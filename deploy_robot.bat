@@ -4,7 +4,7 @@ setlocal EnableDelayedExpansion
 ::  ROBOT DEPLOY SCRIPT
 ::  Pulls latest code, connects to robot WiFi, then deploys via WPILib
 
-:: ---------- CONFIGURATION (edit these) ----------
+:: CONFIGURATION (edit these) 
 set WIFI_SSID=FRC-7476-EXTRA
 set TEAM_NUMBER=7476
 set DEPLOY_BRANCH=main
@@ -13,7 +13,6 @@ set JAVA_HOME=C:\Users\Public\wpilib\2026\jdk
 
 set GRADLEW=%REPO_PATH%\gradlew.bat
 set PATH=%JAVA_HOME%\bin;%PATH%
-:: ------------------------------------------------
 
 title Robot Deploy Script - Team %TEAM_NUMBER%
 

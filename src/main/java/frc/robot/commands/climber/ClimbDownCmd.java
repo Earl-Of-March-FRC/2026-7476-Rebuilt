@@ -10,13 +10,11 @@ import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 
 /**
- * Drives the climber down to {@link ClimberConstants#kStowPosition} via PID.
- * Ends when the bottom limit switch trips, then zeroes the encoder.
+ * Drives both arms down to ClimberConstants.kStowPosition via PID.
+ * Ends when both bottom limit switches trigger, then zeroes both encoders.
  *
- * <p>
- * Requires the encoder to already be zeroed (run {@link StowClimberCmd}
- * at match start first).
- *
+ * Requires the encoders to already be zeroed. Run StowClimberCmd at match
+ * start first.
  */
 public class ClimbDownCmd extends Command {
 
@@ -32,27 +30,37 @@ public class ClimbDownCmd extends Command {
     climber.setTargetPosition(ClimberConstants.kStowPosition);
 
     Logger.recordOutput("Commands/ClimbDownCmd/Status", "Running");
-    Logger.recordOutput("Commands/ClimbDownCmd/TargetInches", ClimberConstants.kStowPosition.in(Inches));
+    Logger.recordOutput("Commands/ClimbDownCmd/TargetInches",
+        ClimberConstants.kStowPosition.in(Inches));
   }
 
   @Override
   public void execute() {
-    Logger.recordOutput("Commands/ClimbDownCmd/PositionInches", climber.getPosition().in(Inches));
-    Logger.recordOutput("Commands/ClimbDownCmd/VelocityInchesPerSec", climber.getVelocity().in(InchesPerSecond));
-    Logger.recordOutput("Commands/ClimbDownCmd/LimitSwitchTripped", climber.isEitherAtBottom());
+    Logger.recordOutput("Commands/ClimbDownCmd/LeftPositionInches",
+        climber.getLeftPosition().in(Inches));
+    Logger.recordOutput("Commands/ClimbDownCmd/RightPositionInches",
+        climber.getRightPosition().in(Inches));
+    Logger.recordOutput("Commands/ClimbDownCmd/LeftVelocityInchesPerSec",
+        climber.getLeftVelocity().in(InchesPerSecond));
+    Logger.recordOutput("Commands/ClimbDownCmd/RightVelocityInchesPerSec",
+        climber.getRightVelocity().in(InchesPerSecond));
+    Logger.recordOutput("Commands/ClimbDownCmd/LeftAtBottom", climber.isLeftAtBottom());
+    Logger.recordOutput("Commands/ClimbDownCmd/RightAtBottom", climber.isRightAtBottom());
   }
 
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    if (!interrupted && climber.isEitherAtBottom()) {
-      climber.resetEncoder();
+    if (!interrupted && climber.areBothAtBottom()) {
+      climber.resetLeftEncoder();
+      climber.resetRightEncoder();
     }
-    Logger.recordOutput("Commands/ClimbDownCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/ClimbDownCmd/Status",
+        interrupted ? "Interrupted" : "Completed");
   }
 
   @Override
   public boolean isFinished() {
-    return climber.isEitherAtBottom();
+    return climber.areBothAtBottom();
   }
 }

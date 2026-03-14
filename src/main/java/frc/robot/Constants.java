@@ -600,7 +600,6 @@ public final class Constants {
     public static final SparkMaxConfig kConfigFollower = new SparkMaxConfig();
 
     static {
-      // Leader
       kConfigLeader.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
       kConfigLeader.encoder.positionConversionFactor(kRotationsToInchesConversion);
       kConfigLeader.closedLoop
@@ -609,10 +608,14 @@ public final class Constants {
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
 
-      // Follower: mirrors leader, inverted because motors face opposite directions
-      kConfigFollower
-          .smartCurrentLimit((int) kSmartCurrentLimit.in(Amps))
-          .follow(kLeftId, true);
+      kConfigFollower.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigFollower.inverted(true); // motors face opposite directions
+      kConfigFollower.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigFollower.closedLoop
+          .p(kPIDClimberControllerP)
+          .i(kPIDClimberControllerI)
+          .d(kPIDClimberControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax);
     }
 
     public static final Distance kRaisePosition = Inches.of(7); // Was 32
