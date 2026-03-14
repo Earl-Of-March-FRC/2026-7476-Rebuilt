@@ -543,6 +543,10 @@ public final class Constants {
      * (where the limit switch returns true)
      */
     public static final Time kTimeFromBottomToRaisedPosition = Seconds.of(2);
+    /**
+     * Time it takes to pull the climber down from raised position, to make the
+     * robot climb
+     */
     public static final Time kTimeFromRaisedToClimbedPosition = kTimeFromBottomToRaisedPosition.times(0.75);
     public static final Distance kStowPosition = Inches.of(0);
     public static final Distance kClimbPosition = Inches.of(32); // set 1 inch above max length
@@ -576,6 +580,7 @@ public final class Constants {
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
+    public static final double kOutputUp = -1.0;
 
     // TalonFX sensor ratio
     public static final double kSensorToMechanismRatio = 1.0;

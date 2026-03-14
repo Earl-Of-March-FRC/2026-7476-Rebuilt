@@ -20,7 +20,7 @@ public class ReturnClimbersToBottomCmd extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
-        new ClimbPercentCmd(climbers, () -> ClimberConstants.kOutputRangeMin).onlyWhile(() -> {
+        new ClimbPercentCmd(climbers, () -> -ClimberConstants.kOutputUp).onlyWhile(() -> {
           boolean can = !climbers.isAtBottom();
           Logger.recordOutput("Commands/ReturnClimbersToBottom/CanRun", can);
           return can;
