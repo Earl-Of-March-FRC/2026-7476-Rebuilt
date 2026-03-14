@@ -4,6 +4,8 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 
+import java.util.function.BooleanSupplier;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.sim.SparkMaxSim;
@@ -23,6 +25,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.UnitHelpers;
@@ -229,11 +232,20 @@ public class ClimberSubsystem extends SubsystemBase {
     Logger.recordOutput("Climber/EncoderReset", true);
   }
 
-  // @return {@code true} when the bottom limit switch is triggered.
+  /**
+   * Check if the bottom limit switch was triggered
+   * 
+   * @return {@code true} when the bottom limit switch is triggered.
+   */
   public boolean isAtBottom() {
     // DigitalInput reads false when the circuit is closed (active-low wiring).
     // However, if the switch is active-high, remove the negation.
-    boolean triggered = !bottomLimitSwitch.get();
+    boolean triggered;
+    if (RobotBase.isReal()) {
+      triggered = !bottomLimitSwitch.get();
+    } else {
+      triggered = getPosition().in(Inches) == 0;
+    }
     Logger.recordOutput("Climber/LimitSwitch/AtBottom", triggered);
     return triggered;
   }

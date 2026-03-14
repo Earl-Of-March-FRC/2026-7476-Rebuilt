@@ -401,7 +401,6 @@ public class PathGenerator {
    * 
    * @param side Side of the tower relative to the driverstation
    * @return Command
-   * @deprecated
    */
   public static Command driveToTowerFrontAuto(TowerSide side) {
     PathPlannerPath selectedPath = getTowerPathFromSide(side);
@@ -420,7 +419,7 @@ public class PathGenerator {
 
     Logger.recordOutput("Commands/PathGenerator/driveToTowerFrontAuto/DesiredPose", desiredPose);
 
-    return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
+    return AutoBuilder.pathfindToPose(desiredPose, AutoConstants.L1ClimbConstraints)
         .andThen(new DriveStopCmd(drive()));
   }
 

@@ -17,7 +17,6 @@ import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.Rotation;
 
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -28,10 +27,8 @@ import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
-import com.fasterxml.jackson.databind.util.Named;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathfindThenFollowPath;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -43,27 +40,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
-import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
-import frc.robot.commands.OTBIntake.IntakeCmd;
-import frc.robot.commands.OTBIntake.PlowCmd;
-import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
-import frc.robot.commands.climber.ClimbUpCmd;
-import frc.robot.commands.climber.StowClimberCmd;
-import frc.robot.commands.climber.TimedAutoClimbCmd;
-import frc.robot.commands.drivetrain.FineAlignTowerCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
@@ -80,7 +69,6 @@ import frc.robot.util.launcher.LaunchHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
-import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -264,6 +252,9 @@ public class RobotContainer {
 
   private void configureBindings() {
 
+    // Resets the climber encoders when the bottom limitswitch hits
+    new Trigger(() -> climberSub.isAtBottom()).whileTrue(Commands.run(() -> climberSub.resetEncoder()));
+
     DriveCmd driveCmd = new DriveCmd(
         driveSub,
         this::getDriverVx,
@@ -402,10 +393,6 @@ public class RobotContainer {
     driverController.povUp().toggleOnTrue(new LauncherCmd(launcherAndIntakeSub,
         () -> RPM.of(2780)));
 
-    driverController.povLeft().whileTrue(new ClimbPercentCmd(climberSub, () -> 0.5));
-
-    driverController.povRight().whileTrue(new ClimbPercentCmd(climberSub, () -> -0.5));
-
     // driverController.povLeft()
     // .whileTrue(new PullClimberCmd(climberSub,
     // () -> (driverController.getLeftTriggerAxis() -
@@ -418,13 +405,8 @@ public class RobotContainer {
     // driverController.getRightTriggerAxis()) * 0.3,
     // ClimbSide.Right));
 
-    operatorController.x().onTrue(new ClimbUpCmd(climberSub));
-    // hold timed
-    operatorController.y().onTrue(new StowClimberCmd(climberSub)); // homing
-    // crawl to limit switch
-    operatorController.povDown().onTrue(new ClimbDownCmd(climberSub)); // PID
-    // stow (fast, needs zero first)
-    operatorController.b().onTrue(new TimedAutoClimbCmd(climberSub));
+    operatorController.x().whileTrue(new ClimbPercentCmd(climberSub, () -> ClimberConstants.kOutputRangeMin));
+    operatorController.y().whileTrue(new ClimbPercentCmd(climberSub, () -> ClimberConstants.kOutputRangeMax));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
@@ -566,6 +548,12 @@ public class RobotContainer {
 
     autoChooser.addOption("Align to Tower Right",
         new DriveToTowerSide(driveSub, TowerSide.Right));
+
+    autoChooser.addOption("Align to Tower Left & Climb",
+        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
+
+    autoChooser.addOption("Align to Tower Right & Climb",
+        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }

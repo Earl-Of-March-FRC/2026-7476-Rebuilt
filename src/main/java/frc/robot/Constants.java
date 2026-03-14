@@ -538,6 +538,11 @@ public final class Constants {
     public static final int kBottomLimitSwitchDIOPort = 1;
 
     // Travel limits
+    /**
+     * Time it takes to raise the climber to climbing position from the bottom
+     * (where the limit switch returns true)
+     */
+    public static final Time kTimeToRaiseToClimbingPosition = Seconds.of(2);
     public static final Distance kStowPosition = Inches.of(0);
     public static final Distance kClimbPosition = Inches.of(32); // set 1 inch above max length
 
@@ -580,8 +585,6 @@ public final class Constants {
     public static final double kPIDClimberControllerD = 0.0;
 
     public static final double kStowCrawlSpeed = -0.15;
-
-    public static final Time kClimbDuration = Seconds.of(3.0);
 
     // SparkMax configs
     public static final SparkMaxConfig kConfigLeader = new SparkMaxConfig();
@@ -699,7 +702,7 @@ public final class Constants {
 
     // Climber simulation
     public static final DCMotor kSimulatedSparkMaxClimberMotor = DCMotor.getNEO(1);
-    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(12.0);
+    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
     public static final Distance kSimulatedMaxClimberHeight = Inches.of(10.0);
   }
 
