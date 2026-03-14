@@ -21,7 +21,7 @@ public class ReturnClimbersToBottomCmd extends SequentialCommandGroup {
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
         new ClimbPercentCmd(climbers, () -> -ClimberConstants.kOutputUp).onlyWhile(() -> {
-          boolean can = !climbers.isEitherAtBottom();
+          boolean can = !climbers.areBothAtBottom();
           Logger.recordOutput("Commands/ReturnClimbersToBottom/CanRun", can);
           return can;
         }));
