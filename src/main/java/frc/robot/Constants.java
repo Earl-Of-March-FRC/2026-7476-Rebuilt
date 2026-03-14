@@ -550,7 +550,7 @@ public final class Constants {
      */
     public static final Time kTimeFromRaisedToClimbedPosition = kTimeFromBottomToRaisedPosition.times(0.75);
     public static final Distance kStowPosition = Inches.of(0);
-    public static final Distance kClimbPosition = Inches.of(32); // set 1 inch above max length
+    public static final Distance kClimbPosition = Inches.of(5.75); // set 1 inch above max length
 
     public static final Distance kMinLength = Inches.of(-1); // small under-travel buffer
     public static final Distance kMaxLength = Inches.of(33);
@@ -589,7 +589,7 @@ public final class Constants {
     public static final double kSensorToMechanismRatio = 1.0;
 
     // PID gains
-    public static final double kPIDClimberControllerP = 0.1;
+    public static final double kPIDClimberControllerP = 10;
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
 
@@ -618,7 +618,7 @@ public final class Constants {
           .outputRange(kOutputRangeMin, kOutputRangeMax);
     }
 
-    public static final Distance kRaisePosition = Inches.of(7); // Was 32
+    public static final Distance kRaisePosition = Inches.of(17.6); // Was 32
 
     public static final Distance kPullPosition = Inches.of(0.0);
 

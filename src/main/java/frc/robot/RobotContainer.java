@@ -230,12 +230,12 @@ public class RobotContainer {
 
     // Resets the climber encoders when the bottom limitswitch hits (won't do this
     // in simulation to avoid some issues with climber getting stuck at bottom)
-    // if (RobotBase.isReal()) {
-    // new Trigger(() -> climberSub.isLeftAtBottom())
-    // .onTrue(Commands.runOnce(() -> climberSub.resetLeftEncoder()));
-    // new Trigger(() -> climberSub.isRightAtBottom())
-    // .onTrue(Commands.runOnce(() -> climberSub.resetRightEncoder()));
-    // }
+    if (RobotBase.isReal()) {
+      new Trigger(() -> climberSub.isLeftAtBottom())
+          .onTrue(Commands.runOnce(() -> climberSub.resetLeftEncoder()));
+      new Trigger(() -> climberSub.isRightAtBottom())
+          .onTrue(Commands.runOnce(() -> climberSub.resetRightEncoder()));
+    }
 
     DriveCmd driveCmd = new DriveCmd(
         driveSub,
