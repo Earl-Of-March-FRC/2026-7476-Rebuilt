@@ -10,16 +10,23 @@ import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 
 /**
- * Drives both arms down to ClimberConstants.kStowPosition via PID.
- * Ends when both bottom limit switches trigger, then zeroes both encoders.
+ * Crawls both arms downward at {@link ClimberConstants#kStowCrawlSpeed} until
+ * both beam-break limit switches have triggered.
  *
- * Requires the encoders to already be zeroed. Run StowClimberCmd at match
- * start first.
+ * <p>
+ * Each arm stops independently the moment its beam-break triggers via the
+ * guard inside {@link ClimberSubsystem#setPercentOutput(double)}. This command
+ * ends only once both arms are fully seated.
  */
 public class ClimbDownCmd extends Command {
 
   private final ClimberSubsystem climber;
 
+  /**
+   * Constructs a {@code ClimbDownCmd}.
+   *
+   * @param climber the climber subsystem
+   */
   public ClimbDownCmd(ClimberSubsystem climber) {
     this.climber = climber;
     addRequirements(climber);
@@ -27,12 +34,7 @@ public class ClimbDownCmd extends Command {
 
   @Override
   public void initialize() {
-    // climber.setTargetPosition(ClimberConstants.kStowPosition);
-    climber.setPercentOutput(ClimberConstants.kStowCrawlSpeed);
-
     Logger.recordOutput("Commands/ClimbDownCmd/Status", "Running");
-    Logger.recordOutput("Commands/ClimbDownCmd/Mode", "PercentOutput");
-
   }
 
   @Override
@@ -54,7 +56,7 @@ public class ClimbDownCmd extends Command {
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    if (!interrupted && climber.areBothAtBottom()) {
+    if (!interrupted) {
       climber.resetLeftEncoder();
       climber.resetRightEncoder();
     }
@@ -62,6 +64,11 @@ public class ClimbDownCmd extends Command {
         interrupted ? "Interrupted" : "Completed");
   }
 
+  /**
+   * Ends when both beam-break limit switches have triggered.
+   *
+   * @return {@code true} when both arms are fully seated
+   */
   @Override
   public boolean isFinished() {
     return climber.areBothAtBottom();

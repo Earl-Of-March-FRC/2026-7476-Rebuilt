@@ -10,19 +10,24 @@ import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 
 /**
- * Homing command: Crawls down at open-loop percent output until the bottom
- * limit switch trips, then zeroes the encoder.
+ * Homing command: crawls both arms downward at
+ * {@link ClimberConstants#kStowCrawlSpeed} until both beam-break switches
+ * trigger, then zeroes both encoders.
  *
  * <p>
- * Run this <em>once at match start</em> before any PID commands so the
- * encoder has a reliable zero reference. After homing, use
- * {@link ClimbDownCmd} (PID) for all subsequent stowing.
- *
+ * Run this once at match start before any other climber commands so the
+ * encoders have a reliable zero reference. Each arm stops independently as
+ * its beam-break triggers; the command waits until both have seated.
  */
 public class StowClimberCmd extends Command {
 
   private final ClimberSubsystem climber;
 
+  /**
+   * Constructs a {@code StowClimberCmd}.
+   *
+   * @param climber the climber subsystem
+   */
   public StowClimberCmd(ClimberSubsystem climber) {
     this.climber = climber;
     addRequirements(climber);
@@ -52,7 +57,7 @@ public class StowClimberCmd extends Command {
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    if (!interrupted && climber.areBothAtBottom()) {
+    if (!interrupted) {
       climber.resetLeftEncoder();
       climber.resetRightEncoder();
       Logger.recordOutput("Commands/StowClimberCmd/EncoderZeroed", true);
@@ -61,6 +66,11 @@ public class StowClimberCmd extends Command {
         interrupted ? "Interrupted" : "Completed");
   }
 
+  /**
+   * Ends when both beam-break limit switches have triggered.
+   *
+   * @return {@code true} when both arms are fully seated
+   */
   @Override
   public boolean isFinished() {
     return climber.areBothAtBottom();

@@ -120,7 +120,7 @@ public class MAXSwerveModule implements SwerveModule {
 
   private void configureConfigs() {
 
-    // Driving config — values come from the active SwerveProfile via SwerveConfig
+    // Driving config -- values come from the active SwerveProfile via SwerveConfig
     Distance drivingFactor = ModuleConstants.kWheelDiameter.times(Math.PI)
         .div(ModuleConstants.kDrivingMotorReduction);
 

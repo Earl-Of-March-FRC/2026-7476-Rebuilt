@@ -109,11 +109,10 @@ public class RobotContainer {
                 Constants.LauncherAndIntakeConstants.kMotorType)));
 
     climberSub = new ClimberSubsystem(
-        new ClimberSubsystem.SparkMaxClimberMotor(
-            new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
-            Constants.ClimberConstants.kConfigLeader,
-            new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
-            Constants.ClimberConstants.kConfigFollower),
+        new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
+        Constants.ClimberConstants.kConfigLeft,
+        new SparkMax(Constants.ClimberConstants.kRightId, Constants.ClimberConstants.kMotorType),
+        Constants.ClimberConstants.kConfigRight,
         new DigitalInput(Constants.ClimberConstants.kLeftBottomLimitSwitchDIOPort),
         new DigitalInput(Constants.ClimberConstants.kRightBottomLimitSwitchDIOPort));
     indexerSub = new IndexerSubsystem(
@@ -326,10 +325,21 @@ public class RobotContainer {
 
     operatorController.b().toggleOnTrue(autoLaunchCmd);
 
-    testController.povLeft()
-        .whileTrue(new ClimbPercentCmd(climberSub,
-            () -> (testController.getLeftTriggerAxis() -
-                testController.getRightTriggerAxis()) * 1));
+    // Left arm only: left stick Y on test controller
+    testController.povLeft().whileTrue(
+        new ClimbPercentCmd(climberSub, () -> testController.getLeftY() * 0.1));
+
+    // Right arm only: right stick Y on test controller
+    testController.povRight().whileTrue(
+        new ClimbPercentCmd(climberSub, () -> testController.getRightY() * 0.1));
+
+    // Both arms together; verify they move in the same direction
+    testController.povUp().whileTrue(
+        new ClimbPercentCmd(climberSub, () -> 0.1)); // should both go up
+
+    testController.povDown().whileTrue(
+        new ClimbPercentCmd(climberSub, () -> -0.1)); // should both go down
+
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
         this::getDriverVx,

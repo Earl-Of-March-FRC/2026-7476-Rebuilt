@@ -7,36 +7,43 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 
 /**
- * Drives both arms to ClimberConstants.kClimbPosition via PID.
- * Ends when both arms are within tolerance of the setpoint, then stops.
- * The large gear ratio holds the robot up passively.
+ * Drives both arms upward at full percent output until each arm individually
+ * reaches or exceeds the target position, then stops that arm.
+ *
+ * <p>
+ * Each arm is tracked independently -- once an arm reaches the target it
+ * stops while the other continues.
  */
 public class ClimbUpCmd extends Command {
 
   private final ClimberSubsystem climber;
-  private final Distance targetPositionInches;
+  private final Distance targetPosition;
 
-  public ClimbUpCmd(ClimberSubsystem climber, Distance targetPositionInches) {
+  /**
+   * Constructs a {@code ClimbUpCmd}.
+   *
+   * @param climber        the climber subsystem
+   * @param targetPosition the desired arm extension
+   */
+  public ClimbUpCmd(ClimberSubsystem climber, Distance targetPosition) {
     this.climber = climber;
-    this.targetPositionInches = targetPositionInches;
+    this.targetPosition = targetPosition;
     addRequirements(climber);
   }
 
   @Override
   public void initialize() {
-    climber.setTargetPosition(targetPositionInches);
-
     Logger.recordOutput("Commands/ClimbUpCmd/Status", "Running");
-    Logger.recordOutput("Commands/ClimbUpCmd/TargetInches",
-        ClimberConstants.kClimbPosition.in(Inches));
+    Logger.recordOutput("Commands/ClimbUpCmd/TargetInches", targetPosition.in(Inches));
   }
 
   @Override
   public void execute() {
+    climber.driveUpToPosition(targetPosition);
+
     Logger.recordOutput("Commands/ClimbUpCmd/LeftPositionInches",
         climber.getLeftPosition().in(Inches));
     Logger.recordOutput("Commands/ClimbUpCmd/RightPositionInches",
@@ -45,7 +52,6 @@ public class ClimbUpCmd extends Command {
         climber.getLeftVelocity().in(InchesPerSecond));
     Logger.recordOutput("Commands/ClimbUpCmd/RightVelocityInchesPerSec",
         climber.getRightVelocity().in(InchesPerSecond));
-    Logger.recordOutput("Commands/ClimbUpCmd/AtSetpoint", climber.atSetpoint());
   }
 
   @Override
@@ -55,8 +61,13 @@ public class ClimbUpCmd extends Command {
         interrupted ? "Interrupted" : "Completed");
   }
 
+  /**
+   * Ends when both arms have reached the target position.
+   *
+   * @return {@code true} when both arms are done
+   */
   @Override
   public boolean isFinished() {
-    return climber.atSetpoint();
+    return climber.bothArmsAtOrAbove(targetPosition);
   }
 }

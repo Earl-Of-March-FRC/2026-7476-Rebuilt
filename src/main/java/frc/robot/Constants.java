@@ -583,7 +583,7 @@ public final class Constants {
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
-    public static final double kOutputUp = -1.0;
+    public static final double kOutputUp = 1.0;
 
     // TalonFX sensor ratio
     public static final double kSensorToMechanismRatio = 1.0;
@@ -593,39 +593,45 @@ public final class Constants {
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
 
-    public static final double kStowCrawlSpeed = -0.15;
-
-    // SparkMax configs
-    public static final SparkMaxConfig kConfigLeader = new SparkMaxConfig();
-    public static final SparkMaxConfig kConfigFollower = new SparkMaxConfig();
-
-    static {
-      kConfigLeader.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigLeader.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigLeader.closedLoop
-          .p(kPIDClimberControllerP)
-          .i(kPIDClimberControllerI)
-          .d(kPIDClimberControllerD)
-          .outputRange(kOutputRangeMin, kOutputRangeMax);
-      kConfigLeader.voltageCompensation(12.0);
-
-      kConfigFollower.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigFollower.inverted(true); // motors face opposite directions
-      kConfigFollower.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigFollower.closedLoop
-          .p(kPIDClimberControllerP)
-          .i(kPIDClimberControllerI)
-          .d(kPIDClimberControllerD)
-          .outputRange(kOutputRangeMin, kOutputRangeMax);
-      kConfigFollower.voltageCompensation(12.0);
-
-    }
-
     public static final Distance kRaisePosition = Inches.of(7); // Was 32
 
     public static final Distance kPullPosition = Inches.of(0.0);
 
     public static final Distance kPositionTolerance = Inches.of(0.5);
+
+    public static final double kStowCrawlSpeed = -0.15;
+
+    // SparkMax configs
+    public static final SparkMaxConfig kConfigLeft = new SparkMaxConfig();
+    public static final SparkMaxConfig kConfigRight = new SparkMaxConfig();
+
+    static {
+      kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigLeft.inverted(false); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
+                                   // positive value like 0.1. Watch which direction the arm moves: If it goes up,
+                                   // that motor needs inverted(false) If it goes down, that motor needs
+                                   // inverted(true)
+      kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigLeft.voltageCompensation(12.0);
+      kConfigLeft.closedLoop
+          .p(kPIDClimberControllerP)
+          .i(kPIDClimberControllerI)
+          .d(kPIDClimberControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax);
+
+      kConfigRight.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigRight.inverted(true); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
+                                   // positive value like 0.1. Watch which direction the arm moves: If it goes up,
+                                   // that motor needs inverted(false) If it goes down, that motor needs
+                                   // inverted(true)
+      kConfigRight.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigRight.closedLoop
+          .p(kPIDClimberControllerP)
+          .i(kPIDClimberControllerI)
+          .d(kPIDClimberControllerD)
+          .outputRange(kOutputRangeMin, kOutputRangeMax);
+      kConfigRight.voltageCompensation(12.0);
+    }
 
   }
 
