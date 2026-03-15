@@ -112,7 +112,7 @@ public class ClimberSubsystem extends SubsystemBase {
       leader.set(-percent);
       follower.set(-percent);
       usingPercent = true;
-      simPercentSetpoint = percent;
+      simPercentSetpoint = -percent;
     }
 
     /**
