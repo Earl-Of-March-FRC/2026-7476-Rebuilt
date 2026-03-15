@@ -500,13 +500,13 @@ public class ClimberSubsystem extends SubsystemBase {
      */
     if (isLeftAtBottom()) {
       motor.resetLeftEncoder();
-      if (motor.isUsingPercentSetpoints() && leftVelocity.in(InchesPerSecond) < 0) {
+      if (motor.isUsingPercentSetpoints() && leftVelocity.in(InchesPerSecond) > 0) {
         motor.stop();
       }
     }
     if (isRightAtBottom()) {
       motor.resetRightEncoder();
-      if (motor.isUsingPercentSetpoints() && rightVelocity.in(InchesPerSecond) < 0) {
+      if (motor.isUsingPercentSetpoints() && rightVelocity.in(InchesPerSecond) > 0) {
         motor.stop();
       }
     }
