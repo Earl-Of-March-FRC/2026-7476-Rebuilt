@@ -69,6 +69,7 @@ public final class SwerveConfig {
   public static double kDrivingI;
   public static double kDrivingD;
   public static int kDriveSmartCurrentLimit;
+  public static int kDriveFreeCurrentLimit;
 
   // Swerve module turn motor PID (populated from active profile)
   public static double kTurningP;
@@ -159,6 +160,7 @@ public final class SwerveConfig {
     SwerveConfig.kDrivingI = profile.drivingI();
     SwerveConfig.kDrivingD = profile.drivingD();
     SwerveConfig.kDriveSmartCurrentLimit = profile.driveSmartCurrentLimit();
+    SwerveConfig.kDriveFreeCurrentLimit = profile.driveFreeCurrentLimit();
 
     SwerveConfig.kTurningP = profile.turningP();
     SwerveConfig.kTurningI = profile.turningI();
