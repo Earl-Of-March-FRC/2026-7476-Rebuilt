@@ -309,6 +309,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
     }
   }
 
+  public void xLock() {
+    setModuleStates(DriveConstants.kXLockModuleStates);
+  }
+
   /**
    * Runs the drivetrain at specified velocities.
    * 
@@ -864,6 +868,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
   public boolean isRadialControllerAtSetpoint() {
     return radialController.atSetpoint();
+  }
+
+  public boolean isHeadingControllerAtSetpoint() {
+    return headingController.atSetpoint();
   }
 
   @Override

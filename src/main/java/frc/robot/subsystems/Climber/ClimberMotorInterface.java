@@ -14,6 +14,12 @@ public interface ClimberMotorInterface {
   /** Stops both motors immediately. */
   void stop();
 
+  /** Stops both motors immediately. */
+  void stopLeft();
+
+  /** Stops both motors immediately. */
+  void stopRight();
+
   /** Returns the average position of both arms. */
   Distance getPosition();
 
