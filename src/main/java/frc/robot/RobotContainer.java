@@ -33,7 +33,6 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -41,7 +40,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
@@ -57,15 +55,15 @@ import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
 import frc.robot.commands.climber.ClimbUpCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
-import frc.robot.commands.drivetrain.ClimbAlignCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.drivetrain.DriveXLockCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
-import frc.robot.commands.groups.PassAndIndexCmd;
-import frc.robot.commands.groups.ReturnClimbersToBottomCmd;
+import frc.robot.commands.groups.LaunchAndIndexCmd;
+import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -74,6 +72,7 @@ import frc.robot.util.launcher.LaunchHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -310,11 +309,17 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
-    Command passCommand = new PassAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier);
-
-    Command intakeToHopperCmd = new PulsingTreadmillCmd(indexerSub, IndexerConstants.kWheelSpeed,
+    Command intakeToHopperCmd = new PulsingTreadmillCmd(
+        indexerSub,
+        IndexerConstants.kWheelSpeed,
         IndexerConstants.kTreadmillSpeed)
         .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
+
+    Command reverseIntakeCmd = new PulsingTreadmillCmd(
+        indexerSub,
+        -IndexerConstants.kWheelSpeed,
+        -IndexerConstants.kTreadmillSpeed)
+        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1)));
 
     driveSub.setDefaultCommand(driveCmd);
 
@@ -322,14 +327,13 @@ public class RobotContainer {
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    operatorController.a().whileTrue(intakeToHopperCmd);
-
-    operatorController.b().toggleOnTrue(autoLaunchCmd);
+    climberSub.setDefaultCommand(new ClimbPercentCmd(climberSub, operatorController::getLeftY));
 
     testController.povLeft()
         .whileTrue(new ClimbPercentCmd(climberSub,
             () -> (testController.getLeftTriggerAxis() -
                 testController.getRightTriggerAxis()) * 1));
+
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(
         driveSub,
         this::getDriverVx,
@@ -337,48 +341,37 @@ public class RobotContainer {
         new Rotation2d(DriveConstants.kBumpHeadingRestriction),
         DriveConstants.kBumpLinearVelocity));
 
-    driverController.start().onTrue(ClimbAlignCmd.fullAlignCommand(driveSub));
+    // Lock Y coordinate to the nearest bump and align heading
+    driverController.x().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+        driveSub,
+        this::getDriverVx,
+        () -> PoseHelpers.nearestBumpY(driveSub.getPose()),
+        new Rotation2d(DriveConstants.kBumpHeadingRestriction),
+        DriveConstants.kBumpLinearVelocity));
 
-    // Only schedule when in Launching zone
-    driverController.x().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
-        .toggleOnTrue(driveAtLaunchingRangeCmd);
+    // Lock Y coordinate to the nearest trench and align heading
+    driverController.b().toggleOnTrue(new DriveLockedHeadingAndYCmd(
+        driveSub,
+        this::getDriverVx,
+        () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
+        new Rotation2d(DriveConstants.kTrenchHeadingRestriction),
+        DriveConstants.kTrenchLinearVelocity));
 
-    driverController.b().onTrue(new CalibrateGyroCmd(driveSub));
+    driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
+    // driverController.y().onTrue(Commands.runOnce(() ->
+    // driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.y().onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
+    driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
+    driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
 
-    operatorController.rightBumper().toggleOnTrue(
-        new PulsingTreadmillCmd(indexerSub, -IndexerConstants.kWheelSpeed,
-            -IndexerConstants.kTreadmillSpeed)
-            .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1))));
+    driverController.povLeft().whileTrue(new DriveToTowerSideCmd(driveSub,
+        TowerSide.Left));
+    driverController.povRight().whileTrue(new DriveToTowerSideCmd(driveSub,
+        TowerSide.Right));
 
-    // operatorController.leftBumper().toggleOnTrue(new IndexerCmd(indexerSub, () ->
-    // -IndexerConstants.kWheelSpeed,
-    // () -> -IndexerConstants.kTreadmillSpeed));
-
-    driverController.povDown().whileTrue(
-        new ClimbDownCmd(climberSub));
-    driverController.leftBumper().whileTrue(
-        new ClimbUpCmd(climberSub, ClimberConstants.kClimbPosition));
-    driverController.rightBumper().whileTrue(
-        new ClimbUpCmd(climberSub, ClimberConstants.kRaisePosition));
-
-    driverController.povDown().whileTrue(new ReturnClimbersToBottomCmd(climberSub));
-
-    // driverController.povLeft()
-    // .whileTrue(new PullClimberCmd(climberSub,
-    // () -> (driverController.getLeftTriggerAxis() -
-    // driverController.getRightTriggerAxis()) * 0.3,
-    // ClimbSide.Left));
-
-    // driverController.povRight()
-    // .whileTrue(new PullClimberCmd(climberSub,
-    // () -> (driverController.getLeftTriggerAxis() -
-    // driverController.getRightTriggerAxis()) * 0.3,
-    // ClimbSide.Right));
-
-    operatorController.x().whileTrue(new ClimbPercentCmd(climberSub, () -> ClimberConstants.kOutputRangeMin));
-    operatorController.y().whileTrue(new ClimbPercentCmd(climberSub, () -> ClimberConstants.kOutputRangeMax));
+    // Cancel all driveSub commands, returning manual control
+    driverController.button(7).onTrue(
+        Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
@@ -424,28 +417,56 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    // operatorController.leftTrigger().and(() -> driveSub.getCurrentBotZone() ==
-    // FieldZones.Launch).toggleOnTrue(
-    // driveAndManualShootCmd);
-    // operatorController.rightTrigger().and(() -> driveSub.getCurrentBotZone() ==
-    // FieldZones.Launch).toggleOnTrue(
-    // driveAndAutoShootCmd);
+    operatorController.a().whileTrue(
+        new ClimbDownCmd(climberSub));
+    operatorController.b().whileTrue(
+        new ClimbUpCmd(climberSub, ClimberConstants.kClimbPosition));
+    operatorController.y().whileTrue(
+        new ClimbUpCmd(climberSub, ClimberConstants.kRaisePosition));
+    // Pass setpoint
+    operatorController.x().whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
+
+    operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
+        .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
+            driveAndManualShootCmd);
+    operatorController.rightBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
+        .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
+            driveAndAutoShootCmd);
+
+    operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
+        .and(operatorController.rightBumper())
+        .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub, launcherAndIntakeSub));
+
+    // RPM setpoints for visionless backups
+    operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kCornerRPMSetpoint));
+    operatorController.povDown().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kTowerRPMSetpoint));
+    operatorController.povLeft().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kTrenchRPMSetpoint));
+    operatorController.povRight().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
+
+    operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
+    operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
+
+    // Manual RPM offset (always active, and does not have any requirements)
+    new Trigger(() -> true)
+        .debounce(Double.MIN_NORMAL) // Debounce is required because .whileTrue() requires a rising edge to start
+        .whileTrue(Commands
+            .run(() -> launcherAndIntakeSub.offsetReferenceVelocity(LauncherAndIntakeConstants.kManualRPMOffsetPerSecond
+                .times(0.2) // length of one command iteration
+                .times(MathUtil.applyDeadband(
+                    operatorController.getRightTriggerAxis() - operatorController.getLeftTriggerAxis(),
+                    OIConstants.kTriggerDeadband)))));
+
+    operatorController.rightStick().onTrue(Commands.runOnce(() -> launcherAndIntakeSub.resetVelocityOffset()));
 
     testController.x().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Left));
     testController.b().whileTrue(new DriveToTowerSideCmd(driveSub,
         TowerSide.Right));
-    // driverController.povLeft().whileTrue(new RaiseClimberCmd(climberSub, 0));
-    // driverController.povRight().whileTrue(new RaiseClimberCmd(climberSub,
-    // ClimberConstants.kRaisePosition));
-    // operatorController.leftBumper().and(() -> driveSub.getCurrentBotZone() ==
-    // FieldZones.Neutral)
-    // .toggleOnTrue(passCommand);
-
-    // operatorController.x().whileTrue(new TimedAutoClimbCmd(climberSub));
-
-    // Cancel all driveSub commands, returning manual control
-    driverController.button(7).onTrue(
-        Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
   }
 
   // Helper methods to reduce repetition

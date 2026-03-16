@@ -74,6 +74,16 @@ public class ClimberSubsystem extends SubsystemBase {
     /* FPGA timestamp of the previous simulationPeriodic() call. */
     private double lastSimSeconds = 0;
 
+    @Override
+    public void stopLeft() {
+      leader.stopMotor();
+    }
+
+    @Override
+    public void stopRight() {
+      follower.stopMotor();
+    }
+
     /**
      * Constructs the motor wrapper and applies configuration to both controllers.
      *
@@ -230,6 +240,11 @@ public class ClimberSubsystem extends SubsystemBase {
       boolean rightAtPosition = getRightPosition().isNear(setpoint, ClimberConstants.kPositionTolerance);
 
       return leftAtPosition && rightAtPosition;
+    }
+
+    @Override
+    public boolean isUsingPercentSetpoints() {
+      return usingPercent;
     }
 
     /**
@@ -493,19 +508,27 @@ public class ClimberSubsystem extends SubsystemBase {
      * while descending. This keeps the two arms independently calibrated
      * regardless of which one reaches the bottom first.
      */
-    if (isLeftAtBottom() && leftVelocity.in(InchesPerSecond) < 0) {
+    if (isLeftAtBottom()) {
       motor.resetLeftEncoder();
-      // motor.stop();
+      if (motor.isUsingPercentSetpoints() && leftVelocity.in(InchesPerSecond) < 0) {
+        motor.stopLeft();
+      }
     }
-    if (isRightAtBottom() && rightVelocity.in(InchesPerSecond) < 0) {
+    if (isRightAtBottom()) {
       motor.resetRightEncoder();
-      // motor.stop();
+      if (motor.isUsingPercentSetpoints() && rightVelocity.in(InchesPerSecond) < 0) {
+        motor.stopRight();
+      }
     }
 
     /* Stop both motors only once both arms have fully seated at the bottom. */
-    if (areBothAtBottom()) {
-      motor.stop();
-    }
+    // if (areBothAtBottom()) {
+    // if (motor.isUsingPercentSetpoints()) {
+    // motor.stop();
+    // } else {
+
+    // }
+    // }
 
     Logger.recordOutput("Climber/Measured/LeftPositionInches", leftPosition.in(Inches));
     Logger.recordOutput("Climber/Measured/RightPositionInches", rightPosition.in(Inches));
