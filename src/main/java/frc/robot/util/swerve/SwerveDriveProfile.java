@@ -56,7 +56,8 @@ public record SwerveDriveProfile(
     double turningP,
     double turningI,
     double turningD,
-    int turnSmartCurrentLimit) {
+    int turnSmartCurrentLimit,
+    int driveFreeCurrentLimit) {
 
   public static enum SwerveDriveProfileID {
     COMP_BOT,
@@ -132,7 +133,7 @@ public record SwerveDriveProfile(
       50,
       // Turn motor PID
       1.0, 0.0, 0.0,
-      20);
+      20, 20);
 
   /**
    * SpongeBot swerve drive configuration with 3 cameras.
@@ -192,7 +193,7 @@ public record SwerveDriveProfile(
       50,
       // Turn motor PID
       1.0, 0.0, 0.0,
-      20);
+      20, 20);
 
   /**
    * Off-season swerve drive configuration with 0 cameras.
@@ -222,7 +223,7 @@ public record SwerveDriveProfile(
       50,
       // Turn motor PID
       1.0, 0.0, 0.0,
-      20);
+      20, 20);
 
   public String getName() {
     return switch (profileId) {

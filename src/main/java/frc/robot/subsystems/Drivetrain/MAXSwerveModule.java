@@ -128,7 +128,8 @@ public class MAXSwerveModule implements SwerveModule {
 
     drivingConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(SwerveConfig.kDriveSmartCurrentLimit);
+        .smartCurrentLimit(SwerveConfig.kDriveSmartCurrentLimit, SwerveConfig.kDriveFreeCurrentLimit)
+        .voltageCompensation(12.0);
     drivingConfig.encoder
         .positionConversionFactor(drivingFactor.in(Meters))
         .velocityConversionFactor(drivingFactor.div(60.0).in(Meters));

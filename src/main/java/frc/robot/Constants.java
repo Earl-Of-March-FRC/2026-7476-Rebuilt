@@ -617,6 +617,7 @@ public final class Constants {
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
+      kConfigLeader.voltageCompensation(12.0);
 
       kConfigFollower.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
       kConfigFollower.inverted(true); // motors face opposite directions
@@ -626,6 +627,8 @@ public final class Constants {
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
+      kConfigFollower.voltageCompensation(12.0);
+
     }
 
     public static final Distance kRaisePosition = Inches.of(17.6); // Was 32
