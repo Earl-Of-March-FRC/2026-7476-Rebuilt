@@ -452,15 +452,23 @@ public class RobotContainer {
     operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
     operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
 
-    // Manual RPM offset (always active, and does not have any requirements)
-    new Trigger(() -> true)
-        .debounce(Double.MIN_NORMAL) // Debounce is required because .whileTrue() requires a rising edge to start
-        .whileTrue(Commands
-            .run(() -> launcherAndIntakeSub.offsetReferenceVelocity(LauncherAndIntakeConstants.kManualRPMOffsetPerSecond
-                .times(0.2) // length of one command iteration
-                .times(MathUtil.applyDeadband(
-                    operatorController.getRightTriggerAxis() - operatorController.getLeftTriggerAxis(),
-                    OIConstants.kTriggerDeadband)))));
+    // Allow operator to apply RPM offset
+    Trigger rpmTrimTrigger = new Trigger(() -> Math.abs(
+        operatorController.getRightTriggerAxis()
+            - operatorController.getLeftTriggerAxis()) > OIConstants.kTriggerDeadband);
+
+    rpmTrimTrigger.whileTrue(
+        Commands.run(() -> {
+          double trigger = MathUtil.applyDeadband(
+              operatorController.getRightTriggerAxis()
+                  - operatorController.getLeftTriggerAxis(),
+              OIConstants.kTriggerDeadband);
+
+          launcherAndIntakeSub.offsetReferenceVelocity(
+              LauncherAndIntakeConstants.kManualRPMOffsetPerSecond
+                  .times(trigger)
+                  .times(edu.wpi.first.wpilibj.TimedRobot.kDefaultPeriod));
+        }));
 
     operatorController.rightStick().onTrue(Commands.runOnce(() -> launcherAndIntakeSub.resetVelocityOffset()));
 
