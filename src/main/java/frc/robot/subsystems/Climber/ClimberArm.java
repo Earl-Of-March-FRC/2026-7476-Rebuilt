@@ -33,6 +33,9 @@ public class ClimberArm implements ClimberArmInterface {
 
   private boolean usingPercent = false;
 
+  // Default to -1 for safety
+  private double desiredVelocitySign = -1;
+
   private double simPercentSetpoint = 0;
 
   private Distance simSetpoint = Inches.of(0);
@@ -56,6 +59,7 @@ public class ClimberArm implements ClimberArmInterface {
   public void setPercentOutput(double percent) {
     motor.set(percent);
     usingPercent = true;
+    desiredVelocitySign = Math.signum(percent);
     simPercentSetpoint = percent;
   }
 
@@ -63,6 +67,13 @@ public class ClimberArm implements ClimberArmInterface {
   public void setTargetPosition(Distance position) {
     usingPercent = false;
     simSetpoint = position;
+
+    if (position.isNear(getPosition(), ClimberConstants.kPositionTolerance)) {
+      desiredVelocitySign = 0;
+    } else {
+      desiredVelocitySign = position.gte(getPosition()) ? 1 : -1;
+    }
+
     motor.getClosedLoopController()
         .setSetpoint(position.in(Inches), SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
@@ -101,6 +112,11 @@ public class ClimberArm implements ClimberArmInterface {
   }
 
   @Override
+  public double getDesiredVelocitySign() {
+    return desiredVelocitySign;
+  }
+
+  @Override
   public double getCurrent() {
     return motor.getOutputCurrent();
   }
@@ -108,9 +124,11 @@ public class ClimberArm implements ClimberArmInterface {
   @Override
   public void resetEncoder() {
     motor.getEncoder().setPosition(0);
-    if (motorSim != null) {
-      motorSim.setPosition(0);
-    }
+    // This is meaningless since we use encoder position to determine if the limit
+    // switch has been hit in sim
+    // if (motorSim != null) {
+    // motorSim.setPosition(0);
+    // }
   }
 
   /**
@@ -144,11 +162,13 @@ public class ClimberArm implements ClimberArmInterface {
     motorSim.setVelocity(velocity.in(InchesPerSecond));
 
     Distance newPos = getPosition().plus(Inches.of(velocity.in(InchesPerSecond) * dt));
-    Distance clampedPos = (Distance) UnitHelpers.clamp(
-        newPos,
-        ClimberConstants.kMinLength,
-        SimulationConstants.kSimulatedMaxClimberHeight);
 
-    motorSim.setPosition(clampedPos.in(Inches));
+    // Do not clamp so that we can properly test safety features
+    // Distance clampedPos = (Distance) UnitHelpers.clamp(
+    // newPos,
+    // ClimberConstants.kMinLength,
+    // SimulationConstants.kSimulatedMaxClimberHeight);
+
+    motorSim.setPosition(newPos.in(Inches));
   }
 }

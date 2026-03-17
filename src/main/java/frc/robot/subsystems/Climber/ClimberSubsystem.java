@@ -259,7 +259,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
   /**
    * Returns {@code true} when both arms are within
-   * {@link ClimberConstants#kPIDPositionTolerance} of the last commanded
+   * {@link ClimberConstants#kPositionTolerance} of the last commanded
    * setpoint.
    *
    * @return {@code true} if both arms are at the setpoint
@@ -287,11 +287,26 @@ public class ClimberSubsystem extends SubsystemBase {
       if (leftArm.getVelocity().in(InchesPerSecond) < 0)
         leftArm.stop();
       resetLeftEncoder();
+      if (leftArm.getDesiredVelocitySign() == -1) {
+        leftArm.stop();
+      }
     }
+    if (leftArm.getPosition().isNear(ClimberConstants.kMaxLength, ClimberConstants.kPositionTolerance)
+        && leftArm.getDesiredVelocitySign() == 1) {
+      leftArm.stop();
+    }
+
     if (isRightAtBottom()) {
       if (rightArm.getVelocity().in(InchesPerSecond) < 0)
         rightArm.stop();
       resetRightEncoder();
+      if (rightArm.getDesiredVelocitySign() == -1) {
+        rightArm.stop();
+      }
+    }
+    if (rightArm.getPosition().isNear(ClimberConstants.kMaxLength, ClimberConstants.kPositionTolerance)
+        && rightArm.getDesiredVelocitySign() == 1) {
+      rightArm.stop();
     }
     if (getLeftPosition().gte(ClimberConstants.kMaxLength)) {
       if (leftArm.getVelocity().in(InchesPerSecond) > 0)

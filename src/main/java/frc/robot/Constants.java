@@ -68,7 +68,7 @@ public final class Constants {
     public static final int kDriverControllerPort = 0;
     public static final int kOperatorControllerPort = 1;
     public static final int kTestControllerPort = 2;
-    public static final double kDriveDeadband = 0.05;
+    public static final double kDeadband = 0.05;
     public static final double kTriggerDeadband = 0.1;
     // Threshld when using trigger axis as a button
     public static final double kTriggerThreshold = 0.5;
@@ -559,11 +559,13 @@ public final class Constants {
      * robot climb
      */
     public static final Time kTimeFromRaisedToClimbedPosition = kTimeFromBottomToRaisedPosition.times(0.75);
-    public static final Distance kStowPosition = Inches.of(0);
-    public static final Distance kClimbPosition = Inches.of(5.75); // set 1 inch above max length
 
-    public static final Distance kMinLength = Inches.of(-1); // small under-travel buffer
-    public static final Distance kMaxLength = Inches.of(33);
+    // TODO: Test these setpoints (again)
+    public static final Distance kRaisePosition = Inches.of(5.75);
+    public static final Distance kLatchPosition = Inches.of(17.6);
+
+    public static final Distance kMinLength = Inches.of(0);
+    public static final Distance kMaxLength = Inches.of(17.6);
 
     public static final double kSettledVelocityThresholdInchesPerSec = 0.25; // arms have stopped moving into raise
                                                                              // position
@@ -571,7 +573,7 @@ public final class Constants {
 
     // PID position tolerance
     /** Encoder error below which atSetpoint() returns true. */
-    public static final Distance kPIDPositionTolerance = Inches.of(0.5);
+    public static final Distance kPositionTolerance = Inches.of(0.2);
 
     // Winch / spool geometry
     public static final Distance kWhinchDrumDiameter = Inches.of(1.625);
@@ -602,12 +604,6 @@ public final class Constants {
     public static final double kPIDClimberControllerP = 10;
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
-
-    public static final Distance kRaisePosition = Inches.of(7); // Was 32
-
-    public static final Distance kPullPosition = Inches.of(0.0);
-
-    public static final Distance kPositionTolerance = Inches.of(0.5);
 
     public static final double kStowCrawlSpeed = -0.15;
 

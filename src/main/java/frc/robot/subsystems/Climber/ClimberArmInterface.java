@@ -48,6 +48,12 @@ public interface ClimberArmInterface {
   LinearVelocity getVelocity();
 
   /**
+   * @return The sign of the desired velocity from percent output <b>or</b> PID,
+   *         -1 for down, 1 for up, and 0 for no velocity
+   */
+  double getDesiredVelocitySign();
+
+  /**
    * Returns {@code true} when the arm is within tolerance of the given setpoint.
    *
    * @param setpoint the target distance to compare against

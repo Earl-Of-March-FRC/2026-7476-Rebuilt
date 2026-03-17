@@ -53,6 +53,7 @@ import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
+import frc.robot.commands.climber.ClimbToHeightCmd;
 import frc.robot.commands.climber.ClimbUpCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
@@ -326,7 +327,9 @@ public class RobotContainer {
         new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
-    climberSub.setDefaultCommand(new ClimbPercentCmd(climberSub, operatorController::getLeftY));
+    // Negate so up is positive
+    climberSub.setDefaultCommand(new ClimbPercentCmd(climberSub,
+        () -> MathUtil.applyDeadband(-operatorController.getLeftY(), OIConstants.kDeadband)));
 
     // Left arm only: left stick Y on test controller
     testController.povLeft().whileTrue(
@@ -429,9 +432,9 @@ public class RobotContainer {
     operatorController.a().whileTrue(
         new ClimbDownCmd(climberSub));
     operatorController.b().whileTrue(
-        new ClimbUpCmd(climberSub, ClimberConstants.kClimbPosition));
+        new ClimbToHeightCmd(climberSub, ClimberConstants.kRaisePosition));
     operatorController.y().whileTrue(
-        new ClimbUpCmd(climberSub, ClimberConstants.kRaisePosition));
+        new ClimbToHeightCmd(climberSub, ClimberConstants.kLatchPosition));
     // Pass setpoint
     operatorController.x().whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
@@ -492,7 +495,7 @@ public class RobotContainer {
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerYAxis)
             * (driverController.leftStick().getAsBoolean() ? OIConstants.kDriverSlowModeMultiplier : 1),
-        OIConstants.kDriveDeadband);
+        OIConstants.kDeadband);
   }
 
   private double getDriverVy() {
@@ -500,7 +503,7 @@ public class RobotContainer {
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerXAxis)
             * (driverController.leftStick().getAsBoolean() ? OIConstants.kDriverSlowModeMultiplier : 1),
-        OIConstants.kDriveDeadband);
+        OIConstants.kDeadband);
   }
 
   private double getDriverOmega() {
@@ -508,7 +511,7 @@ public class RobotContainer {
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis)
             * (driverController.rightStick().getAsBoolean() ? 1 : OIConstants.kDriverTurnSensitivity),
-        OIConstants.kDriveDeadband);
+        OIConstants.kDeadband);
   }
 
   public Gyro getGyro() {
