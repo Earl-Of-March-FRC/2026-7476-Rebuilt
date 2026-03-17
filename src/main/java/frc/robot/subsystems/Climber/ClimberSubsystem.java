@@ -88,18 +88,8 @@ public class ClimberSubsystem extends SubsystemBase {
    *                down
    */
   public void setPercentOutput(double percent) {
-    if (percent < 0 && isLeftAtBottom()) {
-      leftArm.stop();
-    } else {
-      leftArm.setPercentOutput(percent);
-    }
-
-    if (percent < 0 && isRightAtBottom()) {
-      rightArm.stop();
-    } else {
-      rightArm.setPercentOutput(percent);
-    }
-
+    leftArm.setPercentOutput(percent);
+    rightArm.setPercentOutput(percent);
     Logger.recordOutput("Climber/Setpoint/PercentOutput", percent);
   }
 
@@ -294,10 +284,22 @@ public class ClimberSubsystem extends SubsystemBase {
   public void periodic() {
     // Reset each encoder independently when its beam-break triggers.
     if (isLeftAtBottom()) {
+      if (leftArm.getVelocity().in(InchesPerSecond) < 0)
+        leftArm.stop();
       resetLeftEncoder();
     }
     if (isRightAtBottom()) {
+      if (rightArm.getVelocity().in(InchesPerSecond) < 0)
+        rightArm.stop();
       resetRightEncoder();
+    }
+    if (getLeftPosition().gte(ClimberConstants.kMaxLength)) {
+      if (leftArm.getVelocity().in(InchesPerSecond) > 0)
+        leftArm.stop();
+    }
+    if (getRightPosition().gte(ClimberConstants.kMaxLength)) {
+      if (rightArm.getVelocity().in(InchesPerSecond) > 0)
+        rightArm.stop();
     }
 
     Distance leftPos = leftArm.getPosition();

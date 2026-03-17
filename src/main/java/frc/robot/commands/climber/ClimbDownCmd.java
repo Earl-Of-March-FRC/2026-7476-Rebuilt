@@ -62,6 +62,7 @@ public class ClimbDownCmd extends Command {
     }
     Logger.recordOutput("Commands/ClimbDownCmd/Status",
         interrupted ? "Interrupted" : "Completed");
+
   }
 
   /**

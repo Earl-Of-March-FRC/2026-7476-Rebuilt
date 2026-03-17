@@ -244,6 +244,12 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     Logger.recordOutput("Launcher/VelocityOffsetRadPerSec", RPM.of(velocityOffsetRPM).in(RadiansPerSecond));
   }
 
+  public void resetVelocityOffset() {
+    velocityOffsetRPM = 0;
+    Logger.recordOutput("Launcher/VelocityOffsetRPM", velocityOffsetRPM);
+    Logger.recordOutput("Launcher/VelocityOffsetRadPerSec", RPM.of(velocityOffsetRPM).in(RadiansPerSecond));
+  }
+
   public void setUseHighVelocities(boolean use) {
     useHighVelocities = use;
     Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
