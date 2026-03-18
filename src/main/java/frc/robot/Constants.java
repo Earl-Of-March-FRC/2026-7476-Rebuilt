@@ -602,7 +602,7 @@ public final class Constants {
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
 
-    public static final double kStowCrawlSpeed = -0.15;
+    public static final double kStowCrawlSpeed = -1;
 
     // SparkMax configs
     public static final SparkMaxConfig kConfigLeft = new SparkMaxConfig();
