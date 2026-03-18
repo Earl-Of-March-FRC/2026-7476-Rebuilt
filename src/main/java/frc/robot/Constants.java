@@ -542,8 +542,6 @@ public final class Constants {
     public static final int kRightId = 14; // follower
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
-
     // DIO port for the bottom limit switch
     public static final int kLeftBottomLimitSwitchDIOPort = 1;
     public static final int kRightBottomLimitSwitchDIOPort = 0;

@@ -46,6 +46,11 @@ public class ClimberSubsystem extends SubsystemBase {
   private final ClimberArmInterface leftArm;
   private final ClimberArmInterface rightArm;
 
+  /** Used to determine if left arm encoder can be trusted */
+  private boolean leftZeroed = false;
+  /** Used to determine if right arm encoder can be trusted */
+  private boolean rightZeroed = false;
+
   private final DigitalInput leftBottomLimitSwitch;
   private final DigitalInput rightBottomLimitSwitch;
 
@@ -88,8 +93,16 @@ public class ClimberSubsystem extends SubsystemBase {
    *                down
    */
   public void setPercentOutput(double percent) {
-    leftArm.setPercentOutput(percent);
-    rightArm.setPercentOutput(percent);
+    if (canLeftMove(Math.signum(percent)))
+      leftArm.setPercentOutput(percent);
+    else
+      leftArm.stop();
+
+    if (canRightMove(Math.signum(percent)))
+      rightArm.setPercentOutput(percent);
+    else
+      rightArm.stop();
+
     Logger.recordOutput("Climber/Setpoint/PercentOutput", percent);
   }
 
@@ -190,6 +203,48 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
+   * Returns {@code true} when the left arm position is at or above the maximum
+   *
+   * @return {@code true} if the left arm is at the top
+   */
+  public boolean isLeftAtTop() {
+    return leftArm.getPosition().gte(ClimberConstants.kMaxLength);
+  }
+
+  /**
+   * Returns {@code true} when the right arm position is at or above the maximum
+   *
+   * @return {@code true} if the right arm is at the top
+   */
+  public boolean isRightAtTop() {
+    return leftArm.getPosition().gte(ClimberConstants.kMaxLength);
+  }
+
+  /**
+   * returns {@code true} if the left arm can safely move in the provided
+   * direction
+   * 
+   * @param desiredVelocitySign The sign of the desired velocity, should be 0, -1,
+   *                            or 1
+   * @return {@code true} if the left arm can safely move
+   */
+  public boolean canLeftMove(double desiredVelocitySign) {
+    return !((isLeftAtTop() && desiredVelocitySign > 0) || (isLeftAtBottom() && desiredVelocitySign < 0));
+  }
+
+  /**
+   * returns {@code true} if the right arm can safely move in the provided
+   * direction
+   * 
+   * @param desiredVelocitySign The sign of the desired velocity, should be 0, -1,
+   *                            or 1
+   * @return {@code true} if the right arm can safely move
+   */
+  public boolean canRightMove(double desiredVelocitySign) {
+    return !((isRightAtTop() && desiredVelocitySign > 0) || (isRightAtBottom() && desiredVelocitySign < 0));
+  }
+
+  /**
    * Returns {@code true} when either bottom limit switch is triggered.
    *
    * @return {@code true} if at least one arm is at the bottom
@@ -283,38 +338,30 @@ public class ClimberSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Reset each encoder independently when its beam-break triggers.
-    if (isLeftAtBottom()) {
-      if (leftArm.getVelocity().in(InchesPerSecond) < 0)
-        leftArm.stop();
+    if (isLeftAtBottom())
       resetLeftEncoder();
-      if (leftArm.getDesiredVelocitySign() == -1) {
-        leftArm.stop();
-      }
-    }
-    if (leftArm.getPosition().isNear(ClimberConstants.kMaxLength, ClimberConstants.kPositionTolerance)
-        && leftArm.getDesiredVelocitySign() == 1) {
+
+    if (isRightAtBottom())
+      resetRightEncoder();
+
+    // Stop the arms if they are at the limits
+    if (!(canLeftMove(leftArm.getDesiredVelocitySign())
+        && canLeftMove(Math.signum(leftArm.getVelocity().in(InchesPerSecond))))) {
       leftArm.stop();
     }
 
-    if (isRightAtBottom()) {
-      if (rightArm.getVelocity().in(InchesPerSecond) < 0)
-        rightArm.stop();
-      resetRightEncoder();
-      if (rightArm.getDesiredVelocitySign() == -1) {
-        rightArm.stop();
-      }
-    }
-    if (rightArm.getPosition().isNear(ClimberConstants.kMaxLength, ClimberConstants.kPositionTolerance)
-        && rightArm.getDesiredVelocitySign() == 1) {
+    if (!(canRightMove(rightArm.getDesiredVelocitySign())
+        && canRightMove(Math.signum(rightArm.getVelocity().in(InchesPerSecond))))) {
       rightArm.stop();
     }
-    if (getLeftPosition().gte(ClimberConstants.kMaxLength)) {
-      if (leftArm.getVelocity().in(InchesPerSecond) > 0)
-        leftArm.stop();
+
+    // Check if we have zeroed the arms yet
+    if (!leftZeroed && isLeftAtBottom()) {
+      leftZeroed = true;
     }
-    if (getRightPosition().gte(ClimberConstants.kMaxLength)) {
-      if (rightArm.getVelocity().in(InchesPerSecond) > 0)
-        rightArm.stop();
+    // Check if we have zeroed the arms yet
+    if (!rightZeroed && isLeftAtBottom()) {
+      rightZeroed = true;
     }
 
     Distance leftPos = leftArm.getPosition();
@@ -343,6 +390,8 @@ public class ClimberSubsystem extends SubsystemBase {
     Logger.recordOutput("Climber/LimitSwitch/LeftAtBottom", isLeftAtBottom());
     Logger.recordOutput("Climber/LimitSwitch/RightAtBottom", isRightAtBottom());
     Logger.recordOutput("Climber/LimitSwitch/BothAtBottom", areBothAtBottom());
+    Logger.recordOutput("Climber/LimitSwitch/LeftZeroed", leftZeroed);
+    Logger.recordOutput("Climber/LimitSwitch/RightZeroed", rightZeroed);
   }
 
   @Override
