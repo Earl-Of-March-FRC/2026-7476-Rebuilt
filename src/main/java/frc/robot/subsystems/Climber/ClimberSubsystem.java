@@ -372,26 +372,29 @@ public class ClimberSubsystem extends SubsystemBase {
     LinearVelocity rightVel = rightArm.getVelocity();
     LinearVelocity avgVel = getVelocity();
 
-    Logger.recordOutput("Climber/Measured/LeftPositionInches", leftPos.in(Inches));
-    Logger.recordOutput("Climber/Measured/RightPositionInches", rightPos.in(Inches));
+    Logger.recordOutput("Climber/Measured/Left/PositionInches", leftPos.in(Inches));
+    Logger.recordOutput("Climber/Measured/Right/PositionInches", rightPos.in(Inches));
+    Logger.recordOutput("Climber/Measured/Left/PositionPose3d", new Pose3d(0, 0, leftPos.in(Meters), Rotation3d.kZero));
+    Logger.recordOutput("Climber/Measured/Right/PositionPose3d",
+        new Pose3d(0, 0, rightPos.in(Meters), Rotation3d.kZero));
     Logger.recordOutput("Climber/Measured/AvgPositionInches", avgPos.in(Inches));
     Logger.recordOutput("Climber/Measured/Pose3d",
         new Pose3d(0, 0, avgPos.in(Meters), Rotation3d.kZero));
-    Logger.recordOutput("Climber/Measured/LeftVelocityInchesPerSec", leftVel.in(InchesPerSecond));
-    Logger.recordOutput("Climber/Measured/RightVelocityInchesPerSec", rightVel.in(InchesPerSecond));
+    Logger.recordOutput("Climber/Measured/Left/VelocityInchesPerSec", leftVel.in(InchesPerSecond));
+    Logger.recordOutput("Climber/Measured/Right/VelocityInchesPerSec", rightVel.in(InchesPerSecond));
     Logger.recordOutput("Climber/Measured/AvgVelocityInchesPerSec", avgVel.in(InchesPerSecond));
-    Logger.recordOutput("Climber/Measured/LeftAppliedOutput", leftArm.getAppliedOutput());
-    Logger.recordOutput("Climber/Measured/RightAppliedOutput", rightArm.getAppliedOutput());
-    Logger.recordOutput("Climber/Measured/LeftCurrentAmps", leftArm.getCurrent());
-    Logger.recordOutput("Climber/Measured/RightCurrentAmps", rightArm.getCurrent());
+    Logger.recordOutput("Climber/Measured/Left/AppliedOutput", leftArm.getAppliedOutput());
+    Logger.recordOutput("Climber/Measured/Right/AppliedOutput", rightArm.getAppliedOutput());
+    Logger.recordOutput("Climber/Measured/Left/CurrentAmps", leftArm.getCurrent());
+    Logger.recordOutput("Climber/Measured/Right/CurrentAmps", rightArm.getCurrent());
     Logger.recordOutput("Climber/Measured/PositionDeltaInches",
         Math.abs(leftPos.in(Inches) - rightPos.in(Inches)));
     Logger.recordOutput("Climber/AtSetpoint", atSetpoint());
-    Logger.recordOutput("Climber/LimitSwitch/LeftAtBottom", isLeftAtBottom());
-    Logger.recordOutput("Climber/LimitSwitch/RightAtBottom", isRightAtBottom());
+    Logger.recordOutput("Climber/LimitSwitch/Left/AtBottom", isLeftAtBottom());
+    Logger.recordOutput("Climber/LimitSwitch/Right/AtBottom", isRightAtBottom());
     Logger.recordOutput("Climber/LimitSwitch/BothAtBottom", areBothAtBottom());
-    Logger.recordOutput("Climber/LimitSwitch/LeftZeroed", leftZeroed);
-    Logger.recordOutput("Climber/LimitSwitch/RightZeroed", rightZeroed);
+    Logger.recordOutput("Climber/LimitSwitch/Left/Zeroed", leftZeroed);
+    Logger.recordOutput("Climber/LimitSwitch/Right/Zeroed", rightZeroed);
   }
 
   @Override
