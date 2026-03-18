@@ -439,10 +439,10 @@ public class RobotContainer {
     operatorController.x().whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
 
-    operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
+    driverController.povUp()
         .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
             driveAndManualShootCmd);
-    operatorController.rightBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
+    driverController.povDown()
         .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch).toggleOnTrue(
             driveAndAutoShootCmd);
 
@@ -457,9 +457,9 @@ public class RobotContainer {
     operatorController.povDown().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kTowerRPMSetpoint));
     operatorController.povLeft().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
-        () -> LauncherAndIntakeConstants.kTrenchRPMSetpoint));
-    operatorController.povRight().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
+    operatorController.povRight().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kTrenchRPMSetpoint));
 
     operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
     operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
