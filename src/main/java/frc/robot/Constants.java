@@ -507,8 +507,7 @@ public final class Constants {
     // TODO: Tune these values
     public static final double kTreadmillLaunchIndexPercent = 0.5;
     public static final double kTreadmillStoreIndexPercent = 0.5;
-    public static final double kWheelLaunchIndexPercent = 0.5;
-    public static final double kWheelStoreIndexPercent = 0.5;
+    public static final double kWheelLaunchIndexPercent = 1;
 
     // Treadmill pulse timing
     public static final double kPulseDutyCycle = 0.9;

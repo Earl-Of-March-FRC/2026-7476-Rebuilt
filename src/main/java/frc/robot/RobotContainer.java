@@ -328,8 +328,9 @@ public class RobotContainer {
             () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
 
     // Negate so up is positive
-    climberSub.setDefaultCommand(new ClimbPercentCmd(climberSub,
-        () -> MathUtil.applyDeadband(-operatorController.getLeftY(), OIConstants.kDeadband)));
+    // climberSub.setDefaultCommand(new ClimbPercentCmd(climberSub,
+    // () -> MathUtil.applyDeadband(-operatorController.getLeftY(),
+    // OIConstants.kDeadband)));
 
     // Left arm only: left stick Y on test controller
     testController.povLeft().whileTrue(
@@ -429,12 +430,12 @@ public class RobotContainer {
     // () -> PathGenerator.driveToLaunchZoneCommandTrench(MetersPerSecond.of(0)),
     // Set.of(driveSub)).andThen(driveAtLaunchingRangeCmd.asProxy()));
 
-    operatorController.a().whileTrue(
-        new ClimbDownCmd(climberSub));
-    operatorController.b().whileTrue(
-        new ClimbToHeightCmd(climberSub, ClimberConstants.kRaisePosition));
-    operatorController.y().whileTrue(
-        new ClimbToHeightCmd(climberSub, ClimberConstants.kLatchPosition));
+    // operatorController.a().whileTrue(
+    // new ClimbDownCmd(climberSub));
+    // operatorController.b().whileTrue(
+    // new ClimbToHeightCmd(climberSub, ClimberConstants.kRaisePosition));
+    // operatorController.y().whileTrue(
+    // new ClimbToHeightCmd(climberSub, ClimberConstants.kLatchPosition));
     // Pass setpoint
     operatorController.x().whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
