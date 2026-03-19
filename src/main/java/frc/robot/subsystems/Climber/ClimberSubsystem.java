@@ -217,7 +217,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return {@code true} if the right arm is at the top
    */
   public boolean isRightAtTop() {
-    return leftArm.getPosition().gte(ClimberConstants.kMaxLength);
+    return rightArm.getPosition().gte(ClimberConstants.kMaxLength);
   }
 
   /**
@@ -360,7 +360,7 @@ public class ClimberSubsystem extends SubsystemBase {
       leftZeroed = true;
     }
     // Check if we have zeroed the arms yet
-    if (!rightZeroed && isLeftAtBottom()) {
+    if (!rightZeroed && isRightAtBottom()) {
       rightZeroed = true;
     }
 
