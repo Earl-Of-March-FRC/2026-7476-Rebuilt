@@ -68,7 +68,7 @@ public final class Constants {
     public static final int kDriverControllerPort = 0;
     public static final int kOperatorControllerPort = 1;
     public static final int kTestControllerPort = 2;
-    public static final double kDriveDeadband = 0.05;
+    public static final double kDeadband = 0.05;
     public static final double kTriggerDeadband = 0.1;
     // Threshld when using trigger axis as a button
     public static final double kTriggerThreshold = 0.5;
@@ -77,7 +77,7 @@ public final class Constants {
     public static final int kDriverControllerRotAxis = 4;
     public static final File kDeployDirectory = Filesystem.getDeployDirectory();
 
-    public static final double kDriverSlowModeMultiplier = 0.3;
+    public static final double kDriverSlowModeMultiplier = 0.45;
     public static final double kDriverTurnSensitivity = 0.4;
 
     public static final double kButtonPressDebounceSeconds = 0.1;
@@ -507,8 +507,7 @@ public final class Constants {
     // TODO: Tune these values
     public static final double kTreadmillLaunchIndexPercent = 0.5;
     public static final double kTreadmillStoreIndexPercent = 0.5;
-    public static final double kWheelLaunchIndexPercent = 0.5;
-    public static final double kWheelStoreIndexPercent = 0.5;
+    public static final double kWheelLaunchIndexPercent = 1;
 
     // Treadmill pulse timing
     public static final double kPulseDutyCycle = 0.9;
@@ -542,8 +541,6 @@ public final class Constants {
     public static final int kRightId = 14; // follower
     public static final MotorType kMotorType = MotorType.kBrushless;
 
-    public static final int kClimberRaisePositionTicks = 10000; // TODO ask for setpoint
-
     // DIO port for the bottom limit switch
     public static final int kLeftBottomLimitSwitchDIOPort = 1;
     public static final int kRightBottomLimitSwitchDIOPort = 0;
@@ -559,11 +556,13 @@ public final class Constants {
      * robot climb
      */
     public static final Time kTimeFromRaisedToClimbedPosition = kTimeFromBottomToRaisedPosition.times(0.75);
-    public static final Distance kStowPosition = Inches.of(0);
-    public static final Distance kClimbPosition = Inches.of(5.75); // set 1 inch above max length
 
-    public static final Distance kMinLength = Inches.of(-1); // small under-travel buffer
-    public static final Distance kMaxLength = Inches.of(33);
+    // TODO: Test these setpoints (again)
+    public static final Distance kRaisePosition = Inches.of(5.75);
+    public static final Distance kLatchPosition = Inches.of(17.6);
+
+    public static final Distance kMinLength = Inches.of(0);
+    public static final Distance kMaxLength = Inches.of(17.6);
 
     public static final double kSettledVelocityThresholdInchesPerSec = 0.25; // arms have stopped moving into raise
                                                                              // position
@@ -571,7 +570,7 @@ public final class Constants {
 
     // PID position tolerance
     /** Encoder error below which atSetpoint() returns true. */
-    public static final Distance kPIDPositionTolerance = Inches.of(0.5);
+    public static final Distance kPositionTolerance = Inches.of(0.2);
 
     // Winch / spool geometry
     public static final Distance kWhinchDrumDiameter = Inches.of(1.625);
@@ -593,7 +592,7 @@ public final class Constants {
 
     public static final double kOutputRangeMin = -1.0;
     public static final double kOutputRangeMax = 1.0;
-    public static final double kOutputUp = -1.0;
+    public static final double kOutputUp = 1.0;
 
     // TalonFX sensor ratio
     public static final double kSensorToMechanismRatio = 1.0;
@@ -603,39 +602,39 @@ public final class Constants {
     public static final double kPIDClimberControllerI = 0.0;
     public static final double kPIDClimberControllerD = 0.0;
 
-    public static final double kStowCrawlSpeed = -0.15;
+    public static final double kStowCrawlSpeed = -1;
 
     // SparkMax configs
-    public static final SparkMaxConfig kConfigLeader = new SparkMaxConfig();
-    public static final SparkMaxConfig kConfigFollower = new SparkMaxConfig();
+    public static final SparkMaxConfig kConfigLeft = new SparkMaxConfig();
+    public static final SparkMaxConfig kConfigRight = new SparkMaxConfig();
 
     static {
-      kConfigLeader.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigLeader.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigLeader.closedLoop
+      kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigLeft.inverted(false); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
+                                   // positive value like 0.1. Watch which direction the arm moves: If it goes up,
+                                   // that motor needs inverted(false) If it goes down, that motor needs
+                                   // inverted(true)
+      kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigLeft.voltageCompensation(12.0);
+      kConfigLeft.closedLoop
           .p(kPIDClimberControllerP)
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
-      kConfigLeader.voltageCompensation(12.0);
 
-      kConfigFollower.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigFollower.inverted(true); // motors face opposite directions
-      kConfigFollower.encoder.positionConversionFactor(kRotationsToInchesConversion);
-      kConfigFollower.closedLoop
+      kConfigRight.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
+      kConfigRight.inverted(true); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
+                                   // positive value like 0.1. Watch which direction the arm moves: If it goes up,
+                                   // that motor needs inverted(false) If it goes down, that motor needs
+                                   // inverted(true)
+      kConfigRight.encoder.positionConversionFactor(kRotationsToInchesConversion);
+      kConfigRight.closedLoop
           .p(kPIDClimberControllerP)
           .i(kPIDClimberControllerI)
           .d(kPIDClimberControllerD)
           .outputRange(kOutputRangeMin, kOutputRangeMax);
-      kConfigFollower.voltageCompensation(12.0);
-
+      kConfigRight.voltageCompensation(12.0);
     }
-
-    public static final Distance kRaisePosition = Inches.of(17.6); // Was 32
-
-    public static final Distance kPullPosition = Inches.of(0.0);
-
-    public static final Distance kPositionTolerance = Inches.of(0.5);
 
   }
 

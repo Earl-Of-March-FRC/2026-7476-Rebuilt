@@ -1,7 +1,3 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.commands.climber;
 
 import java.util.function.DoubleSupplier;
@@ -12,39 +8,47 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 
 /**
- * Climber command that runs the climbers using percent output
+ * Drives both arms at a percent output supplied by the caller.
+ * Positive values raise the arms; negative values lower them.
+ *
+ * <p>
+ * The subsystem's beam-break guard still applies -- if an arm is at the
+ * bottom and a negative percent is commanded, that arm will not move.
  */
 public class ClimbPercentCmd extends Command {
-  private final ClimberSubsystem climbers;
+
+  private final ClimberSubsystem climber;
   private final DoubleSupplier percent;
 
-  /** Creates a new ClimbPercentCmd. */
-  public ClimbPercentCmd(ClimberSubsystem climbers, DoubleSupplier percent) {
-    this.climbers = climbers;
+  /**
+   * Constructs a {@code ClimbPercentCmd}.
+   *
+   * @param climber the climber subsystem
+   * @param percent supplier returning the desired output fraction in
+   *                {@code [-1, 1]}
+   */
+  public ClimbPercentCmd(ClimberSubsystem climber, DoubleSupplier percent) {
+    this.climber = climber;
     this.percent = percent;
-    addRequirements(climbers);
+    addRequirements(climber);
   }
 
-  // Called when the command is initially scheduled.
   @Override
   public void initialize() {
   }
 
-  // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    final double percentOutput = percent.getAsDouble();
-    climbers.setPercentOutput(percentOutput);
-    Logger.recordOutput("Commands/ClimbPercentCmd/Percent", percentOutput);
+    double output = percent.getAsDouble();
+    climber.setPercentOutput(output);
+    Logger.recordOutput("Commands/ClimbPercentCmd/PercentOutput", output);
   }
 
-  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    climbers.stop();
+    climber.stop();
   }
 
-  // Returns true when the command should end.
   @Override
   public boolean isFinished() {
     return false;

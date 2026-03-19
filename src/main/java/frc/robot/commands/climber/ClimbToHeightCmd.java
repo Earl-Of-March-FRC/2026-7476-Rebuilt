@@ -10,14 +10,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 
 /**
- * Drives both arms upward at full percent output until each arm individually
- * reaches or exceeds the target position, then stops that arm.
+ * Drives both arms to a certain height using PID
  *
  * <p>
  * Each arm is tracked independently -- once an arm reaches the target it
  * stops while the other continues.
  */
-public class ClimbUpCmd extends Command {
+public class ClimbToHeightCmd extends Command {
 
   private final ClimberSubsystem climber;
   private final Distance targetPosition;
@@ -28,7 +27,7 @@ public class ClimbUpCmd extends Command {
    * @param climber        the climber subsystem
    * @param targetPosition the desired arm extension
    */
-  public ClimbUpCmd(ClimberSubsystem climber, Distance targetPosition) {
+  public ClimbToHeightCmd(ClimberSubsystem climber, Distance targetPosition) {
     this.climber = climber;
     this.targetPosition = targetPosition;
     addRequirements(climber);
@@ -42,7 +41,7 @@ public class ClimbUpCmd extends Command {
 
   @Override
   public void execute() {
-    climber.driveUpToPosition(targetPosition);
+    climber.setTargetPosition(targetPosition);
 
     Logger.recordOutput("Commands/ClimbUpCmd/LeftPositionInches",
         climber.getLeftPosition().in(Inches));
@@ -68,6 +67,6 @@ public class ClimbUpCmd extends Command {
    */
   @Override
   public boolean isFinished() {
-    return climber.bothArmsAtOrAbove(targetPosition);
+    return climber.atSetpoint();
   }
 }
