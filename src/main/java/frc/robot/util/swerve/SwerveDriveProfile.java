@@ -19,6 +19,7 @@ import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.MomentOfInertia;
+import frc.robot.Constants.PhotonConstants;
 import frc.robot.util.vision.CameraProfile;
 
 /**
@@ -77,6 +78,17 @@ public record SwerveDriveProfile(
 
   /**
    * CompBot swerve drive configuration.
+   *
+   * <p>
+   * Camera notes:
+   * <ul>
+   * <li><b>Launcher</b> — rear-facing, yaw 180°. High base std devs
+   * ({@link PhotonConstants#kLauncherCameraBaseStdDev}) plus a scale factor
+   * ({@link PhotonConstants#kLauncherCameraDynamicStdDevScaleFactor}) to
+   * reduce jitter without discarding useful measurements entirely.</li>
+   * <li><b>Intake_Trench</b> — front-left, moderate trust.</li>
+   * <li><b>Intake_Ground</b> — front-right, moderate trust.</li>
+   * </ul>
    */
   public static final SwerveDriveProfile COMP_BOT = new SwerveDriveProfile(
       new int[] { 6, 4, 8, 2 }, // drive CAN IDs: FL, FR, BL, BR
@@ -98,15 +110,20 @@ public record SwerveDriveProfile(
       KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
       GyroType.NavX_MXP_SPI,
       new CameraProfile[] {
+          // Launcher camera — rear-facing, historically jittery. Base std devs are
+          // intentionally high and the dynamic scale factor adds an extra trust
+          // penalty on top. Tune kLauncherCameraBaseStdDev and
+          // kLauncherCameraDynamicStdDevScaleFactor in PhotonConstants.
           new CameraProfile(
               "Launcher",
               Degrees.of(0.0), // roll
-              Degrees.of(0), // pitchs
+              Degrees.of(0), // pitch
               Degrees.of(180.0), // yaw
               Meters.of(-0.2712041566), // x
               Meters.of(0.254), // y
               Meters.of(0.4480096958), // z
-              VecBuilder.fill(0.3, 0.3, 0.3)),
+              VecBuilder.fill(1.5, 1.5, 1.5),
+              2.0),
           new CameraProfile(
               "Intake_Trench",
               Degrees.of(0.0), // roll
