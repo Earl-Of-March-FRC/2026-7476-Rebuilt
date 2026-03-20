@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Kilograms;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 
@@ -106,8 +107,8 @@ public record SwerveDriveProfile(
       Inches.of(23.5),
       Meters.of(0.75),
       Meters.of(0.75),
-      Kilograms.of(74.088), // PathPlanner default, not accurate
-      KilogramSquareMeters.of(6.883), // PathPlanner default, not accurate
+      Pounds.of(104.85),
+      KilogramSquareMeters.of(5),
       GyroType.NavX_MXP_SPI,
       new CameraProfile[] {
           // Launcher camera — rear-facing, historically jittery. Base std devs are
