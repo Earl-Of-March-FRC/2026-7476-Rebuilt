@@ -40,6 +40,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -520,12 +521,14 @@ public class RobotContainer {
 
     autoChooser.addOption("Launch and Cross Trench Auto",
         new SequentialCommandGroup(
-            new XLockAndLaunchCmd(
-                driveSub,
-                indexerSub,
-                launcherAndIntakeSub).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+            new ParallelCommandGroup(
+                new XLockAndLaunchCmd(
+                    driveSub,
+                    indexerSub,
+                    launcherAndIntakeSub).withDeadline(
+                        Commands.waitUntil(LaunchHelpers::willHitHub)
+                            .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                new ClimbDownCmd(climberSub)),
             Commands.defer(
                 () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
                 Set.of(driveSub))));
