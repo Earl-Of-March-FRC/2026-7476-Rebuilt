@@ -364,8 +364,8 @@ public class RobotContainer {
     driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
     driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
 
-    driverController.povLeft().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Left));
-    driverController.povRight().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Right));
+    driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
+    driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
@@ -517,6 +517,11 @@ public class RobotContainer {
     // Commands.defer(
     // () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
     // Set.of(driveSub)));
+
+    autoChooser.addOption("Launch", new XLockAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub));
 
     autoChooser.addOption("Launch Then Climb Left",
         new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Left));
