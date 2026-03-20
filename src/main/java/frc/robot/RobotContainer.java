@@ -198,13 +198,11 @@ public class RobotContainer {
     NamedCommands.registerCommand("Cross Bump", PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints));
     NamedCommands.registerCommand("Cross Trench", PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints));
 
-    // Logger.recordOutput("Temp/UpPos", new
-    // Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.334)),
-    // FieldConstants.kFieldWidthY.minus(Meters.of(3.583)), Rotation2d.kZero));
+    Logger.recordOutput("Temp/UpPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.524)),
+        FieldConstants.kFieldWidthY.minus(Meters.of(3.504)), Rotation2d.kZero));
 
-    // Logger.recordOutput("Temp/DownPos", new
-    // Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.334)),
-    // FieldConstants.kFieldWidthY.minus(Meters.of(5.134)), Rotation2d.kZero));
+    Logger.recordOutput("Temp/DownPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.465)),
+        FieldConstants.kFieldWidthY.minus(Meters.of(5.141)), Rotation2d.kZero));
 
     // NamedCommands.registerCommand("Launch Once Connecting Path",
     // AutoBuilder.pathfindToPose(
