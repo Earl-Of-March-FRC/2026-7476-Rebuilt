@@ -5,7 +5,7 @@ from PIL import Image
 
 # CONFIG
 BAT_FILE = "deploy.bat"
-IMAGE_FILE = "exe_icon.jpg"
+IMAGE_FILE = "better_icon.jpg"
 EXE_NAME = "RobotDeploy"
 
 # Get the directory where build.py lives
