@@ -185,3 +185,9 @@ compile_commands.json
 
 # Eclipse generated file for annotation processors
 .factorypath
+
+# Exe builder
+deployExe/build/
+deployExe/runner.py
+deployExe/icon.ico
+*.spec

@@ -130,10 +130,10 @@ public record SwerveDriveProfile(
       SwerveDriveProfileID.COMP_BOT,
       // Drive motor PID
       0.04, 0.0, 0.0,
-      50,
+      30,
       // Turn motor PID
       1.0, 0.0, 0.0,
-      20, 20);
+      15, 20);
 
   /**
    * SpongeBot swerve drive configuration with 3 cameras.
