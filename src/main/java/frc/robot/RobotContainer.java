@@ -40,6 +40,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
@@ -364,8 +365,8 @@ public class RobotContainer {
     driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
     driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
 
-    driverController.povLeft().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Left));
-    driverController.povRight().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Right));
+    driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
+    driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
     // Cancel all driveSub commands, returning manual control
     driverController.button(7).onTrue(Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
@@ -435,13 +436,13 @@ public class RobotContainer {
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
-        () -> LauncherAndIntakeConstants.kCornerRPMSetpoint));
-    operatorController.povDown().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kTowerRPMSetpoint));
-    operatorController.povLeft().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
-        () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
-    operatorController.povRight().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+    operatorController.povDown().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kTrenchRPMSetpoint));
+    operatorController.povLeft().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kCornerRPMSetpoint));
+    operatorController.povRight().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
 
     operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
     operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
@@ -502,21 +503,40 @@ public class RobotContainer {
    * Use this method to define the autonomous command.
    */
   private void configureAutos() {
-    // autoChooser = new LoggedDashboardChooser<>("Auto Routine",
-    // AutoBuilder.buildAutoChooser());
+    autoChooser = new LoggedDashboardChooser<>("Auto Routine",
+        AutoBuilder.buildAutoChooser());
     autoChooser = new LoggedDashboardChooser<>("Auto Routine");
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
 
-    // autoChooser.addOption("Cross Bump Auto",
-    // Commands.defer(
-    // () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
-    // Set.of(driveSub)));
+    autoChooser.addOption("Launch and Cross Bump Auto",
+        new SequentialCommandGroup(
+            new XLockAndLaunchCmd(
+                driveSub,
+                indexerSub,
+                launcherAndIntakeSub).withDeadline(
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+            Commands.defer(
+                () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
+                Set.of(driveSub))));
 
-    // autoChooser.addOption("Cross Trench Auto",
-    // Commands.defer(
-    // () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
-    // Set.of(driveSub)));
+    autoChooser.addOption("Launch and Cross Trench Auto",
+        new SequentialCommandGroup(
+            new XLockAndLaunchCmd(
+                driveSub,
+                indexerSub,
+                launcherAndIntakeSub).withDeadline(
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+            Commands.defer(
+                () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
+                Set.of(driveSub))));
+
+    autoChooser.addOption("Launch", new XLockAndLaunchCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub));
 
     autoChooser.addOption("Launch Then Climb Left",
         new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Left));

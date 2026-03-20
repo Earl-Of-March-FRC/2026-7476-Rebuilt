@@ -194,7 +194,7 @@ public final class Constants {
     public static final SparkMaxConfig kLeaderConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
     // TODO: Test this value
-    public static final Time kAutoLaunchTime = Seconds.of(10);
+    public static final Time kAutoLaunchTime = Seconds.of(6);
 
     static {
       kLeaderConfig
@@ -825,7 +825,7 @@ public final class Constants {
     public static final Distance kAllianceZoneXLength = Inches.of(156.61);
     // Defines a zone starting from our driverstation where launching commands are
     // accepted (needs testing)
-    public static final Distance kAcceptedLaunchingZone = kAllianceZoneXLength.minus(Inches.of(27 / Math.sqrt(2)));
+    public static final Distance kAcceptedLaunchingZone = kAllianceZoneXLength;// .plus(Inches.of(27 / Math.sqrt(2)));
     // From drivestation wall to drivestation wall
     public static final Distance kFieldLengthX = Meter.of(kfieldLayout.getFieldLength());
     // Parallel distance from edge to edge

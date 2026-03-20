@@ -13,9 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.ClimberConstants;
-import frc.robot.commands.climber.ClimbDownCmd;
-import frc.robot.commands.climber.ClimbPercentCmd;
-import frc.robot.commands.climber.ClimbUpCmd;
+import frc.robot.commands.climber.ClimbToHeightCmd;
 import frc.robot.commands.drivetrain.DriveStopCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
@@ -55,8 +53,7 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
     // Already in alliance zone, can start moving up climbers
     final Command moveToTowerFrontCmd = new ParallelDeadlineGroup(
         new ReturnClimbersToBottomCmd(climber)
-            .andThen(new ClimbPercentCmd(climber, () -> ClimberConstants.kOutputUp)
-                .withTimeout(ClimberConstants.kTimeFromBottomToRaisedPosition)),
+            .andThen(new ClimbToHeightCmd(climber, ClimberConstants.kLatchPosition)),
         PathGenerator.driveToTowerFrontAuto(towerSide));
 
     addCommands(
@@ -64,8 +61,6 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
         moveToTowerFrontCmd,
         new DriveToTowerSideCmd(drivetrain, towerSide),
         new DriveStopCmd(drivetrain),
-        new ClimbPercentCmd(climber, () -> -ClimberConstants.kOutputUp)
-            .withTimeout(ClimberConstants.kTimeFromRaisedToClimbedPosition));
-
+        new ClimbToHeightCmd(climber, ClimberConstants.kRaisePosition));
   }
 }
