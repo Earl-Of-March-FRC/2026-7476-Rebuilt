@@ -368,8 +368,9 @@ public class RobotContainer {
     driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
-    // Cancel all driveSub commands, returning manual control
-    driverController.button(7).onTrue(Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
+    // Cancel all driveSub commands and disables xLock, returning manual control
+    driverController.button(7).onTrue(Commands.runOnce(() -> driveSub.setXLock(false), driveSub));
+    driverController.button(8).onTrue(Commands.runOnce(driveSub::toggleXLock));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
@@ -445,7 +446,6 @@ public class RobotContainer {
         () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
 
     operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
-    operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
 
     // Allow operator to apply RPM offset
     Trigger rpmTrimTrigger = new Trigger(() -> Math.abs(
