@@ -121,7 +121,7 @@
             }
           },
           {
-            "title": "Will Fuel Hit Hub",
+            "title": "Will Score Fuel",
             "x": 0.0,
             "y": 384.0,
             "width": 128.0,
@@ -129,23 +129,6 @@
             "type": "Boolean Box",
             "properties": {
               "topic": "/AdvantageKit/RealOutputs/Launcher/Prediction/WillHitHub",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "Will Fuel Leave Field",
-            "x": 128.0,
-            "y": 384.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/WillBallLeaveField",
               "period": 0.06,
               "data_type": "boolean",
               "true_color": 4283215696,
@@ -216,6 +199,23 @@
             "type": "Boolean Box",
             "properties": {
               "topic": "/AdvantageKit/RealOutputs/Drivetrain/XLock",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Field Relative",
+            "x": 128.0,
+            "y": 384.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drivetrain/IsFieldRelativeReal",
               "period": 0.06,
               "data_type": "boolean",
               "true_color": 4283215696,
