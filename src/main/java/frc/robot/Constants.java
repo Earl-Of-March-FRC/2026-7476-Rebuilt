@@ -558,7 +558,7 @@ public final class Constants {
     public static final Time kTimeFromRaisedToClimbedPosition = kTimeFromBottomToRaisedPosition.times(0.75);
 
     // TODO: Test these setpoints (again)
-    public static final Distance kRaisePosition = Inches.of(5.75);
+    public static final Distance kRaisePosition = Inches.of(3);
     public static final Distance kLatchPosition = Inches.of(17.6);
 
     public static final Distance kMinLength = Inches.of(0);
