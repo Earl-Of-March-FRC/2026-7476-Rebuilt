@@ -198,13 +198,11 @@ public class RobotContainer {
     NamedCommands.registerCommand("Cross Bump", PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints));
     NamedCommands.registerCommand("Cross Trench", PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints));
 
-    // Logger.recordOutput("Temp/UpPos", new
-    // Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.334)),
-    // FieldConstants.kFieldWidthY.minus(Meters.of(3.583)), Rotation2d.kZero));
+    Logger.recordOutput("Temp/UpPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.524)),
+        FieldConstants.kFieldWidthY.minus(Meters.of(3.504)), Rotation2d.kZero));
 
-    // Logger.recordOutput("Temp/DownPos", new
-    // Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.334)),
-    // FieldConstants.kFieldWidthY.minus(Meters.of(5.134)), Rotation2d.kZero));
+    Logger.recordOutput("Temp/DownPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.465)),
+        FieldConstants.kFieldWidthY.minus(Meters.of(5.141)), Rotation2d.kZero));
 
     // NamedCommands.registerCommand("Launch Once Connecting Path",
     // AutoBuilder.pathfindToPose(
@@ -359,8 +357,7 @@ public class RobotContainer {
             new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity));
 
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
-    // driverController.y().onTrue(Commands.runOnce(() ->
-    // driveSub.toggleFieldRelative(), driveSub));
+    operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
     driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
@@ -368,8 +365,9 @@ public class RobotContainer {
     driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
-    // Cancel all driveSub commands, returning manual control
-    driverController.button(7).onTrue(Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
+    // Cancel all driveSub commands and disables xLock, returning manual control
+    driverController.button(7).onTrue(Commands.runOnce(() -> driveSub.setXLock(false), driveSub));
+    driverController.button(8).onTrue(Commands.runOnce(driveSub::toggleXLock));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
@@ -445,7 +443,6 @@ public class RobotContainer {
         () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
 
     operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
-    operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
 
     // Allow operator to apply RPM offset
     Trigger rpmTrimTrigger = new Trigger(() -> Math.abs(
