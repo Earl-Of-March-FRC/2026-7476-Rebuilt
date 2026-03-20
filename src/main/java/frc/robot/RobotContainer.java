@@ -359,8 +359,7 @@ public class RobotContainer {
             new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity));
 
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
-    // driverController.y().onTrue(Commands.runOnce(() ->
-    // driveSub.toggleFieldRelative(), driveSub));
+    operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
     driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
