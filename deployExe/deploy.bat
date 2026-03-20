@@ -28,6 +28,7 @@ set REPO_PATH=
 for %%D in (
     "%USERPROFILE%\Documents\GitHub\%REPO_NAME%"
     "%USERPROFILE%\Documents\%REPO_NAME%"
+    "%USERPROFILE%\Documents\FRC\%REPO_NAME%"
     "%USERPROFILE%\Desktop\%REPO_NAME%"
     "%USERPROFILE%\Documents\FRC\%REPO_NAME%"
     "%USERPROFILE%\source\repos\%REPO_NAME%"
