@@ -316,6 +316,10 @@ public final class Constants {
         kTrenchAngularVelocity,
         kTrenchAngularAcceleration);
 
+    // How close to the trench the robot can get before climbers automatically lower
+    // to prevent getting caught under the trench
+    public static final Distance kTrenchSafetyMargin = Meters.of(1.5);
+
     // To be used by PathPlanner
     public static final double kPTranslationController = 0.5;
     public static final double kITranslationController = 0.01;

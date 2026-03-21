@@ -354,6 +354,10 @@ public class RobotContainer {
             () -> PoseHelpers.nearestBumpY(driveSub.getPose()), new Rotation2d(DriveConstants.kBumpHeadingRestriction),
             DriveConstants.kBumpLinearVelocity));
 
+    // Supplier to detect if we're near the trench and prevent climbers from getting
+    // caught by automatically lowering them
+    // TO-DO: fix up this chopped code with better logic, using robot pose velocity
+    // instead of stupid driver velocity
     Supplier<Double> trenchCrossXSupplier = () -> {
       if (climberSub.areBothAtBottom()) {
         return getDriverVx();
@@ -362,28 +366,47 @@ public class RobotContainer {
       Distance x = driveSub.getPose().getMeasureX();
 
       Distance blueTrench = FieldConstants.kAllianceWallToHubCenter;
-
-      if (Math.abs(x.minus(blueTrench).in(Meters)) < 1) {
-        if (Math.signum(getDriverVx()) == -1 && x.gt(blueTrench)
-            || Math.signum(getDriverVx()) == 1 && x.lt(blueTrench)) {
-          return 0.0;
-        } else {
-          return getDriverVx();
-        }
-      }
-
       Distance redTrench = FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceWallToHubCenter);
 
-      if (Math.abs(x.minus(redTrench).in(Meters)) < 1) {
-        if (Math.signum(getDriverVx()) == -1 && x.gt(redTrench)
-            || Math.signum(getDriverVx()) == 1 && x.lt(redTrench)) {
-          return 0.0;
-        } else {
-          return getDriverVx();
+      if (PoseHelpers.getAlliance() == Alliance.Blue) {
+
+        if (Math.abs(x.minus(blueTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+          if ((Math.signum(getDriverVx()) == 1 && x.lt(blueTrench))
+              || (Math.signum(getDriverVx()) == -1 && x.gt(blueTrench))) {
+            return 0.0;
+          } else {
+            return getDriverVx();
+          }
+        }
+        if (Math.abs(x.minus(redTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+          if ((Math.signum(getDriverVx()) == 1 && x.lt(redTrench))
+              || (Math.signum(getDriverVx()) == -1 && x.gt(redTrench))) {
+            return 0.0;
+          } else {
+            return getDriverVx();
+          }
+        }
+      } // If we're on the red alliance, the driver controls are reversed, so the signs
+        // are switched (maybe use objective velocity next time :sob:)
+      else {
+        if (Math.abs(x.minus(blueTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+          if ((Math.signum(getDriverVx()) == -1 && x.lt(blueTrench))
+              || (Math.signum(getDriverVx()) == 1 && x.gt(blueTrench))) {
+            return 0.0;
+          } else {
+            return getDriverVx();
+          }
+        }
+        if (Math.abs(x.minus(redTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+          if ((Math.signum(getDriverVx()) == -1 && x.lt(redTrench))
+              || (Math.signum(getDriverVx()) == 1 && x.gt(redTrench))) {
+            return 0.0;
+          } else {
+            return getDriverVx();
+          }
         }
       }
-
-      return 0.0;
+      return getDriverVx();
     };
 
     // Lock Y coordinate to the nearest trench and align heading
