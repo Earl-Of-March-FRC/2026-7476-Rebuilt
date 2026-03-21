@@ -58,6 +58,9 @@ public class ClimberSubsystem extends SubsystemBase {
     }
   }
 
+  /**
+   * Side of the climber arm(s)
+   */
   public static enum ClimberArmSide {
     Left, Right, Both
   }
