@@ -730,7 +730,7 @@ public final class Constants {
 
     // Climber simulation
     public static final DCMotor kSimulatedSparkMaxClimberMotor = DCMotor.getNEO(1);
-    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
+    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(4);
     public static final Distance kSimulatedMaxClimberHeight = Inches.of(10.0);
     // When climbers are within this from 0, the simulated bottom limit switches
     // will indicate that it's at the bottom
