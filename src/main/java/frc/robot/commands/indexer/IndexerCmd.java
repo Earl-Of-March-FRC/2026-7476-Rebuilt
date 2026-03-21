@@ -35,7 +35,7 @@ public class IndexerCmd extends Command {
   public void initialize() {
     pulseTimer.restart();
     pulseOn = true;
-    Logger.recordOutput("IndexerCmd/Status", "Initialized");
+    Logger.recordOutput("Commands/IndexerCmd/Status", "Initialized");
   }
 
   @Override
@@ -54,16 +54,16 @@ public class IndexerCmd extends Command {
     indexer.setWheelPercent(wheelSpeed.getAsDouble());
     indexer.setTreadmillPercent(treadmill);
 
-    Logger.recordOutput("IndexerCmd/MeasuredVelocityRPM", indexer.getWheelVelocity());
-    Logger.recordOutput("IndexerCmd/WheelPercentOutput", wheelSpeed.getAsDouble());
-    Logger.recordOutput("IndexerCmd/TreadmillPercentOutput", treadmill);
-    Logger.recordOutput("IndexerCmd/PulseOn", pulseOn);
+    Logger.recordOutput("Commands/IndexerCmd/MeasuredVelocityRPM", indexer.getWheelVelocity());
+    Logger.recordOutput("Commands/IndexerCmd/WheelPercentOutput", wheelSpeed.getAsDouble());
+    Logger.recordOutput("Commands/IndexerCmd/TreadmillPercentOutput", treadmill);
+    Logger.recordOutput("Commands/IndexerCmd/PulseOn", pulseOn);
   }
 
   @Override
   public void end(boolean interrupted) {
     indexer.stop();
-    Logger.recordOutput("IndexerCmd/Status", interrupted ? "Interrupted" : "Completed");
+    Logger.recordOutput("Commands/IndexerCmd/Status", interrupted ? "Interrupted" : "Completed");
   }
 
   @Override

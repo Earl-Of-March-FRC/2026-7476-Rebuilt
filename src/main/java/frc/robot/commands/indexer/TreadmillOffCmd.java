@@ -20,15 +20,15 @@ public class TreadmillOffCmd extends Command {
 
   @Override
   public void initialize() {
-    Logger.recordOutput("IndexerCmd/TreadmillPulse", false);
+    Logger.recordOutput("Commands/IndexerCmd/TreadmillPulse", false);
   }
 
   @Override
   public void execute() {
     indexer.setWheelPercent(wheelSpeed.getAsDouble());
     indexer.setTreadmillPercent(0);
-    Logger.recordOutput("IndexerCmd/WheelPercentOutput", wheelSpeed.getAsDouble());
-    Logger.recordOutput("IndexerCmd/TreadmillPercentOutput", 0.0);
+    Logger.recordOutput("Commands/IndexerCmd/WheelPercentOutput", wheelSpeed.getAsDouble());
+    Logger.recordOutput("Commands/IndexerCmd/TreadmillPercentOutput", 0.0);
   }
 
   @Override
