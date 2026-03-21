@@ -616,7 +616,9 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
     if (!selectedAuto.hasRequirement(climberSub)) {
-      return selectedAuto.alongWith(new ClimbDownCmd(climberSub));
+      return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is causing the code to crash when
+                                                                   // autonomous phase runs twice. Prevent this by
+                                                                   // testing autos using the test controller
     }
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
