@@ -615,6 +615,9 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
+    if (!selectedAuto.hasRequirement(climberSub)) {
+      return selectedAuto.alongWith(new ClimbDownCmd(climberSub));
+    }
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
 
