@@ -58,15 +58,15 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
         PathGenerator.driveToTowerFrontAuto(towerSide));
 
     addCommands(
-        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndCLimbCmd/Phase", "Initiated")),
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Initiated")),
         moveIntoZoneAllianceZoneCmd,
         Commands.runOnce(
-            () -> Logger.recordOutput("Commands/DriveAndCLimbCmd/Phase", "Move To Tower Front & Raise Climbers")),
+            () -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Move To Tower Front & Raise Climbers")),
         moveToTowerFrontCmd,
-        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndCLimbCmd/Phase", "Drive To Tower Side")),
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Drive To Tower Side")),
         new DriveToTowerSideCmd(drivetrain, towerSide),
         new DriveStopCmd(drivetrain),
-        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndCLimbCmd/Phase", "Climb")),
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Climb")),
         new ClimbToHeightCmd(climber, ClimberConstants.kRaisePosition));
   }
 }
