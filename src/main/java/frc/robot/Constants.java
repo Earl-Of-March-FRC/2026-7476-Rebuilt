@@ -688,7 +688,7 @@ public final class Constants {
     public static final int kGearRatioLevel = 2;
 
     /** Starting pose when in blue alliance */
-    public static final Pose2d kStartingPose = new Pose2d(4.4, 0.6, Rotation2d.fromRadians(0));
+    public static final Pose2d kStartingPose = new Pose2d(3.6, 0.6, Rotation2d.fromRadians(0));
 
     // Whether the bump should have defined collision
     public static final boolean kSimBumpCollision = false;
