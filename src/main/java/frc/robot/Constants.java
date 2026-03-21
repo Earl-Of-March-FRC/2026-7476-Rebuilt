@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import org.photonvision.estimation.TargetModel;
 
@@ -160,6 +161,42 @@ public final class Constants {
       double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
     };
+
+    public static final Distance kMinLaunchDistance;
+
+    static {
+      // Minimum vertical velocity needed to reach hub height (from energy
+      // conservation,
+      // accounting for release height offset)
+      double minVz = Math.sqrt(2 * 9.81
+          * (FieldConstants.kHubHeight.in(Meters)
+              - LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters)));
+
+      // Work backwards through the launch velocity chain to find the minimum RPM:
+      // Vz = ballSpeed * sin(angle)
+      // ballSpeed = wheelLinearSpeed * slipCoeff
+      // wheelLinearSpeed = omega * radius
+      double minOmegaRPM = (minVz
+          / Math.sin(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians))
+          / LauncherAndIntakeConstants.kWheelSlipCoefficient
+          / LauncherAndIntakeConstants.kWheelRadius.in(Meters))
+          * (60.0 / (2 * Math.PI));
+
+      // Invert the quadratic RPM curve:
+      // kRPMCurveA*d² + kRPMCurveB*d + kRPMCurveC = minOmegaRPM
+      // kRPMCurveA*d² + kRPMCurveB*d + (kRPMCurveC - minOmegaRPM) = 0
+      double a = kRPMCurveA;
+      double b = kRPMCurveB;
+      double c = kRPMCurveC - minOmegaRPM;
+
+      double discriminant = b * b - 4 * a * c;
+      double minDist = discriminant >= 0
+          ? (-b + Math.sqrt(discriminant)) / (2 * a)
+          : 1.5; // fallback if curve never reaches minOmegaRPM
+
+      kMinLaunchDistance = Meters.of(Math.max(0, minDist));
+      Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
+    }
 
     public static final Distance kTestLaunchRadius = Meters.of(2.0);
     public static final Time kTestBallAirTime = Seconds.of(0.5);
@@ -348,7 +385,6 @@ public final class Constants {
     };
 
     public static final LinearVelocity kTooCloseBackAwaySpeed = MetersPerSecond.of(1.5);
-    public static final Distance kMinLaunchDistance = Meters.of(1.5); // TODO tune from Launcher/TooClose/XDist logs
   }
 
   public static final class AutoConstants {

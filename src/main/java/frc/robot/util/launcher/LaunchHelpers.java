@@ -168,7 +168,7 @@ public class LaunchHelpers {
   public static boolean isTooCloseToHub() {
     double xDist = Math.abs(
         drive().getPose().getX() - PoseHelpers.getAllianceHubtTranslation2d().getX());
-    boolean tooClose = Meters.of(xDist).lt(DriveConstants.kMinLaunchDistance);
+    boolean tooClose = Meters.of(xDist).lt(LauncherAndIntakeConstants.kMinLaunchDistance);
     Logger.recordOutput("Launcher/TooClose/XDist", xDist);
     Logger.recordOutput("Launcher/TooClose/IsTooClose", tooClose);
     return tooClose;
