@@ -20,6 +20,8 @@ import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -33,6 +35,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -351,11 +354,44 @@ public class RobotContainer {
             () -> PoseHelpers.nearestBumpY(driveSub.getPose()), new Rotation2d(DriveConstants.kBumpHeadingRestriction),
             DriveConstants.kBumpLinearVelocity));
 
+    Supplier<Double> trenchCrossXSupplier = () -> {
+      if (climberSub.areBothAtBottom()) {
+        return getDriverVx();
+      }
+
+      Distance x = driveSub.getPose().getMeasureX();
+
+      Distance blueTrench = FieldConstants.kAllianceWallToHubCenter;
+
+      if (Math.abs(x.minus(blueTrench).in(Meters)) < 1) {
+        if (Math.signum(getDriverVx()) == -1 && x.gt(blueTrench)
+            || Math.signum(getDriverVx()) == 1 && x.lt(blueTrench)) {
+          return 0.0;
+        } else {
+          return getDriverVx();
+        }
+      }
+
+      Distance redTrench = FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceWallToHubCenter);
+
+      if (Math.abs(x.minus(redTrench).in(Meters)) < 1) {
+        if (Math.signum(getDriverVx()) == -1 && x.gt(redTrench)
+            || Math.signum(getDriverVx()) == 1 && x.lt(redTrench)) {
+          return 0.0;
+        } else {
+          return getDriverVx();
+        }
+      }
+
+      return 0.0;
+    };
+
     // Lock Y coordinate to the nearest trench and align heading
     driverController.b()
-        .toggleOnTrue(new DriveLockedHeadingAndYCmd(driveSub, this::getDriverVx,
+        .toggleOnTrue(new DriveLockedHeadingAndYCmd(driveSub, trenchCrossXSupplier,
             () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
-            new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity));
+            new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity)
+            .alongWith(new ClimbDownCmd(climberSub)));
 
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
     operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
