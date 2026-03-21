@@ -20,6 +20,8 @@ import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -33,6 +35,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -351,11 +354,48 @@ public class RobotContainer {
             () -> PoseHelpers.nearestBumpY(driveSub.getPose()), new Rotation2d(DriveConstants.kBumpHeadingRestriction),
             DriveConstants.kBumpLinearVelocity));
 
+    // Supplier to detect if we're near the trench and prevent climbers from getting
+    // caught by automatically lowering them
+    // TO-DO: fix up this chopped code with better logic, using robot pose velocity
+    // instead of stupid driver velocity
+    Supplier<Double> trenchCrossXSupplier = () -> {
+      if (climberSub.areBothAtBottom()) {
+        return getDriverVx();
+      }
+
+      Distance x = driveSub.getPose().getMeasureX();
+
+      Distance blueTrench = FieldConstants.kAllianceWallToHubCenter;
+      Distance redTrench = FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceWallToHubCenter);
+
+      double Vx = getDriverVx() * (PoseHelpers.getAlliance() == Alliance.Blue ? 1 : -1); // Account for reversed field
+                                                                                         // coordinates on red
+
+      if (Math.abs(x.minus(blueTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+        if ((Math.signum(Vx) == 1 && x.lt(blueTrench))
+            || (Math.signum(Vx) == -1 && x.gt(blueTrench))) {
+          return 0.0;
+        } else {
+          return getDriverVx();
+        }
+      }
+      if (Math.abs(x.minus(redTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+        if ((Math.signum(Vx) == 1 && x.lt(redTrench))
+            || (Math.signum(Vx) == -1 && x.gt(redTrench))) {
+          return 0.0;
+        } else {
+          return getDriverVx();
+        }
+      }
+      return getDriverVx();
+    };
+
     // Lock Y coordinate to the nearest trench and align heading
     driverController.b()
-        .toggleOnTrue(new DriveLockedHeadingAndYCmd(driveSub, this::getDriverVx,
+        .toggleOnTrue(new DriveLockedHeadingAndYCmd(driveSub, trenchCrossXSupplier,
             () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
-            new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity));
+            new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity)
+            .alongWith(new ClimbDownCmd(climberSub)));
 
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
     operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
@@ -575,6 +615,9 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
+    if (!selectedAuto.hasRequirement(climberSub)) {
+      return selectedAuto.alongWith(new ClimbDownCmd(climberSub));
+    }
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
 
