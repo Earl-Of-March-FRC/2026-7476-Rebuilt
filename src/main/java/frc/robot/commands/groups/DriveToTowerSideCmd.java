@@ -10,8 +10,6 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import frc.robot.Constants.DriveConstants;
-import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.swerve.PathGenerator;

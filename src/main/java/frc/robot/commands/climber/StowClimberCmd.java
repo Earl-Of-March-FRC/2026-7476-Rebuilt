@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ArmSide;
 
 /**
  * Homing command: crawls both arms downward at
@@ -22,6 +23,7 @@ import frc.robot.subsystems.Climber.ClimberSubsystem;
 public class StowClimberCmd extends Command {
 
   private final ClimberSubsystem climber;
+  private final ArmSide armSide;
 
   /**
    * Constructs a {@code StowClimberCmd}.
@@ -29,12 +31,24 @@ public class StowClimberCmd extends Command {
    * @param climber the climber subsystem
    */
   public StowClimberCmd(ClimberSubsystem climber) {
+    this(climber, ArmSide.Both);
+  }
+
+  /**
+   * Constructs a {@code StowClimberCmd}.
+   *
+   * @param climber the climber subsystem
+   * @param armSide side of the arm to stow
+   */
+  public StowClimberCmd(ClimberSubsystem climber, ArmSide armSide) {
     this.climber = climber;
+    this.armSide = armSide;
     addRequirements(climber);
   }
 
   @Override
   public void initialize() {
+    Logger.recordOutput("Commands/StowClimberCmd/Side", armSide.name());
     Logger.recordOutput("Commands/StowClimberCmd/Status", "Running");
   }
 
@@ -73,6 +87,11 @@ public class StowClimberCmd extends Command {
    */
   @Override
   public boolean isFinished() {
+    if (armSide == ArmSide.Left) {
+      return climber.isLeftAtBottom();
+    } else if (armSide == ArmSide.Right) {
+      return climber.isRightAtBottom();
+    }
     return climber.areBothAtBottom();
   }
 }

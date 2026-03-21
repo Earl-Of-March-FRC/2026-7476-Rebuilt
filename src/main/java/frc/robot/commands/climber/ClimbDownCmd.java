@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ArmSide;
 
 /**
  * Crawls both arms downward at {@link ClimberConstants#kStowCrawlSpeed} until
@@ -21,6 +22,7 @@ import frc.robot.subsystems.Climber.ClimberSubsystem;
 public class ClimbDownCmd extends Command {
 
   private final ClimberSubsystem climber;
+  private final ArmSide side;
 
   /**
    * Constructs a {@code ClimbDownCmd}.
@@ -28,18 +30,30 @@ public class ClimbDownCmd extends Command {
    * @param climber the climber subsystem
    */
   public ClimbDownCmd(ClimberSubsystem climber) {
+    this(climber, ArmSide.Both);
+  }
+
+  /**
+   * Constructs a {@code ClimbDownCmd}.
+   *
+   * @param climber the climber subsystem
+   * @param side    Arm side
+   */
+  public ClimbDownCmd(ClimberSubsystem climber, ArmSide side) {
     this.climber = climber;
+    this.side = side;
     addRequirements(climber);
   }
 
   @Override
   public void initialize() {
+    Logger.recordOutput("Commands/ClimbDownCmd/Side", side);
     Logger.recordOutput("Commands/ClimbDownCmd/Status", "Running");
   }
 
   @Override
   public void execute() {
-    climber.setPercentOutput(ClimberConstants.kStowCrawlSpeed);
+    climber.setPercentOutput(ClimberConstants.kStowCrawlSpeed, side);
 
     Logger.recordOutput("Commands/ClimbDownCmd/LeftPositionInches",
         climber.getLeftPosition().in(Inches));
@@ -56,12 +70,19 @@ public class ClimbDownCmd extends Command {
   @Override
   public void end(boolean interrupted) {
     climber.stop();
-    if (!interrupted) {
+    if (interrupted) {
+      Logger.recordOutput("Commands/ClimbDownCmd/Status", "Interrupted");
+      return;
+    }
+    if (side != ArmSide.Right) {
       climber.resetLeftEncoder();
+    }
+
+    if (side != ArmSide.Left) {
       climber.resetRightEncoder();
     }
-    Logger.recordOutput("Commands/ClimbDownCmd/Status",
-        interrupted ? "Interrupted" : "Completed");
+
+    Logger.recordOutput("Commands/ClimbDownCmd/Status", "Completed");
 
   }
 
@@ -72,6 +93,11 @@ public class ClimbDownCmd extends Command {
    */
   @Override
   public boolean isFinished() {
+    if (side == ArmSide.Left) {
+      return climber.isLeftAtBottom();
+    } else if (side == ArmSide.Right) {
+      return climber.isRightAtBottom();
+    }
     return climber.areBothAtBottom();
   }
 }
