@@ -368,42 +368,23 @@ public class RobotContainer {
       Distance blueTrench = FieldConstants.kAllianceWallToHubCenter;
       Distance redTrench = FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceWallToHubCenter);
 
-      if (PoseHelpers.getAlliance() == Alliance.Blue) {
+      double Vx = getDriverVx() * (PoseHelpers.getAlliance() == Alliance.Blue ? 1 : -1); // Account for reversed field
+                                                                                         // coordinates on red
 
-        if (Math.abs(x.minus(blueTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
-          if ((Math.signum(getDriverVx()) == 1 && x.lt(blueTrench))
-              || (Math.signum(getDriverVx()) == -1 && x.gt(blueTrench))) {
-            return 0.0;
-          } else {
-            return getDriverVx();
-          }
+      if (Math.abs(x.minus(blueTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+        if ((Math.signum(Vx) == 1 && x.lt(blueTrench))
+            || (Math.signum(Vx) == -1 && x.gt(blueTrench))) {
+          return 0.0;
+        } else {
+          return getDriverVx();
         }
-        if (Math.abs(x.minus(redTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
-          if ((Math.signum(getDriverVx()) == 1 && x.lt(redTrench))
-              || (Math.signum(getDriverVx()) == -1 && x.gt(redTrench))) {
-            return 0.0;
-          } else {
-            return getDriverVx();
-          }
-        }
-      } // If we're on the red alliance, the driver controls are reversed, so the signs
-        // are switched (maybe use objective velocity next time :sob:)
-      else {
-        if (Math.abs(x.minus(blueTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
-          if ((Math.signum(getDriverVx()) == -1 && x.lt(blueTrench))
-              || (Math.signum(getDriverVx()) == 1 && x.gt(blueTrench))) {
-            return 0.0;
-          } else {
-            return getDriverVx();
-          }
-        }
-        if (Math.abs(x.minus(redTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
-          if ((Math.signum(getDriverVx()) == -1 && x.lt(redTrench))
-              || (Math.signum(getDriverVx()) == 1 && x.gt(redTrench))) {
-            return 0.0;
-          } else {
-            return getDriverVx();
-          }
+      }
+      if (Math.abs(x.minus(redTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+        if ((Math.signum(Vx) == 1 && x.lt(redTrench))
+            || (Math.signum(Vx) == -1 && x.gt(redTrench))) {
+          return 0.0;
+        } else {
+          return getDriverVx();
         }
       }
       return getDriverVx();
