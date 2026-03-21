@@ -48,17 +48,17 @@ public class ClimberSubsystem extends SubsystemBase {
      * 
      * @param isFacingDriverstation Whether the drivetrain is facing the
      *                              driverstation
-     * @return The corresponding {@link ArmSide}
+     * @return The corresponding {@link ClimberArmSide}
      */
-    public ArmSide getCorrespondingArmSide(boolean isFacingDriverstation) {
+    public ClimberArmSide getCorrespondingArmSide(boolean isFacingDriverstation) {
       return switch (this) {
-        case Left -> isFacingDriverstation ? ArmSide.Left : ArmSide.Right;
-        case Right -> isFacingDriverstation ? ArmSide.Right : ArmSide.Left;
+        case Left -> isFacingDriverstation ? ClimberArmSide.Left : ClimberArmSide.Right;
+        case Right -> isFacingDriverstation ? ClimberArmSide.Right : ClimberArmSide.Left;
       };
     }
   }
 
-  public static enum ArmSide {
+  public static enum ClimberArmSide {
     Left, Right, Both
   }
 
@@ -112,7 +112,7 @@ public class ClimberSubsystem extends SubsystemBase {
    *                down
    */
   public void setPercentOutput(double percent) {
-    setPercentOutput(percent, ArmSide.Both);
+    setPercentOutput(percent, ClimberArmSide.Both);
   }
 
   /**
@@ -127,13 +127,13 @@ public class ClimberSubsystem extends SubsystemBase {
    *                down
    * @param side    Side to set
    */
-  public void setPercentOutput(double percent, ArmSide side) {
-    if (side != ArmSide.Right && canLeftMove(Math.signum(percent)))
+  public void setPercentOutput(double percent, ClimberArmSide side) {
+    if (side != ClimberArmSide.Right && canLeftMove(Math.signum(percent)))
       leftArm.setPercentOutput(percent);
     else
       leftArm.stop();
 
-    if (side != ArmSide.Left && canRightMove(Math.signum(percent)))
+    if (side != ClimberArmSide.Left && canRightMove(Math.signum(percent)))
       rightArm.setPercentOutput(percent);
     else
       rightArm.stop();
@@ -149,7 +149,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param position desired arm extension
    */
   public void setTargetPosition(Distance position) {
-    setTargetPosition(position, ArmSide.Both);
+    setTargetPosition(position, ClimberArmSide.Both);
   }
 
   /**
@@ -159,19 +159,19 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param position desired arm extension
    * @param side     desired arm side
    */
-  public void setTargetPosition(Distance position, ArmSide side) {
+  public void setTargetPosition(Distance position, ClimberArmSide side) {
     Distance clamped = (Distance) UnitHelpers.clamp(
         position,
         ClimberConstants.kMinLength,
         ClimberConstants.kMaxLength);
     lastSetpoint = clamped;
-    if (side != ArmSide.Right) {
+    if (side != ClimberArmSide.Right) {
       leftArm.setTargetPosition(clamped);
     } else {
       leftArm.stop();
     }
 
-    if (side != ArmSide.Left) {
+    if (side != ClimberArmSide.Left) {
       rightArm.setTargetPosition(clamped);
     } else {
       rightArm.stop();

@@ -8,7 +8,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ArmSide;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 
 /**
  * Homing command: crawls both arms downward at
@@ -23,7 +23,7 @@ import frc.robot.subsystems.Climber.ClimberSubsystem.ArmSide;
 public class StowClimberCmd extends Command {
 
   private final ClimberSubsystem climber;
-  private final ArmSide armSide;
+  private final ClimberArmSide armSide;
 
   /**
    * Constructs a {@code StowClimberCmd}.
@@ -31,7 +31,7 @@ public class StowClimberCmd extends Command {
    * @param climber the climber subsystem
    */
   public StowClimberCmd(ClimberSubsystem climber) {
-    this(climber, ArmSide.Both);
+    this(climber, ClimberArmSide.Both);
   }
 
   /**
@@ -40,7 +40,7 @@ public class StowClimberCmd extends Command {
    * @param climber the climber subsystem
    * @param armSide side of the arm to stow
    */
-  public StowClimberCmd(ClimberSubsystem climber, ArmSide armSide) {
+  public StowClimberCmd(ClimberSubsystem climber, ClimberArmSide armSide) {
     this.climber = climber;
     this.armSide = armSide;
     addRequirements(climber);
@@ -87,9 +87,9 @@ public class StowClimberCmd extends Command {
    */
   @Override
   public boolean isFinished() {
-    if (armSide == ArmSide.Left) {
+    if (armSide == ClimberArmSide.Left) {
       return climber.isLeftAtBottom();
-    } else if (armSide == ArmSide.Right) {
+    } else if (armSide == ClimberArmSide.Right) {
       return climber.isRightAtBottom();
     }
     return climber.areBothAtBottom();

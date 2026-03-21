@@ -6,7 +6,7 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ArmSide;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 
 /**
  * Drives both arms at a percent output supplied by the caller.
@@ -20,7 +20,7 @@ public class ClimbPercentCmd extends Command {
 
   private final ClimberSubsystem climber;
   private final DoubleSupplier percent;
-  private final ArmSide side;
+  private final ClimberArmSide side;
 
   /**
    * Constructs a {@code ClimbPercentCmd}.
@@ -30,7 +30,7 @@ public class ClimbPercentCmd extends Command {
    *                {@code [-1, 1]}
    */
   public ClimbPercentCmd(ClimberSubsystem climber, DoubleSupplier percent) {
-    this(climber, percent, ArmSide.Both);
+    this(climber, percent, ClimberArmSide.Both);
   }
 
   /**
@@ -41,7 +41,7 @@ public class ClimbPercentCmd extends Command {
    *                {@code [-1, 1]}
    * @param side    Arm side
    */
-  public ClimbPercentCmd(ClimberSubsystem climber, DoubleSupplier percent, ArmSide side) {
+  public ClimbPercentCmd(ClimberSubsystem climber, DoubleSupplier percent, ClimberArmSide side) {
     this.climber = climber;
     this.percent = percent;
     this.side = side;

@@ -8,7 +8,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ArmSide;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 
 /**
  * Drives both arms to a certain height using PID
@@ -21,7 +21,7 @@ public class ClimbToHeightCmd extends Command {
 
   private final ClimberSubsystem climber;
   private final Distance targetPosition;
-  private final ArmSide side;
+  private final ClimberArmSide side;
 
   /**
    * Constructs a {@code ClimbUpCmd}.
@@ -30,7 +30,7 @@ public class ClimbToHeightCmd extends Command {
    * @param targetPosition the desired arm extension
    */
   public ClimbToHeightCmd(ClimberSubsystem climber, Distance targetPosition) {
-    this(climber, targetPosition, ArmSide.Both);
+    this(climber, targetPosition, ClimberArmSide.Both);
   }
 
   /**
@@ -40,7 +40,7 @@ public class ClimbToHeightCmd extends Command {
    * @param targetPosition the desired arm extension
    * @param side           Arm side to run
    */
-  public ClimbToHeightCmd(ClimberSubsystem climber, Distance targetPosition, ArmSide side) {
+  public ClimbToHeightCmd(ClimberSubsystem climber, Distance targetPosition, ClimberArmSide side) {
     this.climber = climber;
     this.targetPosition = targetPosition;
     this.side = side;
@@ -82,9 +82,9 @@ public class ClimbToHeightCmd extends Command {
    */
   @Override
   public boolean isFinished() {
-    if (side == ArmSide.Left) {
+    if (side == ClimberArmSide.Left) {
       return climber.leftAtSetpoint();
-    } else if (side == ArmSide.Right) {
+    } else if (side == ClimberArmSide.Right) {
       return climber.rightAtSetpoint();
     }
     return climber.atSetpoint();

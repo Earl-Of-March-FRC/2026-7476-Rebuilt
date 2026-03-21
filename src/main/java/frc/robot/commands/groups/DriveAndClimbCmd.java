@@ -18,7 +18,7 @@ import frc.robot.commands.climber.ClimbToHeightCmd;
 import frc.robot.commands.climber.StowClimberCmd;
 import frc.robot.commands.drivetrain.DriveStopCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ArmSide;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.swerve.FieldZones;
@@ -41,7 +41,7 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
    * @param towerSide  Tower side to climb
    */
   public DriveAndClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem climber, TowerSide towerSide) {
-    final ArmSide armSide = towerSide.getCorrespondingArmSide(false);
+    final ClimberArmSide armSide = towerSide.getCorrespondingArmSide(false);
     Logger.recordOutput("Commands/DriveAndClimbCmd/ArmSide", armSide.name());
 
     final Supplier<FieldZones> currentBotZone = () -> {
