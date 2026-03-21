@@ -20,6 +20,8 @@ import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -33,6 +35,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -40,6 +43,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -198,13 +202,11 @@ public class RobotContainer {
     NamedCommands.registerCommand("Cross Bump", PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints));
     NamedCommands.registerCommand("Cross Trench", PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints));
 
-    // Logger.recordOutput("Temp/UpPos", new
-    // Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.334)),
-    // FieldConstants.kFieldWidthY.minus(Meters.of(3.583)), Rotation2d.kZero));
+    Logger.recordOutput("Temp/UpPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.524)),
+        FieldConstants.kFieldWidthY.minus(Meters.of(3.504)), Rotation2d.kZero));
 
-    // Logger.recordOutput("Temp/DownPos", new
-    // Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.334)),
-    // FieldConstants.kFieldWidthY.minus(Meters.of(5.134)), Rotation2d.kZero));
+    Logger.recordOutput("Temp/DownPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.465)),
+        FieldConstants.kFieldWidthY.minus(Meters.of(5.141)), Rotation2d.kZero));
 
     // NamedCommands.registerCommand("Launch Once Connecting Path",
     // AutoBuilder.pathfindToPose(
@@ -352,15 +354,51 @@ public class RobotContainer {
             () -> PoseHelpers.nearestBumpY(driveSub.getPose()), new Rotation2d(DriveConstants.kBumpHeadingRestriction),
             DriveConstants.kBumpLinearVelocity));
 
+    // Supplier to detect if we're near the trench and prevent climbers from getting
+    // caught by automatically lowering them
+    // TO-DO: fix up this chopped code with better logic, using robot pose velocity
+    // instead of stupid driver velocity
+    Supplier<Double> trenchCrossXSupplier = () -> {
+      if (climberSub.areBothAtBottom()) {
+        return getDriverVx();
+      }
+
+      Distance x = driveSub.getPose().getMeasureX();
+
+      Distance blueTrench = FieldConstants.kAllianceWallToHubCenter;
+      Distance redTrench = FieldConstants.kFieldLengthX.minus(FieldConstants.kAllianceWallToHubCenter);
+
+      double Vx = getDriverVx() * (PoseHelpers.getAlliance() == Alliance.Blue ? 1 : -1); // Account for reversed field
+                                                                                         // coordinates on red
+
+      if (Math.abs(x.minus(blueTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+        if ((Math.signum(Vx) == 1 && x.lt(blueTrench))
+            || (Math.signum(Vx) == -1 && x.gt(blueTrench))) {
+          return 0.0;
+        } else {
+          return getDriverVx();
+        }
+      }
+      if (Math.abs(x.minus(redTrench).in(Meters)) < DriveConstants.kTrenchSafetyMargin.in(Meters)) {
+        if ((Math.signum(Vx) == 1 && x.lt(redTrench))
+            || (Math.signum(Vx) == -1 && x.gt(redTrench))) {
+          return 0.0;
+        } else {
+          return getDriverVx();
+        }
+      }
+      return getDriverVx();
+    };
+
     // Lock Y coordinate to the nearest trench and align heading
     driverController.b()
-        .toggleOnTrue(new DriveLockedHeadingAndYCmd(driveSub, this::getDriverVx,
+        .toggleOnTrue(new DriveLockedHeadingAndYCmd(driveSub, trenchCrossXSupplier,
             () -> PoseHelpers.nearestTrenchY(driveSub.getPose()),
-            new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity));
+            new Rotation2d(DriveConstants.kTrenchHeadingRestriction), DriveConstants.kTrenchLinearVelocity)
+            .alongWith(new ClimbDownCmd(climberSub)));
 
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
-    // driverController.y().onTrue(Commands.runOnce(() ->
-    // driveSub.toggleFieldRelative(), driveSub));
+    operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
     driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
@@ -368,8 +406,9 @@ public class RobotContainer {
     driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
-    // Cancel all driveSub commands, returning manual control
-    driverController.button(7).onTrue(Commands.defer(() -> new InstantCommand(), Set.of(driveSub)));
+    // Cancel all driveSub commands and disables xLock, returning manual control
+    driverController.button(7).onTrue(Commands.runOnce(() -> driveSub.setXLock(false), driveSub));
+    driverController.button(8).onTrue(Commands.runOnce(driveSub::toggleXLock));
 
     // // Binding for Plow (Button 5 is usually Left Bumper)
     // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
@@ -445,7 +484,6 @@ public class RobotContainer {
         () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
 
     operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
-    operatorController.button(8).toggleOnTrue(new DriveXLockCmd(driveSub));
 
     // Allow operator to apply RPM offset
     Trigger rpmTrimTrigger = new Trigger(() -> Math.abs(
@@ -523,12 +561,14 @@ public class RobotContainer {
 
     autoChooser.addOption("Launch and Cross Trench Auto",
         new SequentialCommandGroup(
-            new XLockAndLaunchCmd(
-                driveSub,
-                indexerSub,
-                launcherAndIntakeSub).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+            new ParallelCommandGroup(
+                new XLockAndLaunchCmd(
+                    driveSub,
+                    indexerSub,
+                    launcherAndIntakeSub).withDeadline(
+                        Commands.waitUntil(LaunchHelpers::willHitHub)
+                            .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                new ClimbDownCmd(climberSub)),
             Commands.defer(
                 () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
                 Set.of(driveSub))));
@@ -575,6 +615,11 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
+    if (!selectedAuto.hasRequirement(climberSub)) {
+      return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is causing the code to crash when
+                                                                   // autonomous phase runs twice. Prevent this by
+                                                                   // testing autos using the test controller
+    }
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
 

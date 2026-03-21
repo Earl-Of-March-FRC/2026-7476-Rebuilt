@@ -87,6 +87,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private boolean gyroDisconnected = false;
   private boolean isFieldRelativeDesired = true;
   private boolean isFieldRelativeReal = !gyroDisconnected && isFieldRelativeDesired;
+  /** Whether the bot should stop moving and XLock */
+  private boolean shouldXLock = false;
   private final Debouncer gyroDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
   private final Field2d field = new Field2d(); // make Field2d to put on the DriverStation
   private final double kMetersFromHubHigh = 0;
@@ -309,8 +311,17 @@ public class DrivetrainSubsystem extends SubsystemBase {
     }
   }
 
+  /** Puts the wheels in an X shape */
   public void xLock() {
     setModuleStates(DriveConstants.kXLockModuleStates);
+  }
+
+  public void toggleXLock() {
+    shouldXLock = !shouldXLock;
+  }
+
+  public void setXLock(boolean shouldXLock) {
+    this.shouldXLock = shouldXLock;
   }
 
   /**
@@ -336,6 +347,12 @@ public class DrivetrainSubsystem extends SubsystemBase {
    *                        an inversion be applied for red alliance)
    */
   public void runVelocity(ChassisSpeeds speeds, boolean isFieldRelative, boolean isManualX, boolean isManualY) {
+
+    if (shouldXLock) {
+      xLock();
+      return;
+    }
+
     if (isFieldRelative) {
       boolean isRedAlliance = PoseHelpers.getAlliance() == Alliance.Red;
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
@@ -1010,6 +1027,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/GyroDisconnected", gyroDisconnected);
     Logger.recordOutput("Drivetrain/IsFieldRelativeReal", isFieldRelativeReal);
     Logger.recordOutput("Drivetrain/IsFieldRelativeDesired", isFieldRelativeDesired);
+    Logger.recordOutput("Drivetrain/XLock", shouldXLock);
     Logger.recordOutput("Drivetrain/Pose", getPose());
     Logger.recordOutput("Drivetrain/Speeds/RobotRelative", getChassisSpeedsRobotRelative());
     Logger.recordOutput("Drivetrain/Speeds/FieldRelative", getChassisSpeedsFieldRelative());

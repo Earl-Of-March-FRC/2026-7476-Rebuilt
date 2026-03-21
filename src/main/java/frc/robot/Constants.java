@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.GyroSimulation;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import org.photonvision.estimation.TargetModel;
 
@@ -154,12 +155,48 @@ public final class Constants {
     // For fine tuning due to small changes
     // TODO replace with final value after testing
     private static final LoggedNetworkNumber kRPMCurveMultiplier = new LoggedNetworkNumber("/Tuning/RPMCurveMultiplier",
-        1);
+        0.963);
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
       double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
     };
+
+    public static final Distance kMinLaunchDistance;
+
+    static {
+      // Minimum vertical velocity needed to reach hub height (from energy
+      // conservation,
+      // accounting for release height offset)
+      double minVz = Math.sqrt(2 * 9.81
+          * (FieldConstants.kHubHeight.in(Meters)
+              - LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters)));
+
+      // Work backwards through the launch velocity chain to find the minimum RPM:
+      // Vz = ballSpeed * sin(angle)
+      // ballSpeed = wheelLinearSpeed * slipCoeff
+      // wheelLinearSpeed = omega * radius
+      double minOmegaRPM = (minVz
+          / Math.sin(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians))
+          / LauncherAndIntakeConstants.kWheelSlipCoefficient
+          / LauncherAndIntakeConstants.kWheelRadius.in(Meters))
+          * (60.0 / (2 * Math.PI));
+
+      // Invert the quadratic RPM curve:
+      // kRPMCurveA*d² + kRPMCurveB*d + kRPMCurveC = minOmegaRPM
+      // kRPMCurveA*d² + kRPMCurveB*d + (kRPMCurveC - minOmegaRPM) = 0
+      double a = kRPMCurveA;
+      double b = kRPMCurveB;
+      double c = kRPMCurveC - minOmegaRPM;
+
+      double discriminant = b * b - 4 * a * c;
+      double minDist = discriminant >= 0
+          ? (-b + Math.sqrt(discriminant)) / (2 * a)
+          : 1.5; // fallback if curve never reaches minOmegaRPM
+
+      kMinLaunchDistance = Meters.of(Math.max(0, minDist));
+      Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
+    }
 
     public static final Distance kTestLaunchRadius = Meters.of(2.0);
     public static final Time kTestBallAirTime = Seconds.of(0.5);
@@ -316,6 +353,10 @@ public final class Constants {
         kTrenchAngularVelocity,
         kTrenchAngularAcceleration);
 
+    // How close to the trench the robot can get before climbers automatically lower
+    // to prevent getting caught under the trench
+    public static final Distance kTrenchSafetyMargin = Meters.of(1.5);
+
     // To be used by PathPlanner
     public static final double kPTranslationController = 0.5;
     public static final double kITranslationController = 0.01;
@@ -342,6 +383,8 @@ public final class Constants {
         new SwerveModuleState(0, Rotation2d.fromDegrees(135)),
         new SwerveModuleState(0, Rotation2d.fromDegrees(-135))
     };
+
+    public static final LinearVelocity kTooCloseBackAwaySpeed = MetersPerSecond.of(1.5);
   }
 
   public static final class AutoConstants {
@@ -681,7 +724,7 @@ public final class Constants {
     public static final int kGearRatioLevel = 2;
 
     /** Starting pose when in blue alliance */
-    public static final Pose2d kStartingPose = new Pose2d(4.4, 0.6, Rotation2d.fromRadians(0));
+    public static final Pose2d kStartingPose = new Pose2d(3.6, 0.6, Rotation2d.fromRadians(0));
 
     // Whether the bump should have defined collision
     public static final boolean kSimBumpCollision = false;
@@ -726,7 +769,7 @@ public final class Constants {
 
     // Climber simulation
     public static final DCMotor kSimulatedSparkMaxClimberMotor = DCMotor.getNEO(1);
-    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(3);
+    public static final LinearVelocity kSimulatedMaxClimberSpeed = InchesPerSecond.of(4);
     public static final Distance kSimulatedMaxClimberHeight = Inches.of(10.0);
     // When climbers are within this from 0, the simulated bottom limit switches
     // will indicate that it's at the bottom

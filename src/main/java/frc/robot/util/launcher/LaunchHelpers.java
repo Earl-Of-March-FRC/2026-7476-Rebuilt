@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
+import org.littletonrobotics.junction.Logger;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
@@ -23,6 +24,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -45,6 +47,7 @@ public class LaunchHelpers {
   private static LauncherAndIntakeSubsystem launcherAndIntakeSub;
   private static DrivetrainSubsystem driveSub;
   private static boolean configured = false;
+  private static Distance minLaunchDistance = null;
 
   public static void setSubsystems(DrivetrainSubsystem driveSubsystem,
       LauncherAndIntakeSubsystem launcherAndIntakeSubsystem) {
@@ -151,6 +154,24 @@ public class LaunchHelpers {
    */
   public static boolean willHitHub() {
     return willHitTarget(PoseHelpers.getAllianceHubtTranslation3d(), FieldConstants.kHubInsideWidth);
+  }
+
+  /**
+   * Returns {@code true} if the robot is so close to the hub that
+   * {@link #calculateWheelRPM} would return zero (i.e. the ball cannot
+   * physically reach hub height from this distance regardless of flywheel speed).
+   *
+   * <p>
+   * Use this in driving commands to trigger a "back away from hub" behaviour
+   * before trying to shoot.
+   */
+  public static boolean isTooCloseToHub() {
+    double xDist = Math.abs(
+        drive().getPose().getX() - PoseHelpers.getAllianceHubtTranslation2d().getX());
+    boolean tooClose = Meters.of(xDist).lt(LauncherAndIntakeConstants.kMinLaunchDistance);
+    Logger.recordOutput("Launcher/TooClose/XDist", xDist);
+    Logger.recordOutput("Launcher/TooClose/IsTooClose", tooClose);
+    return tooClose;
   }
 
   /**

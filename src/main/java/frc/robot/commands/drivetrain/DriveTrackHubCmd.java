@@ -24,6 +24,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -87,6 +88,34 @@ public class DriveTrackHubCmd extends Command {
     Translation3d toHub3d = driveSub.getHubTranslation3dBotRelative();
     Translation2d toHub = toHub3d.toTranslation2d();
     launchingRange = Meters.of(toHub.getNorm());
+
+    // Too-close guard:
+    // If the robot is closer to the hub than the minimum launch distance along X,
+    // drive straight away along the X axis until we are at a shootable distance.
+    // Heading tracking still runs so the robot is always ready to shoot the moment
+    // we back far enough.
+    if (LaunchHelpers.isTooCloseToHub()) {
+      // Blue hub is at low X so blue backs up in negative X, red backs up in
+      // positive X
+      boolean isBlue = PoseHelpers.getAlliance() == Alliance.Blue;
+      double xDir = isBlue ? -1.0 : 1.0;
+
+      Translation2d backVelocity = new Translation2d(
+          xDir * DriveConstants.kTooCloseBackAwaySpeed.in(MetersPerSecond), 0);
+
+      // Still rotate to face hub so we're ready the instant we can shoot
+      LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
+      AngularVelocity omega = driveSub.getHeadingCorrectionOmega(launchSetpoints.botHeading());
+
+      driveSub.runVelocity(
+          new ChassisSpeeds(backVelocity.getX(), backVelocity.getY(), omega.in(RadiansPerSecond)),
+          true, false, false);
+
+      Logger.recordOutput("Drivetrain/DriveTrackHub/TooClose", true);
+      return;
+    }
+
+    Logger.recordOutput("Drivetrain/DriveTrackHub/TooClose", false);
 
     LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
     Rotation2d desiredHeading = launchSetpoints.botHeading();
@@ -162,9 +191,7 @@ public class DriveTrackHubCmd extends Command {
     Logger.recordOutput("Drivetrain/IsLockedAtRange", shouldLockRangeSupplier.getAsBoolean());
     Logger.recordOutput("Drivetrain/DriveTrackHub/NextPose", futurePose);
     Logger.recordOutput("Drivetrain/DriveTrackHub/AtLimit", atLimit);
-    Logger.recordOutput("Drivetrain/DriveTrackHub/DesiredSpeeds",
-        speeds);
-
+    Logger.recordOutput("Drivetrain/DriveTrackHub/DesiredSpeeds", speeds);
   }
 
   @Override
@@ -182,8 +209,8 @@ public class DriveTrackHubCmd extends Command {
   /**
    * Predicts what the next Pose2d of the bot will be if the current velocity is
    * maintained for a duration of dt, uses substeps to keep the velocity aligned
-   * with the
-   * curve. This method will only predict the translation, not the rotation
+   * with the curve. This method will only predict the translation, not the
+   * rotation.
    * 
    * @param velocity The current velocity, field relative
    * @param dt       The total timestep

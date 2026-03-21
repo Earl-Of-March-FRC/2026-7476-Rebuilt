@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.ClimberConstants;
@@ -57,10 +58,15 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
         PathGenerator.driveToTowerFrontAuto(towerSide));
 
     addCommands(
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Initiated")),
         moveIntoZoneAllianceZoneCmd,
+        Commands.runOnce(
+            () -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Move To Tower Front & Raise Climbers")),
         moveToTowerFrontCmd,
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Drive To Tower Side")),
         new DriveToTowerSideCmd(drivetrain, towerSide),
         new DriveStopCmd(drivetrain),
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Climb")),
         new ClimbToHeightCmd(climber, ClimberConstants.kRaisePosition));
   }
 }
