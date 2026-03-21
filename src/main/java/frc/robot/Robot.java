@@ -16,6 +16,7 @@ import org.littletonrobotics.urcl.URCL;
 
 import com.fasterxml.jackson.databind.ser.std.MapProperty;
 import com.pathplanner.lib.pathfinding.Pathfinding;
+import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -65,8 +66,7 @@ public class Robot extends LoggedRobot {
     // .println("No USB flashdrive was found in the RoboRIO's directory.
     // WPILOGWriter and URCL not initiated.");
     // }
-    Logger.registerURCL(URCL.startExternal());
-    Logger.start();
+    // Logger.registerURCL(URCL.startExternal());
 
     m_robotContainer = new RobotContainer();
 
@@ -122,6 +122,7 @@ public class Robot extends LoggedRobot {
 
     SmartDashboard.putBoolean("is Neutral Zone", false);
 
+    PathPlannerLogging.clearLoggingCallbacks();
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -150,6 +151,8 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
+
+    Logger.start();
   }
 
   /** This function is called periodically during autonomous. */
