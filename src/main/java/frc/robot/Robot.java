@@ -65,7 +65,7 @@ public class Robot extends LoggedRobot {
     // .println("No USB flashdrive was found in the RoboRIO's directory.
     // WPILOGWriter and URCL not initiated.");
     // }
-    Logger.registerURCL(URCL.startExternal());
+    // Logger.registerURCL(URCL.startExternal());
     Logger.start();
 
     m_robotContainer = new RobotContainer();
