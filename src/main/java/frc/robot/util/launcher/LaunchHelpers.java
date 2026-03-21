@@ -45,6 +45,7 @@ public class LaunchHelpers {
   private static LauncherAndIntakeSubsystem launcherAndIntakeSub;
   private static DrivetrainSubsystem driveSub;
   private static boolean configured = false;
+  private static Distance minLaunchDistance = null;
 
   public static void setSubsystems(DrivetrainSubsystem driveSubsystem,
       LauncherAndIntakeSubsystem launcherAndIntakeSubsystem) {
@@ -151,6 +152,48 @@ public class LaunchHelpers {
    */
   public static boolean willHitHub() {
     return willHitTarget(PoseHelpers.getAllianceHubtTranslation3d(), FieldConstants.kHubInsideWidth);
+  }
+
+  /**
+   * Returns {@code true} if the robot is so close to the hub that
+   * {@link #calculateWheelRPM} would return zero (i.e. the ball cannot
+   * physically reach hub height from this distance regardless of flywheel speed).
+   *
+   * <p>
+   * Use this in driving commands to trigger a "back away from hub" behaviour
+   * before trying to shoot.
+   */
+  public static boolean isTooCloseToHub() {
+    AngularVelocity rpm = calculateWheelRPM(drive().getHubDistance(), FieldConstants.kHubHeight);
+    return rpm.isNear(RPM.zero(), RPM.of(1));
+  }
+
+  /**
+   * Returns the minimum distance from the hub at which the robot can launch.
+   *
+   * <p>
+   * Computed by finding the first distance at which {@link #calculateWheelRPM}
+   * produces a valid (non-zero) result (i.e. the ball can physically reach hub
+   * height). A 15 cm buffer is added so the robot is can past the minimum.
+   *
+   * <p>
+   * The result is computed once on the first call and cached; subsequent calls
+   * return the cached value immediately.
+   *
+   * @return the minimum shootable distance from the hub
+   */
+  public static Distance getMinLaunchDistance() {
+    if (minLaunchDistance != null)
+      return minLaunchDistance;
+
+    for (double d = 0.1; d < 10.0; d += 0.01) {
+      if (!calculateWheelRPM(Meters.of(d), FieldConstants.kHubHeight).isNear(RPM.zero(), RPM.of(1))) {
+        minLaunchDistance = Meters.of(d + 0.15);
+        return minLaunchDistance;
+      }
+    }
+    minLaunchDistance = Meters.of(1.5);
+    return minLaunchDistance;
   }
 
   /**

@@ -24,6 +24,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -87,6 +88,37 @@ public class DriveTrackHubCmd extends Command {
     Translation3d toHub3d = driveSub.getHubTranslation3dBotRelative();
     Translation2d toHub = toHub3d.toTranslation2d();
     launchingRange = Meters.of(toHub.getNorm());
+
+    // Too-close guard:
+    // If the robot is so close to the hub that the ball cannot reach hub height,
+    // drive straight away from the hub (along the toHub unit vector, reversed)
+    // until we are at a shootable distance. Heading tracking still runs so the
+    // driver is always ready to shoot the moment we back far enough.
+    if (LaunchHelpers.isTooCloseToHub()) {
+      Distance minDist = LaunchHelpers.getMinLaunchDistance();
+      // Unit vector pointing FROM the hub TOWARD the robot (i.e. back-away direction)
+      Translation2d awayFromHub = toHub.getNorm() > 1e-6
+          ? toHub.div(toHub.getNorm()).times(-1) // reversed: points away from hub
+          : new Translation2d(-1, 0);
+
+      double backSpeed = SwerveConfig.kMaxSpeed.times(Constants.DriveConstants.kTooCloseBackAwaySpeedMultiplier)
+          .in(MetersPerSecond);
+      Translation2d backVelocity = awayFromHub.times(backSpeed);
+
+      // Still rotate to face hub so we're ready the instant we can shoot
+      LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
+      AngularVelocity omega = driveSub.getHeadingCorrectionOmega(launchSetpoints.botHeading());
+
+      driveSub.runVelocity(
+          new ChassisSpeeds(backVelocity.getX(), backVelocity.getY(), omega.in(RadiansPerSecond)),
+          true, false, false);
+
+      Logger.recordOutput("Drivetrain/DriveTrackHub/TooClose", true);
+      Logger.recordOutput("Drivetrain/DriveTrackHub/MinLaunchDistanceMeters", minDist.in(Meters));
+      return;
+    }
+
+    Logger.recordOutput("Drivetrain/DriveTrackHub/TooClose", false);
 
     LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
     Rotation2d desiredHeading = launchSetpoints.botHeading();
