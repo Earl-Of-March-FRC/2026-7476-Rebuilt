@@ -40,7 +40,29 @@ public class ClimberSubsystem extends SubsystemBase {
   /** Identifies which side of the climb tower the robot is targeting. */
   public static enum TowerSide {
     Left,
-    Right
+    Right;
+
+    /**
+     * Gets the side of the climbers that will be used to climb this side of the
+     * tower
+     * 
+     * @param isFacingDriverstation Whether the drivetrain is facing the
+     *                              driverstation
+     * @return The corresponding {@link ClimberArmSide}
+     */
+    public ClimberArmSide getCorrespondingArmSide(boolean isFacingDriverstation) {
+      return switch (this) {
+        case Left -> isFacingDriverstation ? ClimberArmSide.Left : ClimberArmSide.Right;
+        case Right -> isFacingDriverstation ? ClimberArmSide.Right : ClimberArmSide.Left;
+      };
+    }
+  }
+
+  /**
+   * Side of the climber arm(s)
+   */
+  public static enum ClimberArmSide {
+    Left, Right, Both
   }
 
   private final ClimberArmInterface leftArm;
@@ -93,17 +115,34 @@ public class ClimberSubsystem extends SubsystemBase {
    *                down
    */
   public void setPercentOutput(double percent) {
-    if (canLeftMove(Math.signum(percent)))
+    setPercentOutput(percent, ClimberArmSide.Both);
+  }
+
+  /**
+   * Sends the same percent output to both arms independently.
+   *
+   * <p>
+   * If an arm's beam-break is triggered and percent is negative (retracting),
+   * that arm is stopped while the other continues. This allows one arm to finish
+   * seating while the other is already at the bottom.
+   *
+   * @param percent output fraction in {@code [-1, 1]}; positive = up, negative =
+   *                down
+   * @param side    Side to set
+   */
+  public void setPercentOutput(double percent, ClimberArmSide side) {
+    if (side != ClimberArmSide.Right && canLeftMove(Math.signum(percent)))
       leftArm.setPercentOutput(percent);
     else
       leftArm.stop();
 
-    if (canRightMove(Math.signum(percent)))
+    if (side != ClimberArmSide.Left && canRightMove(Math.signum(percent)))
       rightArm.setPercentOutput(percent);
     else
       rightArm.stop();
 
-    Logger.recordOutput("Climber/Setpoint/PercentOutput", percent);
+    Logger.recordOutput("Climber/Setpoint/Percent/Side", side.name());
+    Logger.recordOutput("Climber/Setpoint/Percent/Output", percent);
   }
 
   /**
@@ -113,15 +152,37 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param position desired arm extension
    */
   public void setTargetPosition(Distance position) {
+    setTargetPosition(position, ClimberArmSide.Both);
+  }
+
+  /**
+   * Commands both arms to the same position setpoint via their onboard PID
+   * controllers. The target is clamped to {@code [kMinLength, kMaxLength]}.
+   *
+   * @param position desired arm extension
+   * @param side     desired arm side
+   */
+  public void setTargetPosition(Distance position, ClimberArmSide side) {
     Distance clamped = (Distance) UnitHelpers.clamp(
         position,
         ClimberConstants.kMinLength,
         ClimberConstants.kMaxLength);
     lastSetpoint = clamped;
-    leftArm.setTargetPosition(clamped);
-    rightArm.setTargetPosition(clamped);
-    Logger.recordOutput("Climber/Setpoint/Inches", clamped.in(Inches));
-    Logger.recordOutput("Climber/Setpoint/Meters", clamped.in(Meters));
+    if (side != ClimberArmSide.Right) {
+      leftArm.setTargetPosition(clamped);
+    } else {
+      leftArm.stop();
+    }
+
+    if (side != ClimberArmSide.Left) {
+      rightArm.setTargetPosition(clamped);
+    } else {
+      rightArm.stop();
+    }
+
+    Logger.recordOutput("Climber/Setpoint/Position/Inches", clamped.in(Inches));
+    Logger.recordOutput("Climber/Setpoint/Position/Meters", clamped.in(Meters));
+    Logger.recordOutput("Climber/Setpoint/Position/Side", side.name());
   }
 
   /**
@@ -147,6 +208,30 @@ public class ClimberSubsystem extends SubsystemBase {
     else
       rightArm.setPercentOutput(ClimberConstants.kOutputRangeMax);
   }
+
+  // /**
+  // * Drives both arms upward independently, stopping each arm the moment it
+  // * reaches or exceeds the target. The other arm continues until it also
+  // * reaches the target.
+  // *
+  // * <p>
+  // * This is the bang-bang upward drive used by
+  // * {@link frc.robot.commands.climber.ClimbUpCmd}. There are no upper limit
+  // * switches, so position is checked in software.
+  // *
+  // * @param targetPosition the desired arm extension
+  // */
+  // public void driveUpToPosition(Distance targetPosition, ArmSide side) {
+  // if (getLeftPosition().gte(targetPosition))
+  // leftArm.stop();
+  // else
+  // leftArm.setPercentOutput(ClimberConstants.kOutputRangeMax);
+
+  // if (getRightPosition().gte(targetPosition))
+  // rightArm.stop();
+  // else
+  // rightArm.setPercentOutput(ClimberConstants.kOutputRangeMax);
+  // }
 
   /** Stops both arms immediately. */
   public void stop() {
@@ -313,6 +398,28 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
+   * Returns {@code true} when left arm is within
+   * {@link ClimberConstants#kPositionTolerance} of the last commanded
+   * setpoint.
+   *
+   * @return {@code true} if left arm is at the setpoint
+   */
+  public boolean leftAtSetpoint() {
+    return leftArm.isAtPosition(lastSetpoint);
+  }
+
+  /**
+   * Returns {@code true} when right arm is within
+   * {@link ClimberConstants#kPositionTolerance} of the last commanded
+   * setpoint.
+   *
+   * @return {@code true} if right arm is at the setpoint
+   */
+  public boolean rightAtSetpoint() {
+    return rightArm.isAtPosition(lastSetpoint);
+  }
+
+  /**
    * Returns {@code true} when both arms are within
    * {@link ClimberConstants#kPositionTolerance} of the last commanded
    * setpoint.
@@ -320,7 +427,31 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return {@code true} if both arms are at the setpoint
    */
   public boolean atSetpoint() {
-    return leftArm.isAtPosition(lastSetpoint) && rightArm.isAtPosition(lastSetpoint);
+    return leftAtSetpoint() && rightAtSetpoint();
+  }
+
+  /**
+   * Returns {@code true} when left arm has reached or exceeded the target.
+   * Used by {@link frc.robot.commands.climber.ClimbUpCmd} to determine when
+   * to end.
+   *
+   * @param targetPosition the desired arm extension
+   * @return {@code true} when left arm is at or above the target
+   */
+  public boolean leftArmAtOrAbove(Distance targetPosition) {
+    return getLeftPosition().gte(targetPosition);
+  }
+
+  /**
+   * Returns {@code true} when right arm has reached or exceeded the target.
+   * Used by {@link frc.robot.commands.climber.ClimbUpCmd} to determine when
+   * to end.
+   *
+   * @param targetPosition the desired arm extension
+   * @return {@code true} when right arm is at or above the target
+   */
+  public boolean rightArmAtOrAbove(Distance targetPosition) {
+    return getRightPosition().gte(targetPosition);
   }
 
   /**
@@ -332,7 +463,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return {@code true} when both arms are at or above the target
    */
   public boolean bothArmsAtOrAbove(Distance targetPosition) {
-    return getLeftPosition().gte(targetPosition) && getRightPosition().gte(targetPosition);
+    return leftArmAtOrAbove(targetPosition) && rightArmAtOrAbove(targetPosition);
   }
 
   @Override
