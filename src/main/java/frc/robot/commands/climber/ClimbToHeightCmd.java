@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 
 /**
  * Drives both arms to a certain height using PID
@@ -20,6 +21,7 @@ public class ClimbToHeightCmd extends Command {
 
   private final ClimberSubsystem climber;
   private final Distance targetPosition;
+  private final ClimberArmSide side;
 
   /**
    * Constructs a {@code ClimbUpCmd}.
@@ -28,20 +30,33 @@ public class ClimbToHeightCmd extends Command {
    * @param targetPosition the desired arm extension
    */
   public ClimbToHeightCmd(ClimberSubsystem climber, Distance targetPosition) {
+    this(climber, targetPosition, ClimberArmSide.Both);
+  }
+
+  /**
+   * Constructs a {@code ClimbUpCmd}.
+   *
+   * @param climber        the climber subsystem
+   * @param targetPosition the desired arm extension
+   * @param side           Arm side to run
+   */
+  public ClimbToHeightCmd(ClimberSubsystem climber, Distance targetPosition, ClimberArmSide side) {
     this.climber = climber;
     this.targetPosition = targetPosition;
+    this.side = side;
     addRequirements(climber);
   }
 
   @Override
   public void initialize() {
+    Logger.recordOutput("Commands/ClimbUpCmd/Side", side.name());
     Logger.recordOutput("Commands/ClimbUpCmd/Status", "Running");
     Logger.recordOutput("Commands/ClimbUpCmd/TargetInches", targetPosition.in(Inches));
   }
 
   @Override
   public void execute() {
-    climber.setTargetPosition(targetPosition);
+    climber.setTargetPosition(targetPosition, side);
 
     Logger.recordOutput("Commands/ClimbUpCmd/LeftPositionInches",
         climber.getLeftPosition().in(Inches));
@@ -67,6 +82,11 @@ public class ClimbToHeightCmd extends Command {
    */
   @Override
   public boolean isFinished() {
+    if (side == ClimberArmSide.Left) {
+      return climber.leftAtSetpoint();
+    } else if (side == ClimberArmSide.Right) {
+      return climber.rightAtSetpoint();
+    }
     return climber.atSetpoint();
   }
 }

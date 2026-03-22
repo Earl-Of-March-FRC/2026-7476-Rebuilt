@@ -10,8 +10,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import frc.robot.Constants.DriveConstants;
-import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.swerve.PathGenerator;
@@ -29,8 +28,9 @@ public class DriveToTowerSideCmd extends SequentialCommandGroup {
         PathGenerator.driveToTowerSideAuto(towerSide));
     Commands.run(
         () -> drivetrain.runVelocity(
-            new ChassisSpeeds(SwerveConfig.kMaxSpeed.times(-0.1), MetersPerSecond.zero(), RadiansPerSecond.zero()),
+            new ChassisSpeeds(SwerveConfig.kMaxSpeed.times(AutoConstants.kFinalAlignSpeed), MetersPerSecond.zero(),
+                RadiansPerSecond.zero()),
             true, true, false),
-        drivetrain).withTimeout(0.5);
+        drivetrain).withTimeout(AutoConstants.kFinalAlignTime);
   }
 }

@@ -391,8 +391,8 @@ public class PathGenerator {
    */
   public static PathPlannerPath getTowerPathFromSide(TowerSide side) {
     return switch (side) {
-      case Left -> AutoConstants.depotClimbPath;
-      case Right -> AutoConstants.outpostClimbPath;
+      case Left -> AutoConstants.depotClimbVeryCurvedPath;
+      case Right -> AutoConstants.outpostClimbVeryCurvedPath;
     };
   }
 

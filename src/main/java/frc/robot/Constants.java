@@ -436,6 +436,8 @@ public final class Constants {
     public static PathPlannerPath intakeLeftPath;
     public static PathPlannerPath depotClimbPath;
     public static PathPlannerPath outpostClimbPath;
+    public static PathPlannerPath depotClimbVeryCurvedPath;
+    public static PathPlannerPath outpostClimbVeryCurvedPath;
     public static PathPlannerPath outpostPath;
     public static PathConstraints kPathfindingConstraints;
 
@@ -444,6 +446,8 @@ public final class Constants {
         intakeLeftPath = PathPlannerPath.fromPathFile("Intake Left");
         depotClimbPath = PathPlannerPath.fromPathFile("Depot(L1 Climb)");
         outpostClimbPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb)");
+        depotClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Depot(L1 Climb) Extra Curve");
+        outpostClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb) Extra Curve");
         outpostPath = PathPlannerPath.fromPathFile("Drive to Outpost");
       } catch (Exception e) {
         e.printStackTrace();
@@ -469,6 +473,8 @@ public final class Constants {
     };
 
     public static final double kAlignTowerTimeoutSeconds = 3;
+    public static final double kFinalAlignSpeed = -0.1;
+    public static final Time kFinalAlignTime = Seconds.of(0.4);
 
   }
 
