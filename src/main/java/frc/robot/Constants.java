@@ -331,9 +331,9 @@ public final class Constants {
 
     // Define seperate constraints for the bump and trench, Independant of the
     // swerve profile
-    public static final LinearVelocity kBumpLinearVelocity = MetersPerSecond.of(2.5);
-    public static final LinearAcceleration kBumpLinearAcceleration = MetersPerSecondPerSecond.of(1.5);
-    public static final AngularVelocity kBumpAngularVelocity = RadiansPerSecond.of(Math.PI);
+    public static final LinearVelocity kBumpLinearVelocity = MetersPerSecond.of(4.8);
+    public static final LinearAcceleration kBumpLinearAcceleration = MetersPerSecondPerSecond.of(3);
+    public static final AngularVelocity kBumpAngularVelocity = RadiansPerSecond.of(2 * Math.PI);
     public static final AngularAcceleration kBumpAngularAcceleration = RadiansPerSecondPerSecond.of(Math.PI);
 
     public static final PathConstraints kBumpConstraints = new PathConstraints(
@@ -473,7 +473,8 @@ public final class Constants {
     };
 
     public static final double kAlignTowerTimeoutSeconds = 3;
-    public static final double kFinalAlignSpeed = -0.1;
+
+    public static final double kFinalAlignSpeed = -0.15;
     public static final Time kFinalAlignTime = Seconds.of(0.4);
 
   }
