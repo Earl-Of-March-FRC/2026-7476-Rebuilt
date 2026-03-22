@@ -473,6 +473,8 @@ public final class Constants {
     };
 
     public static final double kAlignTowerTimeoutSeconds = 3;
+    public static final double kFinalAlignSpeed = -0.1;
+    public static final Time kFinalAlignTime = Seconds.of(0.4);
 
   }
 
