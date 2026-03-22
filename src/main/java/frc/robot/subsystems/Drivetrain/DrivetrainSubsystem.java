@@ -81,6 +81,15 @@ import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 
 public class DrivetrainSubsystem extends SubsystemBase {
+
+  List<Integer> fiducialIds = new ArrayList<>();
+  List<Pose3d> fiducialIdPoses = new ArrayList<>();
+  List<Double> tagAreas = new ArrayList<>();
+  List<Double> tagAmbiguities = new ArrayList<>();
+  List<Double> stdDevsX = new ArrayList<>();
+  List<Double> stdDevsY = new ArrayList<>();
+  List<Double> stdDevsTheta = new ArrayList<>();
+
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
   private static final SwerveDriveKinematics kinematics = SwerveConfig.kDriveKinematics;
   private final Gyro gyro;
@@ -924,13 +933,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
           robotToCamera,
           robotPose);
 
-      List<Integer> fiducialIds = new ArrayList<>();
-      List<Pose3d> fiducialIdPoses = new ArrayList<>();
-      List<Double> tagAreas = new ArrayList<>();
-      List<Double> tagAmbiguities = new ArrayList<>();
-      List<Double> stdDevsX = new ArrayList<>();
-      List<Double> stdDevsY = new ArrayList<>();
-      List<Double> stdDevsTheta = new ArrayList<>();
+      fiducialIds.clear();
+      fiducialIdPoses.clear();
+      tagAreas.clear();
+      tagAmbiguities.clear();
+      stdDevsX.clear();
+      stdDevsY.clear();
+      stdDevsTheta.clear();
 
       // Iterate through each pose to check for ambiguity
       for (EstimatedRobotPose visionPose : visionPoses) {

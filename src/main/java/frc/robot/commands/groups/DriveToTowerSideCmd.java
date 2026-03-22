@@ -27,8 +27,8 @@ public class DriveToTowerSideCmd extends SequentialCommandGroup {
         PathGenerator.driveToTowerSideAuto(towerSide));
     Commands.run(
         () -> drivetrain.runVelocity(
-            new ChassisSpeeds(SwerveConfig.kMaxSpeed.times(-0.1), MetersPerSecond.zero(), RadiansPerSecond.zero()),
+            new ChassisSpeeds(SwerveConfig.kMaxSpeed.times(-0.05), MetersPerSecond.zero(), RadiansPerSecond.zero()),
             true, true, false),
-        drivetrain).withTimeout(0.5);
+        drivetrain).withTimeout(0.3);
   }
 }
