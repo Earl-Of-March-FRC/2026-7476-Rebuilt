@@ -22,8 +22,8 @@ public class RaiseAndPullClimberCmd extends SequentialCommandGroup {
    * @param climber                 Climber subsystem
    * @param waitBetweenRaiseAndPull Time to wait before the climber starts pulling
    *                                to climbed position
-   * @see {@link ClimberConstants#kTimeFromBottomToRaisedPosition}
-   *      {@link ClimberConstants#kTimeFromRaisedToClimbedPosition}
+   * @see ClimberConstants#kTimeFromBottomToRaisedPosition
+   * @see ClimberConstants#kTimeFromRaisedToClimbedPosition
    */
   public RaiseAndPullClimberCmd(ClimberSubsystem climber, Time waitBetweenRaiseAndPull) {
     addCommands(
