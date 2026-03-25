@@ -84,6 +84,9 @@ tasks.withType(Javadoc) {
     options.tags = [
       'apiNote:a:API Note:'
     ]
+    options.docTitle = 'Docs (2026) | FRC 7476 Spongebotics'
+    options.windowTitle = '2026 | FRC Spongebotics'
+    destinationDir = file("./docs")
 }
 
 // Simulation configuration (e.g. environment variables).
