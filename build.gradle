@@ -80,6 +80,12 @@ tasks.withType(Test).configureEach {
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
+tasks.withType(Javadoc) {
+    options.tags = [
+      'apiNote:a:API Note:'
+    ]
+}
+
 // Simulation configuration (e.g. environment variables).
 wpi.sim.addGui().defaultEnabled = true
 wpi.sim.addDriverstation()
