@@ -30,8 +30,7 @@ import frc.robot.Constants.SimulationConstants;
  * @param z                          Translation in z-direction (meters, +z is
  *                                   up)
  * @param standardDeviation          Standard deviations for vision measurements
- *                                   [x, y,
- *                                   theta]
+ *                                   [x, y, theta]
  * @param configFile                 [OPTIONAL] PhotonVision config file for
  *                                   simulation purposes (config.json)
  * @param fps                        [OPTIONAL] Frames per second for simulation
@@ -39,12 +38,9 @@ import frc.robot.Constants.SimulationConstants;
  * @param avgLatency                 [OPTIONAL] Average latency for simulation
  *                                   purposes
  * @param avgLatencyDeviation        [OPTIONAL] Max deviation from average
- *                                   latency for
- *                                   simulation
- *                                   purposes
+ *                                   latency for simulation purposes
  * @param fieldOfView                [OPTIONAL] Diagonal field of view for
- *                                   simulation
- *                                   purposes
+ *                                   simulation purposes
  * @param resolution                 [OPTIONAL] Video resolution for simulation
  *                                   purposes
  * @param camIntrinsics              [OPTIONAL] Camera instrinsics for
@@ -52,8 +48,14 @@ import frc.robot.Constants.SimulationConstants;
  * @param distCoeffs                 [OPTIONAL] Distortion coeffients for
  *                                   simulation
  * @param simulationWireframeEnabled [OPTIONAL] Simulate wireframe, usually
- *                                   false due
- *                                   to being extremely resource-heavy
+ *                                   false due to being extremely resource-heavy
+ * @param dynamicStdDevScaleFactor   [OPTIONAL] Multiplier applied on top of the
+ *                                   dynamic std dev calculation. Values > 1.0
+ *                                   make the camera less trusted (larger std
+ *                                   devs). Use this to reduce jitter from
+ *                                   cameras that are noisy or at awkward
+ *                                   angles.
+ *                                   Defaults to 1.0.
  * @apiNote +x is in front of the robot, +y is to the left of the robot, +z is
  *          up
  */
@@ -74,11 +76,10 @@ public record CameraProfile(
     int[] resolution,
     Matrix<N3, N3> camIntrinsics,
     Matrix<N8, N1> distCoeffs,
-    boolean simulationWireframeEnabled) {
+    boolean simulationWireframeEnabled,
+    double dynamicStdDevScaleFactor) {
 
-  /**
-   * {@inheritDoc}
-   */
+  /** Basic constructor — no config file, no wireframe, scale factor 1.0. */
   public CameraProfile(String name,
       Angle roll,
       Angle pitch,
@@ -90,9 +91,7 @@ public record CameraProfile(
     this(name, roll, pitch, yaw, x, y, z, standardDeviation, null);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** Basic constructor with explicit wireframe flag, scale factor 1.0. */
   public CameraProfile(String name,
       Angle roll,
       Angle pitch,
@@ -100,13 +99,12 @@ public record CameraProfile(
       Distance x,
       Distance y,
       Distance z,
-      Vector<N3> standardDeviation, boolean simulationWireframeEnabled) {
+      Vector<N3> standardDeviation,
+      boolean simulationWireframeEnabled) {
     this(name, roll, pitch, yaw, x, y, z, standardDeviation, null, simulationWireframeEnabled);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** Constructor with config file, no wireframe, scale factor 1.0. */
   public CameraProfile(String name,
       Angle roll,
       Angle pitch,
@@ -119,8 +117,37 @@ public record CameraProfile(
     this(name, roll, pitch, yaw, x, y, z, standardDeviation, configFile, false);
   }
 
+  /** Constructor with config file and wireframe flag, scale factor 1.0. */
+  public CameraProfile(String name,
+      Angle roll,
+      Angle pitch,
+      Angle yaw,
+      Distance x,
+      Distance y,
+      Distance z,
+      Vector<N3> standardDeviation,
+      File configFile,
+      boolean simulationWireframeEnabled) {
+    this(name, roll, pitch, yaw, x, y, z, standardDeviation, configFile,
+        SimulationConstants.kSimVisionFPS,
+        SimulationConstants.kSimVisionLatency,
+        SimulationConstants.kSimVisionLatencyDeviation,
+        SimulationConstants.kSimVisionFOV,
+        SimulationConstants.kSimVisionResolution,
+        SimulationConstants.kSimVisionIntrinsics,
+        SimulationConstants.kSimVisionDistCoeffs,
+        simulationWireframeEnabled,
+        1.0);
+  }
+
   /**
-   * {@inheritDoc}
+   * Constructor with explicit dynamic std dev scale factor and no config file.
+   * Use this when you want to dampen a jittery camera without touching its base
+   * std devs.
+   *
+   * @param dynamicStdDevScaleFactor Multiplier on the dynamic portion of the std
+   *                                 dev calc. &gt; 1.0 = less trust, 1.0 =
+   *                                 default behaviour.
    */
   public CameraProfile(String name,
       Angle roll,
@@ -130,11 +157,18 @@ public record CameraProfile(
       Distance y,
       Distance z,
       Vector<N3> standardDeviation,
-      File configFile, boolean simulationWireframeEnabled) {
-    this(name, roll, pitch, yaw, x, y, z, standardDeviation, configFile, SimulationConstants.kSimVisionFPS,
-        SimulationConstants.kSimVisionLatency, SimulationConstants.kSimVisionLatencyDeviation,
-        SimulationConstants.kSimVisionFOV, SimulationConstants.kSimVisionResolution,
-        SimulationConstants.kSimVisionIntrinsics, SimulationConstants.kSimVisionDistCoeffs, simulationWireframeEnabled);
+      double dynamicStdDevScaleFactor) {
+    this(name, roll, pitch, yaw, x, y, z, standardDeviation,
+        null,
+        SimulationConstants.kSimVisionFPS,
+        SimulationConstants.kSimVisionLatency,
+        SimulationConstants.kSimVisionLatencyDeviation,
+        SimulationConstants.kSimVisionFOV,
+        SimulationConstants.kSimVisionResolution,
+        SimulationConstants.kSimVisionIntrinsics,
+        SimulationConstants.kSimVisionDistCoeffs,
+        false,
+        dynamicStdDevScaleFactor);
   }
 
   /**
