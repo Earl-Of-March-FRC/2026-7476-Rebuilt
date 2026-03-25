@@ -80,6 +80,15 @@ tasks.withType(Test).configureEach {
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
+tasks.withType(Javadoc) {
+    options.tags = [
+      'apiNote:a:API Note:'
+    ]
+    options.docTitle = 'Docs (2026) | FRC 7476 Spongebotics'
+    options.windowTitle = '2026 | FRC Spongebotics'
+    destinationDir = file("./docs")
+}
+
 // Simulation configuration (e.g. environment variables).
 wpi.sim.addGui().defaultEnabled = true
 wpi.sim.addDriverstation()
