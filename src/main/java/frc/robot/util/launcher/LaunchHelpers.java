@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
+import org.littletonrobotics.junction.Logger;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
@@ -23,6 +24,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -45,6 +47,7 @@ public class LaunchHelpers {
   private static LauncherAndIntakeSubsystem launcherAndIntakeSub;
   private static DrivetrainSubsystem driveSub;
   private static boolean configured = false;
+  private static Distance minLaunchDistance = null;
 
   public static void setSubsystems(DrivetrainSubsystem driveSubsystem,
       LauncherAndIntakeSubsystem launcherAndIntakeSubsystem) {
@@ -154,9 +157,31 @@ public class LaunchHelpers {
   }
 
   /**
+   * Checks if the robot is too close to the hub to score fuel
+   * 
+   * @return {@code true} if the robot is so close to the hub that
+   *         {@link #calculateWheelRPM} would return zero (i.e. the ball cannot
+   *         physically reach hub height from this distance regardless of flywheel
+   *         speed).
+   *         <p>
+   *         Use this in driving commands to trigger a "back away from hub"
+   *         behaviour
+   *         before trying to shoot.
+   */
+  public static boolean isTooCloseToHub() {
+    double xDist = Math.abs(
+        drive().getPose().getX() - PoseHelpers.getAllianceHubtTranslation2d().getX());
+    boolean tooClose = Meters.of(xDist).lt(LauncherAndIntakeConstants.kMinLaunchDistance);
+    Logger.recordOutput("Launcher/TooClose/XDist", xDist);
+    Logger.recordOutput("Launcher/TooClose/IsTooClose", tooClose);
+    return tooClose;
+  }
+
+  /**
    * Calculate the correct RPM to launching at the hub from a certain distance
    * 
-   * @param targetDistance The distance from the hub in the X-Y plane
+   * @param targetDistance The distance from the target in the X-Y plane
+   * @param targetHeight   The height of the target
    * @return The ideal wheel speed
    */
   public static AngularVelocity calculateWheelRPM(Distance targetDistance, Distance targetHeight) {
@@ -238,7 +263,7 @@ public class LaunchHelpers {
    * 
    * @param targetHeight         The height of the target
    * @param wheelAngularVelocity Wheel speed
-   * @return
+   * @return The airtime of the ball
    */
   public static Time calculateBallAirTime(Distance targetHeight, AngularVelocity wheelAngularVelocity) {
     Translation3d ballInitialVelocityVectorMPS = calculateBallResultantVelocityVector(wheelAngularVelocity);
@@ -270,7 +295,7 @@ public class LaunchHelpers {
    * speed
    * 
    * @param targetHeight The height of the target
-   * @return
+   * @return The airtime of the ball
    */
   public static Time calculateBallAirTime(Distance targetHeight) {
     return calculateBallAirTime(targetHeight, launcher().getVelocity());
@@ -309,7 +334,6 @@ public class LaunchHelpers {
    * 
    * This is only the launcher contribution, and does not account for bot velocity
    * 
-   * @param wheelAngularVelocity Flywheel speed
    * @return Ball linear velocity as a Translation3d, in mps
    */
   public static Translation3d calculateBallLaunchVelocityVector() {
@@ -341,7 +365,6 @@ public class LaunchHelpers {
    * 
    * This takes into acoount the velocity of the bot
    * 
-   * @param wheelAngularVelocity Flywheel speed
    * @return Ball linear velocity as a Translation3d, in mps
    */
   public static Translation3d calculateBallResultantVelocityVector() {
@@ -367,9 +390,9 @@ public class LaunchHelpers {
    * Calculate the launch setpoints (flywheel speed and bot heading) to hit a
    * target, optionally applying lead to account for drivetrain velocity
    * 
-   * @param targetBotRelative2d The target translation relative to the bot
-   * @param applyLead           Whether to apply lead to account for drivetrain
-   *                            velocity
+   * @param targetBotRelative The target translation relative to the bot
+   * @param applyLead         Whether to apply lead to account for drivetrain
+   *                          velocity
    * @return The launch setpoints to hit the target
    */
   public static LaunchSetpoints calculateLaunchSetpoints(Translation3d targetBotRelative, boolean applyLead) {
@@ -421,9 +444,8 @@ public class LaunchHelpers {
    * Calculate the launch setpoints (flywheel speed and bot heading) to hit the
    * hub, optionally applying lead to account for drivetrain velocity
    * 
-   * @param targetBotRelative The target translation relative to the bot
-   * @param applyLead         Whether to apply lead to account for drivetrain
-   *                          velocity
+   * @param applyLead Whether to apply lead to account for drivetrain
+   *                  velocity
    * @return The launch setpoints to hit the target
    */
   public static LaunchSetpoints calculateHubLaunchSetpoints(boolean applyLead) {

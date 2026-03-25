@@ -44,14 +44,14 @@ public class DriveLockedHeadingAndYCmd extends Command {
   /**
    * Creates a new DriveLockedHeadingAndYCmd.
    * 
-   * @param driveSub          The drivetrain subsystem
-   * @param xSupplier         Supplier for X-axis input (-1 to 1, field-relative)
-   * @param ySetpointSupplier Supplier for the Y coordinate setpoint (Origin is at
-   *                          blue outpost,
-   *                          positive Y is along alliance Wall)
-   * @param lockedAngle       The angle to lock the robot's heading to
-   *                          (field-relative)
-   * @param maxSpeed          Maximum speed in meters per second
+   * @param driveSub    The drivetrain subsystem
+   * @param xSupplier   Supplier for X-axis input (-1 to 1, field-relative)
+   * @param ySetpoint   Supplier for the Y coordinate setpoint (Origin is at
+   *                    blue outpost,
+   *                    positive Y is along alliance Wall)
+   * @param lockedAngle The angle to lock the robot's heading to
+   *                    (field-relative)
+   * @param maxSpeed    Maximum speed in meters per second
    */
   public DriveLockedHeadingAndYCmd(
       DrivetrainSubsystem driveSub,
@@ -70,13 +70,13 @@ public class DriveLockedHeadingAndYCmd extends Command {
   /**
    * Convenience constructor with default speed limit.
    * 
-   * @param driveSub          The drivetrain subsystem
-   * @param xSupplier         Supplier for X-axis input (-1 to 1, field-relative)
-   * @param ySetpointSupplier Supplier for the Y coordinate setpoint (Origin is at
-   *                          blue outpost,
-   *                          positive Y is along alliance Wall)
-   * @param lockedAngle       The angle to lock the robot's heading to
-   *                          (field-relative)
+   * @param driveSub    The drivetrain subsystem
+   * @param xSupplier   Supplier for X-axis input (-1 to 1, field-relative)
+   * @param ySetpoint   Supplier for the Y coordinate setpoint (Origin is at
+   *                    blue outpost,
+   *                    positive Y is along alliance Wall)
+   * @param lockedAngle The angle to lock the robot's heading to
+   *                    (field-relative)
    */
   public DriveLockedHeadingAndYCmd(
       DrivetrainSubsystem driveSub,

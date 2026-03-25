@@ -10,12 +10,15 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.commands.climber.ClimbToHeightCmd;
+import frc.robot.commands.climber.StowClimberCmd;
 import frc.robot.commands.drivetrain.DriveStopCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.util.swerve.FieldZones;
@@ -38,6 +41,9 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
    * @param towerSide  Tower side to climb
    */
   public DriveAndClimbCmd(DrivetrainSubsystem drivetrain, ClimberSubsystem climber, TowerSide towerSide) {
+    final ClimberArmSide armSide = towerSide.getCorrespondingArmSide(false);
+    Logger.recordOutput("Commands/DriveAndClimbCmd/ArmSide", armSide.name());
+
     final Supplier<FieldZones> currentBotZone = () -> {
       Logger.recordOutput("Commands/DriveAndClimbCmd/MeasuredBotZone", drivetrain.getCurrentBotZone());
       return drivetrain.getCurrentBotZone();
@@ -52,15 +58,20 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
 
     // Already in alliance zone, can start moving up climbers
     final Command moveToTowerFrontCmd = new ParallelDeadlineGroup(
-        new ReturnClimbersToBottomCmd(climber)
-            .andThen(new ClimbToHeightCmd(climber, ClimberConstants.kLatchPosition)),
+        new StowClimberCmd(climber, armSide)
+            .andThen(new ClimbToHeightCmd(climber, ClimberConstants.kLatchPosition, armSide)),
         PathGenerator.driveToTowerFrontAuto(towerSide));
 
     addCommands(
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Initiated")),
         moveIntoZoneAllianceZoneCmd,
+        Commands.runOnce(
+            () -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Move To Tower Front & Raise Climbers")),
         moveToTowerFrontCmd,
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Drive To Tower Side")),
         new DriveToTowerSideCmd(drivetrain, towerSide),
         new DriveStopCmd(drivetrain),
-        new ClimbToHeightCmd(climber, ClimberConstants.kRaisePosition));
+        Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Climb")),
+        new ClimbToHeightCmd(climber, ClimberConstants.kRaisePosition, armSide));
   }
 }

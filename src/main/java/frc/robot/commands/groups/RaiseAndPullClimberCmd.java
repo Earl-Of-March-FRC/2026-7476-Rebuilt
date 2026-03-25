@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.commands.climber.ClimbPercentCmd;
+import frc.robot.commands.climber.StowClimberCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
@@ -21,12 +22,12 @@ public class RaiseAndPullClimberCmd extends SequentialCommandGroup {
    * @param climber                 Climber subsystem
    * @param waitBetweenRaiseAndPull Time to wait before the climber starts pulling
    *                                to climbed position
-   * @see {@link ClimberConstants#kTimeFromBottomToRaisedPosition}
-   *      {@link ClimberConstants#kTimeFromRaisedToClimbedPosition}
+   * @see ClimberConstants#kTimeFromBottomToRaisedPosition
+   * @see ClimberConstants#kTimeFromRaisedToClimbedPosition
    */
   public RaiseAndPullClimberCmd(ClimberSubsystem climber, Time waitBetweenRaiseAndPull) {
     addCommands(
-        new ReturnClimbersToBottomCmd(climber), new ClimbPercentCmd(climber, () -> ClimberConstants.kOutputRangeMax)
+        new StowClimberCmd(climber), new ClimbPercentCmd(climber, () -> ClimberConstants.kOutputRangeMax)
             .withTimeout(ClimberConstants.kTimeFromBottomToRaisedPosition),
         new WaitCommand(waitBetweenRaiseAndPull), new ClimbPercentCmd(climber, () -> ClimberConstants.kOutputRangeMin)
             .withTimeout(ClimberConstants.kTimeFromRaisedToClimbedPosition));
