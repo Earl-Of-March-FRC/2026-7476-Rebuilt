@@ -527,7 +527,7 @@ public class RobotContainer {
     // Apply slow-mode when left stick is pushed down
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerYAxis)
-            * (driverController.leftStick().getAsBoolean() ? OIConstants.kDriverSlowModeMultiplier : 1),
+            * (driverController.leftStick().getAsBoolean() ? OIConstants.kTranslationSlowModeMultiplier : 1),
         OIConstants.kDeadband);
   }
 
@@ -535,15 +535,15 @@ public class RobotContainer {
     // Apply slow-mode when left stick is pushed down
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerXAxis)
-            * (driverController.leftStick().getAsBoolean() ? OIConstants.kDriverSlowModeMultiplier : 1),
+            * (driverController.leftStick().getAsBoolean() ? OIConstants.kTranslationSlowModeMultiplier : 1),
         OIConstants.kDeadband);
   }
 
   private double getDriverOmega() {
-    // Use low sensitivity by default, and use max speed when right stick is pushed
+    // Use max speed by default, and use low sensitivity when right stick is pushed
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis)
-            * (driverController.rightStick().getAsBoolean() ? 1 : OIConstants.kDriverTurnSensitivity),
+            * (driverController.rightStick().getAsBoolean() ? OIConstants.kTurnSlowModeMultiplier : 1),
         OIConstants.kDeadband);
   }
 
