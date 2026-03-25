@@ -69,6 +69,7 @@ import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
+import frc.robot.commands.groups.LaunchOnTheFlyCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
@@ -285,6 +286,13 @@ public class RobotContainer {
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
+    Command launchOnTheFlyCmd = new LaunchOnTheFlyCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        this::getDriverVx,
+        this::getDriverVy);
+
     // Drive while tracking hub and launching balls based on an additional trigger
     // another trigger can used to lock distance
     Command driveAndManualShootCmd = new DriveAndLaunchCmd(
@@ -468,6 +476,12 @@ public class RobotContainer {
         .toggleOnTrue(driveAndManualShootCmd);
     driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
         .toggleOnTrue(driveAndAutoShootCmd);
+
+    // I don’t know the binding, so I just assigned an arbitrary one for now. We
+    // need to talk to Vinny to see what he prefers.
+    driverController.leftBumper()
+        .and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(launchOnTheFlyCmd);
 
     operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
         .and(operatorController.rightBumper()).and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
