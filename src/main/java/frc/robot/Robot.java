@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.RPM;
+
 import java.io.File;
 import java.util.function.Supplier;
 
@@ -21,10 +23,15 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.ElectricalConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
+import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.ProfileSelector;
@@ -43,6 +50,15 @@ public class Robot extends LoggedRobot {
 
   private Command autonomousCommand;
   private boolean simulateFuel = false;
+
+  private boolean launcherUnderspeedHappened = false;
+  private int launcherUnderspeedInstances = 0;
+  private boolean lowVoltageHappened = false;
+  private int lowVoltageInstances = 0;
+  private boolean lowCurrentHappened = false;
+  private int lowCurrentInstances = 0;
+  private boolean brownOutHappened = false;
+  private int brownOutInstances = 0;
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -83,6 +99,63 @@ public class Robot extends LoggedRobot {
    * and
    * SmartDashboard integrated updating.
    */
+
+  public void lowVoltageAndUnderspeedCounter() {
+    double voltage = RobotController.getInputVoltage();
+    double current = RobotController.getInputCurrent();
+
+    boolean launcherUnderspeed = false;
+    if (m_robotContainer.launcherAndIntakeSub.getVelocity() // If the current launcher is under the setpoint
+        .in(RPM) < m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM)
+            * LauncherAndIntakeConstants.kVelocityTolerancePercent) {
+      if (!launcherUnderspeed) { // If it wasn't previously low voltage, count this as the start of an instance.
+        launcherUnderspeedInstances++;
+      }
+      launcherUnderspeed = true;
+      launcherUnderspeedHappened = true;
+
+    }
+
+    boolean isLowVoltage = false;
+    if (voltage < ElectricalConstants.kBatteryWarningVoltage) {
+      if (!isLowVoltage) { // If it wasn't previously low voltage, count this as the start of an instance.
+        lowVoltageInstances++;
+      }
+      isLowVoltage = true;
+      lowVoltageHappened = true;
+    }
+
+    boolean isLowCurrent = false;
+    if (current < ElectricalConstants.kBatteryWarningCurrent) {
+      if (!isLowCurrent) { // If it wasn't previously low voltage, count this as the start of an instance.
+        lowCurrentInstances++;
+      }
+      isLowCurrent = true;
+      lowCurrentHappened = true;
+    }
+
+    boolean isBrownOut = false;
+
+    if (RobotController.isBrownedOut()) {
+      if (!isBrownOut) {
+        brownOutInstances++;
+      }
+      isBrownOut = true;
+      brownOutHappened = true;
+    }
+
+    SmartDashboard.putBoolean("Launcher Underspeed Happened", launcherUnderspeedHappened);
+    SmartDashboard.putBoolean("Low Voltage Happened", lowVoltageHappened);
+    SmartDashboard.putBoolean("Low Current Happened", lowCurrentHappened);
+    SmartDashboard.putBoolean("Brown Out Happened", brownOutHappened);
+
+    SmartDashboard.putNumber("Launcher Underspeed instances", launcherUnderspeedInstances);
+    SmartDashboard.putNumber("Low Voltage instances", lowVoltageInstances);
+    SmartDashboard.putNumber("Low Current instances", lowCurrentInstances);
+    SmartDashboard.putNumber("Brown Out instances", brownOutInstances);
+
+  }
+
   @Override
   public void robotPeriodic() {
     // Runs the Scheduler. This is responsible for polling buttons, adding
@@ -98,6 +171,8 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putBoolean("Auto?", isAutonomous());
     SmartDashboard.putData("Commands", CommandScheduler.getInstance());
     SmartDashboard.putBoolean("is neutral zone", m_robotContainer.driveSub.getCurrentBotZone() == FieldZones.Neutral);
+
+    lowVoltageAndUnderspeedCounter();
 
   }
 

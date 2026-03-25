@@ -1,6 +1,7 @@
 package frc.robot.subsystems.launcherAndIntake;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -33,6 +34,8 @@ import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
 
 public class LauncherAndIntakeSubsystem extends SubsystemBase {
+
+  private AngularVelocity m_targetRPM = RPM.of(0); //
 
   // SparkMax motor implementation
   public static class SparkMaxLauncherAndIntakeMotor implements LauncherAndIntakeMotorInterface {
@@ -223,6 +226,9 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
   }
 
   public void setReferenceVelocity(AngularVelocity velocity) {
+
+    m_targetRPM = velocity;
+
     AngularVelocity withOffset = RPM.of(velocity.in(RPM) + velocityOffsetRPM);
 
     Logger.recordOutput("Launcher/Setpoint/TargetRPM", velocity.in(RPM));
@@ -231,6 +237,10 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     Logger.recordOutput("Launcher/Setpoint/TargetRadPerSecWithOffset", withOffset.in(RadiansPerSecond));
 
     motor.setReferenceVelocity(withOffset);
+  }
+
+  public AngularVelocity getTargetRPM() {
+    return m_targetRPM;
   }
 
   public void stop() {
