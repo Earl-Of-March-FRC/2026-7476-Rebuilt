@@ -541,8 +541,6 @@ public class RobotContainer {
    * Use this method to define the autonomous command.
    */
   private void configureAutos() {
-    autoChooser = new LoggedDashboardChooser<>("Auto Routine",
-        AutoBuilder.buildAutoChooser());
     autoChooser = new LoggedDashboardChooser<>("Auto Routine");
     autoChooser.addDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("CalibrateGyro", new CalibrateGyroCmd(driveSub));
