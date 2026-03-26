@@ -31,6 +31,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathfindThenFollowPath;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -45,6 +46,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
@@ -575,6 +577,17 @@ public class RobotContainer {
         driveSub,
         indexerSub,
         launcherAndIntakeSub));
+
+    autoChooser.addOption("Outpost Intake Auto",
+        new SequentialCommandGroup(
+            new XLockAndLaunchCmd(
+                driveSub,
+                indexerSub,
+                launcherAndIntakeSub).withDeadline(
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+            AutoBuilder.pathfindThenFollowPath(AutoConstants.outpostIntake, AutoConstants.L1ClimbConstraints),
+            new WaitCommand(3)));
 
     autoChooser.addOption("Launch Then Climb Left",
         new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Left));

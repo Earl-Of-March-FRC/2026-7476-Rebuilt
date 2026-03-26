@@ -439,6 +439,7 @@ public final class Constants {
     public static PathPlannerPath depotClimbVeryCurvedPath;
     public static PathPlannerPath outpostClimbVeryCurvedPath;
     public static PathPlannerPath outpostPath;
+    public static PathPlannerPath outpostIntake;
     public static PathConstraints kPathfindingConstraints;
 
     static {
@@ -449,6 +450,7 @@ public final class Constants {
         depotClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Depot(L1 Climb) Extra Curve");
         outpostClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb) Extra Curve");
         outpostPath = PathPlannerPath.fromPathFile("Drive to Outpost");
+        outpostIntake = PathPlannerPath.fromPathFile("Outpost Intake");
       } catch (Exception e) {
         e.printStackTrace();
       }
