@@ -497,7 +497,8 @@ public class RobotContainer {
         OIConstants.kTestControllerPort);
     final LoggedNetworkNumber testRPM = new LoggedNetworkNumber("/Tuning/testRPM", 1000);
 
-    testController.a().whileTrue(new LauncherCmd(launcherAndIntakeSub, () -> RPM.of(testRPM.get())));
+    testController.a()
+        .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
   }
 
   // Helper methods to reduce repetition
