@@ -70,6 +70,7 @@ import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
+import frc.robot.commands.groups.ZonePassCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -322,6 +323,13 @@ public class RobotContainer {
         -IndexerConstants.kWheelSpeed,
         -IndexerConstants.kTreadmillSpeed)
         .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1)));
+    Command zonePassCmd = new ZonePassCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        this::getDriverVx,
+        this::getDriverVy, launchSupplier,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
 
     driveSub.setDefaultCommand(driveCmd);
 
@@ -468,6 +476,10 @@ public class RobotContainer {
         .toggleOnTrue(driveAndManualShootCmd);
     driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
         .toggleOnTrue(driveAndAutoShootCmd);
+
+    operatorController.povDown().and(
+        () -> driveSub.getCurrentBotZone() != FieldZones.Launch && driveSub.getCurrentBotZone() != FieldZones.Alliance)
+        .toggleOnTrue(zonePassCmd);
 
     operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
         .and(operatorController.rightBumper()).and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)

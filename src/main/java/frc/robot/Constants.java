@@ -256,6 +256,49 @@ public final class Constants {
     }
   }
 
+  public static final class PassConstants {
+
+    /** Depot-side bump pass target (closer to bottom of field). */
+    public static final Translation2d kBlueBumpPassPose1 = new Translation2d(3.6, 2.6);
+
+    /** Outpost-side bump pass target (closer to top of field). */
+    public static final Translation2d kBlueBumpPassPose2 = new Translation2d(3.6, 5.5);
+
+    /**
+     * Both neutral-zone pass targets as an array for convenience.
+     * Index 0 = depot side, index 1 = outpost side.
+     */
+    public static final Translation2d[] kBlueBumpPassTargets = { kBlueBumpPassPose1, kBlueBumpPassPose2 };
+
+    public static final Distance kPassTargetHeight = Meters.of(0.0);
+
+    // Enemy-zone dump target.
+    // When in the enemy zone we just blast the ball to the back of our
+    // alliance zone so a robot can collect it.
+
+    /**
+     * x coord of the landing zone; well inside the alliance
+     * zone, away from the hub.
+     */
+    public static final Distance kBlueDumpTargetX = Meters.of(2.0);
+
+    /**
+     * Y coordinate of the dump target; field centre line so either alliance
+     * robot can reach it.
+     */
+    public static final Distance kBlueDumpTargetY = Meters.of(4.0); // approx field centre
+
+    /** Height to target for the enemy-zone dump shot (ground). */
+    public static final Distance kDumpTargetHeight = Meters.of(0.0);
+
+    /**
+     * Effective radius of the hub structure used when checking whether a pass
+     * trajectory's ground-plane path intersects the hub.
+     * Add a small safety margin on top of the physical half-width.
+     */
+    public static final Distance kHubLOSRadius = FieldConstants.kHubInsideWidth.div(2.0).plus(Meters.of(0.15));
+  }
+
   public static final class ClimbAlignConstants {
     // AprilTag IDs for the climb towers
     public static final int kBlueLeftTagId = 31;
