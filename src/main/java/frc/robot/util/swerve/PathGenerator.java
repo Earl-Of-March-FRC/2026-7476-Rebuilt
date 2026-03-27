@@ -396,6 +396,25 @@ public class PathGenerator {
     };
   }
 
+  public static Command driveToDepotAuto() {
+    PathPlannerPath depotPath = AutoConstants.depotPath;
+    if (depotPath == null) {
+      return new PrintCommand("Depot path was null.");
+    }
+
+    List<Pose2d> waypoints = depotPath.getPathPoses();
+    if (waypoints.isEmpty()) {
+      return new PrintCommand("Depot path was empty.");
+    }
+    Pose2d firstWaypoint = waypoints.get(0);
+    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), Rotation2d.k180deg);
+
+    Logger.recordOutput("Commands/PathGenerator/driveToDepotAuto/DesiredPose", desiredPose);
+
+    return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive())); // ?
+  }
+
   /**
    * Basic command that drives to the first waypoint of the L1 path
    * 

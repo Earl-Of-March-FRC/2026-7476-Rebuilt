@@ -68,6 +68,7 @@ import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
+import frc.robot.commands.groups.LaunchAndDepotCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
@@ -191,7 +192,8 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
         true).until(() -> driveSub.isRadialControllerAtSetpoint()));
 
-    NamedCommands.registerCommand("Launch", new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM));
+    // NamedCommands.registerCommand("Launch", new LauncherCmd(launcherAndIntakeSub,
+    // AutoConstants.kLauncherRPM));
     NamedCommands.registerCommand("Drive to Launch", new DriveAtLaunchingRangeCmd(
         driveSub,
         () -> 0.0,
@@ -212,17 +214,6 @@ public class RobotContainer {
     // AutoBuilder.pathfindToPose(
     // new Pose2d(AutoConstants.depotStartPoint, new Rotation2d(0, 0)),
     // AutoConstants.L1ClimbConstraints));
-
-    NamedCommands.registerCommand("Intake Left Connecting Path",
-        Commands.defer(
-            () -> AutoBuilder.pathfindToPose(new Pose2d(AutoConstants.intakeLeftStartPoint, new Rotation2d(0, 0)),
-                AutoConstants.L1ClimbConstraints),
-            Set.of(driveSub)));
-
-    NamedCommands.registerCommand("Launch Once Connecting Path",
-        Commands.defer(
-            () -> AutoBuilder.pathfindThenFollowPath(AutoConstants.depotClimbPath, AutoConstants.L1ClimbConstraints),
-            Set.of(driveSub)));
 
     configureBindings();
     configureAutos();
@@ -602,6 +593,9 @@ public class RobotContainer {
 
     autoChooser.addOption("Align to Tower Right & Climb",
         new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
+
+    autoChooser.addOption("Launch and Depot Launch",
+        new LaunchAndDepotCmd(driveSub, indexerSub, launcherAndIntakeSub));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
