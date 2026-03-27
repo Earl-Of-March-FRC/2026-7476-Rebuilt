@@ -31,6 +31,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathfindThenFollowPath;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -45,6 +46,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
@@ -70,6 +72,7 @@ import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.LaunchAndDepotCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
+import frc.robot.commands.groups.LaunchAndOutpostCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
@@ -596,6 +599,9 @@ public class RobotContainer {
 
     autoChooser.addOption("Launch and Depot Launch",
         new LaunchAndDepotCmd(driveSub, indexerSub, launcherAndIntakeSub));
+
+    autoChooser.addOption("Launch and Outpost Launch",
+        new LaunchAndOutpostCmd(driveSub, indexerSub, launcherAndIntakeSub));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }

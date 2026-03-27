@@ -442,6 +442,9 @@ public final class Constants {
     public static PathPlannerPath depotPath;
     public static PathConstraints kPathfindingConstraints;
 
+    public static Pose2d outpostPose = new Pose2d(Meters.of(0.455), Meters.of(0.651), Rotation2d.kZero);
+    public static Time autoOutpostIntakeTime = Seconds.of(3); // TODO to be updated
+
     static {
       try {
         intakeLeftPath = PathPlannerPath.fromPathFile("Intake Left");
@@ -449,8 +452,8 @@ public final class Constants {
         outpostClimbPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb)");
         depotClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Depot(L1 Climb) Extra Curve");
         outpostClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb) Extra Curve");
-        outpostPath = PathPlannerPath.fromPathFile("Drive to Outpost");
         depotPath = PathPlannerPath.fromPathFile("Depot Intake");
+        outpostPath = PathPlannerPath.fromPathFile("Outpost Intake");
       } catch (Exception e) {
         e.printStackTrace();
       }

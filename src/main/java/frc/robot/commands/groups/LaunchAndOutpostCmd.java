@@ -5,50 +5,30 @@
 package frc.robot.commands.groups;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
-import frc.robot.commands.OTBIntake.IntakeCmd;
-import frc.robot.commands.indexer.PulsingTreadmillCmd;
-import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 import frc.robot.util.launcher.LaunchHelpers;
-import frc.robot.util.swerve.PathGenerator;
 
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class LaunchAndDepotCmd extends SequentialCommandGroup {
+public class LaunchAndOutpostCmd extends SequentialCommandGroup {
   /** Creates a new LaunchAndOutpostCmd. */
-  public LaunchAndDepotCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public LaunchAndOutpostCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
 
-    final PathPlannerPath depotPath = AutoConstants.depotClimbPath;
-
-    final Command moveToDepotCmd = PathGenerator.driveToDepotAuto();
-
-    final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
-
-    // TODO to be replaced with over the bumper intake command
-    final Command intakeCmd = new PulsingTreadmillCmd(
-        indexerSub,
-        IndexerConstants.kWheelSpeed,
-        IndexerConstants.kTreadmillSpeed)
-        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
-
-    final Command driveThroughDepotAndIntakeCmd = new ParallelDeadlineGroup(
-        driveThroughDepotCmd,
-        intakeCmd);
+    final Command moveToOutpost = AutoBuilder.pathfindToPoseFlipped(AutoConstants.outpostPose,
+        AutoConstants.L1ClimbConstraints);
 
     addCommands(
         new XLockAndLaunchCmd(
@@ -57,8 +37,8 @@ public class LaunchAndDepotCmd extends SequentialCommandGroup {
             launcherAndIntakeSub).withDeadline(
                 Commands.waitUntil(LaunchHelpers::willHitHub)
                     .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
-        moveToDepotCmd,
-        driveThroughDepotAndIntakeCmd,
+        moveToOutpost,
+        Commands.waitTime(AutoConstants.autoOutpostIntakeTime),
         new XLockAndLaunchCmd(
             driveSub,
             indexerSub,
