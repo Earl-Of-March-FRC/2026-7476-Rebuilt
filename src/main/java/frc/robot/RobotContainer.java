@@ -55,6 +55,7 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
@@ -314,13 +315,13 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
-    Command intakeToHopperCmd = new PulsingTreadmillCmd(
+    Command intakeFrontCmd = new PulsingTreadmillCmd(
         indexerSub,
         IndexerConstants.kWheelSpeed,
         IndexerConstants.kTreadmillSpeed)
         .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
 
-    Command reverseIntakeCmd = new PulsingTreadmillCmd(
+    Command outakeFrontCmd = new PulsingTreadmillCmd(
         indexerSub,
         -IndexerConstants.kWheelSpeed,
         -IndexerConstants.kTreadmillSpeed)
@@ -388,8 +389,8 @@ public class RobotContainer {
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
     operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
-    driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
+    driverController.leftBumper().toggleOnTrue(intakeFrontCmd);
+    driverController.rightBumper().toggleOnTrue(outakeFrontCmd);
 
     driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
@@ -494,8 +495,18 @@ public class RobotContainer {
     testController.a()
         .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
 
-    testController.leftBumper().whileTrue(new IntakeCmd(otbIntakeSub, () -> Constants.OTBIntakeConstants.kIntakeSpeed));
-    testController.rightBumper().whileTrue(new IntakeCmd(otbIntakeSub, () -> Constants.OTBIntakeConstants.kPlowSpeed));
+    testController.leftBumper()
+        .whileTrue(new PulsingTreadmillCmd(
+            indexerSub,
+            -IndexerConstants.kWheelSpeed,
+            -IndexerConstants.kTreadmillSpeed)
+            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed)));
+    testController.rightBumper()
+        .whileTrue(new PulsingTreadmillCmd(
+            indexerSub,
+            IndexerConstants.kWheelSpeed,
+            IndexerConstants.kTreadmillSpeed)
+            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed)));
   }
 
   // Helper methods to reduce repetition

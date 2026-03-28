@@ -486,7 +486,7 @@ public final class Constants {
     public static final double kRollerReduction = 1.0 / 10.0;
 
     public static final double kIntakeSpeed = 1;
-    public static final double kPlowSpeed = -1;
+    public static final double kOutakeSpeed = -1;
 
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
 
