@@ -443,7 +443,7 @@ public final class Constants {
     public static PathConstraints kPathfindingConstraints;
 
     public static Pose2d outpostPose = new Pose2d(Meters.of(0.455), Meters.of(0.651), Rotation2d.kZero);
-    public static Time autoOutpostIntakeTime = Seconds.of(3); // TODO to be updated
+    public static Time kAutoOutpostIntakeTime = Seconds.of(3); // TODO to be updated
 
     static {
       try {

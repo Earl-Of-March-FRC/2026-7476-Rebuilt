@@ -5,11 +5,9 @@
 package frc.robot.commands.groups;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
@@ -21,7 +19,16 @@ import frc.robot.util.launcher.LaunchHelpers;
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class LaunchAndOutpostCmd extends SequentialCommandGroup {
-  /** Creates a new LaunchAndOutpostCmd. */
+  /**
+   * Creates a command that launches, intakes at the outpost for a set amount of
+   * time ({@link AutoConstants#kAutoOutpostIntakeTime}), and launches again.
+   * 
+   * @param driveSub             Drivetrain subsystem
+   * @param indexerSub           Indexer subsystem
+   * @param launcherAndIntakeSub Launcher/Intake subsystem
+   * 
+   * @see AutoConstants#kAutoOutpostIntakeTime
+   */
   public LaunchAndOutpostCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub) {
     // Add your commands in the addCommands() call, e.g.
@@ -38,7 +45,7 @@ public class LaunchAndOutpostCmd extends SequentialCommandGroup {
                 Commands.waitUntil(LaunchHelpers::willHitHub)
                     .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
         moveToOutpost,
-        Commands.waitTime(AutoConstants.autoOutpostIntakeTime),
+        Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
         new XLockAndLaunchCmd(
             driveSub,
             indexerSub,

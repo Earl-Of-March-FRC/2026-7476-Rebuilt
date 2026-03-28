@@ -27,7 +27,13 @@ import frc.robot.util.swerve.PathGenerator;
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class LaunchAndDepotCmd extends SequentialCommandGroup {
-  /** Creates a new LaunchAndOutpostCmd. */
+  /**
+   * Creates a command that launches, intakes from the depot, and launches again
+   * 
+   * @param driveSub             Drivetrain subsystem
+   * @param indexerSub           Indexer subsystem
+   * @param launcherAndIntakeSub Launcher/Intake subsystem
+   */
   public LaunchAndDepotCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub) {
     // Add your commands in the addCommands() call, e.g.

@@ -2,6 +2,8 @@ package frc.robot.util.swerve;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -396,25 +398,6 @@ public class PathGenerator {
     };
   }
 
-  public static Command driveToDepotAuto() {
-    PathPlannerPath depotPath = AutoConstants.depotPath;
-    if (depotPath == null) {
-      return new PrintCommand("Depot path was null.");
-    }
-
-    List<Pose2d> waypoints = depotPath.getPathPoses();
-    if (waypoints.isEmpty()) {
-      return new PrintCommand("Depot path was empty.");
-    }
-    Pose2d firstWaypoint = waypoints.get(0);
-    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), Rotation2d.k180deg);
-
-    Logger.recordOutput("Commands/PathGenerator/driveToDepotAuto/DesiredPose", desiredPose);
-
-    return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
-        .andThen(new DriveStopCmd(drive())); // ?
-  }
-
   /**
    * Basic command that drives to the first waypoint of the L1 path
    * 
@@ -425,12 +408,12 @@ public class PathGenerator {
     PathPlannerPath selectedPath = getTowerPathFromSide(side);
 
     if (selectedPath == null) {
-      return new PrintCommand("Selected path for driveToTowerSideAuto was null.");
+      return new PrintCommand("Selected path for driveToTowerFrontAuto was null.");
     }
 
     List<Pose2d> waypoints = selectedPath.getPathPoses();
     if (waypoints.isEmpty()) {
-      return new PrintCommand("Selected path for driveToTowerSideAuto was empty.");
+      return new PrintCommand("Selected path for driveToTowerFrontAuto was empty.");
     }
 
     Pose2d firstWaypoint = waypoints.get(0);
@@ -466,6 +449,30 @@ public class PathGenerator {
     Logger.recordOutput("Commands/PathGenerator/driveToTowerSideAuto/DesiredPose", desiredClimbPose);
 
     return AutoBuilder.pathfindThenFollowPath(selectedPath, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  /**
+   * Creates a command that drives to the start of the depot intake path
+   * 
+   * @return Command
+   */
+  public static Command driveToDepotAuto() {
+    PathPlannerPath depotPath = AutoConstants.depotPath;
+    if (depotPath == null) {
+      return new PrintCommand("Depot path for driveToDepotAuto was null.");
+    }
+
+    List<Pose2d> waypoints = depotPath.getPathPoses();
+    if (waypoints.isEmpty()) {
+      return new PrintCommand("Depot path for driveToDepotAuto was empty.");
+    }
+    Pose2d firstWaypoint = waypoints.get(0);
+    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), Rotation2d.k180deg);
+
+    Logger.recordOutput("Commands/PathGenerator/driveToDepotAuto/DesiredPose", desiredPose);
+
+    return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
         .andThen(new DriveStopCmd(drive()));
   }
 
