@@ -159,6 +159,10 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putBoolean("Low Current Happened", lowCurrentHappened);
     SmartDashboard.putBoolean("Brown Out Happened", brownOutHappened);
 
+    SmartDashboard.putBoolean("Low Voltage", isLowVoltage);
+    SmartDashboard.putBoolean("Low Current", isLowCurrent);
+    SmartDashboard.putBoolean("Launcher Underspeed", launcherUnderspeed);
+
     SmartDashboard.putNumber("Launcher Underspeed instances", launcherUnderspeedInstances);
     SmartDashboard.putNumber("Low Voltage instances", lowVoltageInstances);
     SmartDashboard.putNumber("Low Current instances", lowCurrentInstances);
