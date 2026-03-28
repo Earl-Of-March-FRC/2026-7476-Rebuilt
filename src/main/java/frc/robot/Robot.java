@@ -51,12 +51,19 @@ public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private boolean simulateFuel = false;
 
+  private boolean launcherUnderspeed = false;
   private boolean launcherUnderspeedHappened = false;
   private int launcherUnderspeedInstances = 0;
+
+  private boolean isLowVoltage = false;
   private boolean lowVoltageHappened = false;
   private int lowVoltageInstances = 0;
+
+  private boolean isLowCurrent = false;
   private boolean lowCurrentHappened = false;
   private int lowCurrentInstances = 0;
+
+  private boolean isBrownOut = false;
   private boolean brownOutHappened = false;
   private int brownOutInstances = 0;
 
@@ -104,7 +111,6 @@ public class Robot extends LoggedRobot {
     double voltage = RobotController.getInputVoltage();
     double current = RobotController.getInputCurrent();
 
-    boolean launcherUnderspeed = false;
     if (m_robotContainer.launcherAndIntakeSub.getVelocity() // If the current launcher is under the setpoint
         .in(RPM) < m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM)
             * LauncherAndIntakeConstants.kVelocityTolerancePercent) {
@@ -114,27 +120,29 @@ public class Robot extends LoggedRobot {
       launcherUnderspeed = true;
       launcherUnderspeedHappened = true;
 
+    } else {
+      launcherUnderspeed = false;
     }
 
-    boolean isLowVoltage = false;
     if (voltage < ElectricalConstants.kBatteryWarningVoltage) {
       if (!isLowVoltage) { // If it wasn't previously low voltage, count this as the start of an instance.
         lowVoltageInstances++;
       }
       isLowVoltage = true;
       lowVoltageHappened = true;
+    } else {
+      isLowVoltage = false;
     }
 
-    boolean isLowCurrent = false;
     if (current < ElectricalConstants.kBatteryWarningCurrent) {
       if (!isLowCurrent) { // If it wasn't previously low voltage, count this as the start of an instance.
         lowCurrentInstances++;
       }
       isLowCurrent = true;
       lowCurrentHappened = true;
+    } else {
+      isLowCurrent = false;
     }
-
-    boolean isBrownOut = false;
 
     if (RobotController.isBrownedOut()) {
       if (!isBrownOut) {
@@ -142,6 +150,8 @@ public class Robot extends LoggedRobot {
       }
       isBrownOut = true;
       brownOutHappened = true;
+    } else {
+      isBrownOut = false;
     }
 
     SmartDashboard.putBoolean("Launcher Underspeed Happened", launcherUnderspeedHappened);

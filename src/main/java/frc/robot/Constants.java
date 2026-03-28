@@ -240,7 +240,7 @@ public final class Constants {
     public static final Time kAutoLaunchTime = Seconds.of(6);
 
     // TODO: make this more accurate through testing
-    public static final double kVelocityTolerancePercent = 0.10;
+    public static final double kVelocityTolerancePercent = 0.90;
 
     static {
       kLeaderConfig
