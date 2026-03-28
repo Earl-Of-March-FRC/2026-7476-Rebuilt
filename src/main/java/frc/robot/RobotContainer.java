@@ -598,10 +598,10 @@ public class RobotContainer {
         new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
     autoChooser.addOption("Launch and Depot Launch",
-        new LaunchAndDepotCmd(driveSub, indexerSub, launcherAndIntakeSub));
+        new LaunchAndDepotCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub));
 
     autoChooser.addOption("Launch and Outpost Launch",
-        new LaunchAndOutpostCmd(driveSub, indexerSub, launcherAndIntakeSub));
+        new LaunchAndOutpostCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
