@@ -480,59 +480,24 @@ public final class Constants {
 
   public static final class OTBIntakeConstants {
     public static final int kRollerCanId = 15;
-    public static final int kShoulderCanId = 16;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     // TODO: Verify values for these reductions
     public static final double kRollerReduction = 1.0 / 10.0;
-    public static final double kShoulderReduction = 1.0 / 10.0;
 
-    // // Conversion factors (RPM → rad/s)
-    // public static final double kPositionConversionFactor = 2 * Math.PI;
-    // public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
-
-    // Motor Rotations -> Shoulder degrees
-    public static final double kShoulderPositionConversionFactor = 360;
-    // Motor RPM -> Shoulder degrees/Second
-    public static final double kShoulderVelocityConversionFactor = 360 / 60.0;
-
-    public static final AngularVelocity kMaxVelocity = RPM.of(60);
-
-    public static final double kIntakeSpeed = 0.5;
-    public static final double kPlowSpeed = 0.7;
-
-    public static final double kPIDShoulderControllerP = 0;
-    public static final double kPIDShoulderControllerI = 0;
-    public static final double kPIDShoulderControllerD = 0;
-    public static final double kPIDShoulderControllerFF = 0;
-
-    // TODO: Mesure this value
-    public static final Angle kStowPosition = Degrees.of(0);
+    public static final double kIntakeSpeed = 1;
+    public static final double kPlowSpeed = -1;
 
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
-    public static final SparkMaxConfig kShoulderConfig = new SparkMaxConfig();
 
     static {
       kRollerConfig
           .idleMode(IdleMode.kCoast)
-          .smartCurrentLimit(20);
-      // kRollerConfig.encoder
-      // .positionConversionFactor(kPositionConversionFactor * kRollerReduction)
-      // .velocityConversionFactor(kVelocityConversionFactor * kRollerReduction);
-
-      kShoulderConfig
-          .idleMode(IdleMode.kBrake)
-          .smartCurrentLimit(40);
-      kShoulderConfig.encoder
-          .positionConversionFactor(kShoulderPositionConversionFactor * kShoulderReduction)
-          .velocityConversionFactor(kShoulderVelocityConversionFactor * kShoulderReduction);
-      kShoulderConfig.closedLoop
-          .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
-          .outputRange(-1, 1).feedForward
-          .kCos(kPIDShoulderControllerFF)
-          // Feedforward requires the absolute postition of the shoulder in rotations
-          // (horizontal = 0)
-          .kCosRatio(1.0 / kShoulderPositionConversionFactor);
+          // TODO: set this value depending on motor type, 20 is good for a 550, too low
+          // for a neo
+          .smartCurrentLimit(20)
+          // TODO: invert so + is intaking, - is outaking
+          .inverted(false);
     }
   }
 
