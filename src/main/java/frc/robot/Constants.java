@@ -659,10 +659,10 @@ public final class Constants {
 
     static {
       kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigLeft.inverted(false); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
-                                   // positive value like 0.1. Watch which direction the arm moves: If it goes up,
-                                   // that motor needs inverted(false) If it goes down, that motor needs
-                                   // inverted(true)
+      kConfigLeft.inverted(true); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
+                                  // positive value like 0.1. Watch which direction the arm moves: If it goes up,
+                                  // that motor needs inverted(false) If it goes down, that motor needs
+                                  // inverted(true)
       kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
       kConfigLeft.voltageCompensation(12.0);
       kConfigLeft.closedLoop
