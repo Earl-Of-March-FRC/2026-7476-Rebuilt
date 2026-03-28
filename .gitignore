@@ -191,3 +191,6 @@ deployExe/build/
 deployExe/runner.py
 deployExe/icon.ico
 *.spec
+
+# Javadoc
+docs

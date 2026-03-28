@@ -30,8 +30,8 @@ public class LaunchAndClimbCmd extends SequentialCommandGroup {
    * @param climber           Climber subsystem
    * @param climbSide         Tower side to climb
    * 
-   * @see {@link DriveAndLaunchCmd},
-   *      {@link LauncherAndIntakeConstants#kAutoLaunchTime}
+   * @see DriveAndLaunchCmd
+   * @see LauncherAndIntakeConstants#kAutoLaunchTime
    */
   public LaunchAndClimbCmd(DrivetrainSubsystem drivetrain, IndexerSubsystem indexer,
       LauncherAndIntakeSubsystem launcherAndIntake, ClimberSubsystem climber, TowerSide climbSide) {

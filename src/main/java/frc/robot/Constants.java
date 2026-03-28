@@ -78,8 +78,8 @@ public final class Constants {
     public static final int kDriverControllerRotAxis = 4;
     public static final File kDeployDirectory = Filesystem.getDeployDirectory();
 
-    public static final double kDriverSlowModeMultiplier = 0.45;
-    public static final double kDriverTurnSensitivity = 0.4;
+    public static final double kTranslationSlowModeMultiplier = 0.45;
+    public static final double kTurnSlowModeMultiplier = 0.4;
 
     public static final double kButtonPressDebounceSeconds = 0.1;
   }
