@@ -449,18 +449,16 @@ public class RobotContainer {
         new ClimbToHeightCmd(climberSub, ClimberConstants.kRaisePosition));
     operatorController.y().whileTrue(
         new ClimbToHeightCmd(climberSub, ClimberConstants.kLatchPosition));
-    // Pass setpoint
-    operatorController.x().whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
-        () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
+    // Pass
+    operatorController.x().toggleOnTrue(
+        Commands.either(zonePassCmd, Commands.none(),
+            () -> driveSub.getCurrentBotZone() != FieldZones.Launch
+                && driveSub.getCurrentBotZone() != FieldZones.Alliance));
 
     driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
         .toggleOnTrue(driveAndManualShootCmd);
     driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
         .toggleOnTrue(driveAndAutoShootCmd);
-
-    operatorController.povDown().and(
-        () -> driveSub.getCurrentBotZone() != FieldZones.Launch && driveSub.getCurrentBotZone() != FieldZones.Alliance)
-        .toggleOnTrue(zonePassCmd);
 
     operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
         .and(operatorController.rightBumper()).and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
