@@ -130,8 +130,7 @@ public final class Constants {
     public static final Distance kWheelRadius = Inches.of(2);
     // Empirical constant describing the ratio between wheel linear velocity and
     // ball launch velocity
-    // TODO determine from video data
-    public static final double kWheelSlipCoefficient = 0.4;
+    public static final double kWheelSlipCoefficient = 0.436;
 
     public static final int kLeaderCanSparkId = 9;
     public static final int kFollowerCanSparkId = 10;
