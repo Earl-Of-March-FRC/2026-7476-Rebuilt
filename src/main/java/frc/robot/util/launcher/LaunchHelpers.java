@@ -97,12 +97,12 @@ public class LaunchHelpers {
     // Find 2-D translation of flight path
     Translation2d ball2DTranslationMeters = ballInitialVelocityMPS.times(airTime.in(Seconds)).toTranslation2d();
 
-    // Rotate to launch in the correct direction using the supplied bot pose,
-    // not drive().getPose()
-    ball2DTranslationMeters = new Translation2d(
-        ball2DTranslationMeters.getNorm(),
-        botPose.getRotation().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
+    // // Rotate to launch in the correct direction using the supplied bot pose
+    // ball2DTranslationMeters = new Translation2d(
+    // ball2DTranslationMeters.getNorm(),
+    // botPose.getRotation().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
 
+    // Add to current pose, and add back the z component
     return new Translation3d(botPose.getTranslation().plus(ball2DTranslationMeters))
         .plus(new Translation3d(0, 0, targetHeight.in(Meters)));
   }
@@ -151,10 +151,9 @@ public class LaunchHelpers {
    *         {@link LauncherAndIntakeConstants#kMinLaunchDistance}
    */
   public static boolean isTooCloseToHub() {
-    double xDist = Math.abs(
-        drive().getPose().getX() - PoseHelpers.getAllianceHubtTranslation2d().getX());
-    boolean tooClose = Meters.of(xDist).lt(LauncherAndIntakeConstants.kMinLaunchDistance);
-    Logger.recordOutput("Launcher/TooClose/XDist", xDist);
+    double dist = drive().getPose().getTranslation().getDistance(PoseHelpers.getAllianceHubtTranslation2d());
+    boolean tooClose = Meters.of(dist).lt(LauncherAndIntakeConstants.kMinLaunchDistance);
+    Logger.recordOutput("Launcher/TooClose/Dist", dist);
     Logger.recordOutput("Launcher/TooClose/IsTooClose", tooClose);
     return tooClose;
   }
@@ -281,8 +280,10 @@ public class LaunchHelpers {
         .times(ballLinearVelocityMPS)
         .rotateBy(new Rotation3d(LauncherAndIntakeConstants.kLauncherBotHeading));
 
-    // Rotate into field frame
-    return launchVelocity.rotateBy(new Rotation3d(drive().getPose().getRotation().unaryMinus()));
+    // Field relative coordinates
+    launchVelocity = launchVelocity.rotateBy(new Rotation3d(drive().getPose().getRotation()));
+
+    return launchVelocity;
   }
 
   /**
