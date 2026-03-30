@@ -12,6 +12,7 @@ import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
 import frc.robot.subsystems.Drivetrain.SimulatedGyro;
 import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
 import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
@@ -20,7 +21,6 @@ import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.SimulatedArena;
@@ -55,8 +55,10 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
+import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
 import frc.robot.commands.climber.ClimbToHeightCmd;
@@ -87,7 +89,7 @@ import com.revrobotics.spark.SparkMax;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
-  // public final OTBIntakeSubsystem otbIntakeSub;
+  public final OTBIntakeSubsystem otbIntakeSub;
   public final IndexerSubsystem indexerSub;
   public final LauncherAndIntakeSubsystem launcherAndIntakeSub;
   public final ClimberSubsystem climberSub;
@@ -113,7 +115,8 @@ public class RobotContainer {
                 Constants.LauncherAndIntakeConstants.kMotorType),
             new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
                 Constants.LauncherAndIntakeConstants.kMotorType)));
-
+    otbIntakeSub = new OTBIntakeSubsystem(
+        new SparkMax(Constants.OTBIntakeConstants.kRollerCanId, Constants.OTBIntakeConstants.kMotorType));
     climberSub = new ClimberSubsystem(
         new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
         Constants.ClimberConstants.kConfigLeft,
@@ -312,13 +315,13 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
-    Command intakeToHopperCmd = new PulsingTreadmillCmd(
+    Command intakeFrontCmd = new PulsingTreadmillCmd(
         indexerSub,
         IndexerConstants.kWheelSpeed,
         IndexerConstants.kTreadmillSpeed)
         .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
 
-    Command reverseIntakeCmd = new PulsingTreadmillCmd(
+    Command outakeFrontCmd = new PulsingTreadmillCmd(
         indexerSub,
         -IndexerConstants.kWheelSpeed,
         -IndexerConstants.kTreadmillSpeed)
@@ -386,8 +389,8 @@ public class RobotContainer {
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
     operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.leftBumper().toggleOnTrue(intakeToHopperCmd);
-    driverController.rightBumper().toggleOnTrue(reverseIntakeCmd);
+    driverController.leftBumper().toggleOnTrue(intakeFrontCmd);
+    driverController.rightBumper().toggleOnTrue(outakeFrontCmd);
 
     driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
@@ -395,14 +398,6 @@ public class RobotContainer {
     // Cancel all driveSub commands and disables xLock, returning manual control
     driverController.button(7).onTrue(Commands.runOnce(() -> driveSub.setXLock(false), driveSub));
     driverController.button(8).onTrue(Commands.runOnce(driveSub::toggleXLock));
-
-    // // Binding for Plow (Button 5 is usually Left Bumper)
-    // driverController.button(5).whileTrue(new IntakeCmd(otbIntakeSub, () ->
-    // OTBIntakeConstants.kIntakeSpeed));
-
-    // // Binding for Intake (Button 6 is usually Right Bumper)
-    // driverController.button(6).whileTrue(new PlowCmd(otbIntakeSub, () ->
-    // OTBIntakeConstants.kPlowSpeed));
 
     // driverController.rightBumper().onTrue(Commands.defer(
     // () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
@@ -499,6 +494,19 @@ public class RobotContainer {
 
     testController.a()
         .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
+
+    testController.leftBumper()
+        .whileTrue(new PulsingTreadmillCmd(
+            indexerSub,
+            -IndexerConstants.kWheelSpeed,
+            -IndexerConstants.kTreadmillSpeed)
+            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed)));
+    testController.rightBumper()
+        .whileTrue(new PulsingTreadmillCmd(
+            indexerSub,
+            IndexerConstants.kWheelSpeed,
+            IndexerConstants.kTreadmillSpeed)
+            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed)));
   }
 
   // Helper methods to reduce repetition
