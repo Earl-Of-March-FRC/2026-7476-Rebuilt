@@ -130,8 +130,7 @@ public final class Constants {
     public static final Distance kWheelRadius = Inches.of(2);
     // Empirical constant describing the ratio between wheel linear velocity and
     // ball launch velocity
-    // TODO determine from video data
-    public static final double kWheelSlipCoefficient = 0.4;
+    public static final double kWheelSlipCoefficient = 0.436;
 
     public static final int kLeaderCanSparkId = 9;
     public static final int kFollowerCanSparkId = 10;
@@ -149,20 +148,20 @@ public final class Constants {
     public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
 
     // Found using polynomial regression (degree 2)
-    private static final double kRPMCurveA = 43.5;
-    private static final double kRPMCurveB = 119;
-    private static final double kRPMCurveC = 2372;
+    private static final double kRPMCurveA = 69.9;
+    private static final double kRPMCurveB = -143;
+    private static final double kRPMCurveC = 2640;
     // For fine tuning due to small changes
     // TODO replace with final value after testing
     private static final LoggedNetworkNumber kRPMCurveMultiplier = new LoggedNetworkNumber("/Tuning/RPMCurveMultiplier",
-        0.963);
+        1.0);
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
       double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
     };
 
-    public static final Distance kMinLaunchDistance;
+    public static final Distance kMinLaunchDistance = Meters.of(1.8);
 
     static {
       // Minimum vertical velocity needed to reach hub height (from energy
@@ -194,7 +193,9 @@ public final class Constants {
           ? (-b + Math.sqrt(discriminant)) / (2 * a)
           : 1.5; // fallback if curve never reaches minOmegaRPM
 
-      kMinLaunchDistance = Meters.of(Math.max(0, minDist));
+      // These calculations are not accurate enough, stick with a predetermined
+      // constant
+      // kMinLaunchDistance = Meters.of(Math.max(0, minDist));
       Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
     }
 
@@ -218,9 +219,9 @@ public final class Constants {
     public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
     public static final AngularVelocity kPassRPMSetpoint = RPM.of(4500);
     // Visionless backup setpoints
-    public static final AngularVelocity kBumpRPMSetpoint = RPM.of(2750);
-    public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3390);
-    public static final AngularVelocity kTowerRPMSetpoint = RPM.of(3190);
+    public static final AngularVelocity kBumpRPMSetpoint = RPM.of(2500);
+    public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3020);
+    public static final AngularVelocity kTowerRPMSetpoint = RPM.of(2910);
     public static final AngularVelocity kCornerRPMSetpoint = kDistanceToRPMCurve.apply(Meters.of(5.4539));
     // RPM increment per second when doing manual offset
     public static final AngularVelocity kManualRPMOffsetPerSecond = RPM.of(50);
@@ -659,10 +660,10 @@ public final class Constants {
 
     static {
       kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigLeft.inverted(false); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
-                                   // positive value like 0.1. Watch which direction the arm moves: If it goes up,
-                                   // that motor needs inverted(false) If it goes down, that motor needs
-                                   // inverted(true)
+      kConfigLeft.inverted(true); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
+                                  // positive value like 0.1. Watch which direction the arm moves: If it goes up,
+                                  // that motor needs inverted(false) If it goes down, that motor needs
+                                  // inverted(true)
       kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
       kConfigLeft.voltageCompensation(12.0);
       kConfigLeft.closedLoop

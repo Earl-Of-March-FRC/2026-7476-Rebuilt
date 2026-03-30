@@ -28,6 +28,7 @@ import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -96,8 +97,8 @@ public class RobotContainer {
       OIConstants.kDriverControllerPort);
   private final CommandXboxController operatorController = new CommandXboxController(
       OIConstants.kOperatorControllerPort);
-  private final CommandXboxController testController = new CommandXboxController(
-      OIConstants.kTestControllerPort);
+  // Only initialize in test mode
+  private CommandXboxController testController;
 
   private LoggedDashboardChooser<Command> autoChooser, debugChooser;
 
@@ -325,25 +326,10 @@ public class RobotContainer {
 
     driveSub.setDefaultCommand(driveCmd);
 
-    indexerSub
-        .setDefaultCommand(new IndexerCmd(indexerSub, () -> testController.getLeftY() * IndexerConstants.kWheelSpeed,
-            () -> testController.getRightY() * IndexerConstants.kTreadmillSpeed));
-
     // Negate so up is positive
     climberSub.setDefaultCommand(new ClimbPercentCmd(climberSub,
         () -> MathUtil.applyDeadband(-operatorController.getLeftY(),
             OIConstants.kDeadband)));
-
-    // Left arm only: left stick Y on test controller
-    testController.povLeft().whileTrue(new ClimbPercentCmd(climberSub, () -> testController.getLeftY() * 0.1));
-
-    // Right arm only: right stick Y on test controller
-    testController.povRight().whileTrue(new ClimbPercentCmd(climberSub, () -> testController.getRightY() * 0.1));
-
-    // Both arms together; verify they move in the same direction
-    testController.povUp().whileTrue(new ClimbPercentCmd(climberSub, () -> 0.1)); // should both go up
-
-    testController.povDown().whileTrue(new ClimbPercentCmd(climberSub, () -> -0.1)); // should both go down
 
     driverController.a().toggleOnTrue(new DriveLockedHeadingCmd(driveSub, this::getDriverVx, this::getDriverVy,
         new Rotation2d(DriveConstants.kBumpHeadingRestriction), DriveConstants.kBumpLinearVelocity));
@@ -503,9 +489,16 @@ public class RobotContainer {
     }));
 
     operatorController.rightStick().onTrue(Commands.runOnce(() -> launcherAndIntakeSub.resetVelocityOffset()));
+  }
 
-    testController.x().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Left));
-    testController.b().whileTrue(new DriveToTowerSideCmd(driveSub, TowerSide.Right));
+  /** Run in {@code Robot.testInit()} */
+  public void configureTestMode() {
+    testController = new CommandXboxController(
+        OIConstants.kTestControllerPort);
+    final LoggedNetworkNumber testRPM = new LoggedNetworkNumber("/Tuning/testRPM", 1000);
+
+    testController.a()
+        .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
   }
 
   // Helper methods to reduce repetition

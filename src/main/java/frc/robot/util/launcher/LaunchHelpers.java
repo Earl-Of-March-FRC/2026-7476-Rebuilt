@@ -93,13 +93,13 @@ public class LaunchHelpers {
     // Find 2d translation of flight path
     Translation2d ball2DTranslationMeters = ballInitialVelocityMPS.times(airTime.in(Seconds)).toTranslation2d();
 
-    // Rotate to launch in the correct direction
-    ball2DTranslationMeters = new Translation2d(
-        ball2DTranslationMeters.getNorm(),
-        drive().getPose().getRotation().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
+    // // Rotate to launch in the correct direction
+    // ball2DTranslationMeters = new Translation2d(
+    // ball2DTranslationMeters.getNorm(),
+    // drive().getPose().getRotation().minus(LauncherAndIntakeConstants.kLauncherBotHeading));
 
     // Add to current pose, and add back the z component
-    return new Translation3d(drive().getPose().getTranslation().plus(ball2DTranslationMeters))
+    return new Translation3d(botPose.getTranslation().plus(ball2DTranslationMeters))
         .plus(new Translation3d(0, 0, targetHeight.in(Meters)));
   }
 
@@ -169,10 +169,9 @@ public class LaunchHelpers {
    *         before trying to shoot.
    */
   public static boolean isTooCloseToHub() {
-    double xDist = Math.abs(
-        drive().getPose().getX() - PoseHelpers.getAllianceHubtTranslation2d().getX());
-    boolean tooClose = Meters.of(xDist).lt(LauncherAndIntakeConstants.kMinLaunchDistance);
-    Logger.recordOutput("Launcher/TooClose/XDist", xDist);
+    double dist = drive().getPose().getTranslation().getDistance(PoseHelpers.getAllianceHubtTranslation2d());
+    boolean tooClose = Meters.of(dist).lt(LauncherAndIntakeConstants.kMinLaunchDistance);
+    Logger.recordOutput("Launcher/TooClose/Dist", dist);
     Logger.recordOutput("Launcher/TooClose/IsTooClose", tooClose);
     return tooClose;
   }
@@ -323,7 +322,7 @@ public class LaunchHelpers {
         .rotateBy(new Rotation3d(LauncherAndIntakeConstants.kLauncherBotHeading));
 
     // Field relative coordinates
-    launchVelocity = launchVelocity.rotateBy(new Rotation3d(drive().getPose().getRotation().unaryMinus()));
+    launchVelocity = launchVelocity.rotateBy(new Rotation3d(drive().getPose().getRotation()));
 
     return launchVelocity;
   }
