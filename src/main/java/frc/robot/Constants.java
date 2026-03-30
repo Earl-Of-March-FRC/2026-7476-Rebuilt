@@ -161,7 +161,7 @@ public final class Constants {
       return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
     };
 
-    public static final Distance kMinLaunchDistance;
+    public static final Distance kMinLaunchDistance = Meters.of(1.8);
 
     static {
       // Minimum vertical velocity needed to reach hub height (from energy
@@ -193,7 +193,9 @@ public final class Constants {
           ? (-b + Math.sqrt(discriminant)) / (2 * a)
           : 1.5; // fallback if curve never reaches minOmegaRPM
 
-      kMinLaunchDistance = Meters.of(Math.max(0, minDist));
+      // These calculations are not accurate enough, stick with a predetermined
+      // constant
+      // kMinLaunchDistance = Meters.of(Math.max(0, minDist));
       Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
     }
 
