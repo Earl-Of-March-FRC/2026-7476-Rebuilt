@@ -123,6 +123,8 @@ public final class Constants {
     public static final Distance kBallReleaseHeight = Inches.of(20);
     public static final Angle kBallReleaseAngle = Degree.of(58.016961);
 
+    public static final Angle kPassReleaseAngle = Degree.of(25.0); // TODO: tune this
+
     // Launch heading relative to bot heading (0 means launching straight forward,
     // positive is counterclockwise)
     public static final Rotation2d kLauncherBotHeading = Rotation2d.fromDegrees(180);

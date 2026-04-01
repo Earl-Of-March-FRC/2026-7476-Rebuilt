@@ -5,10 +5,14 @@ import static edu.wpi.first.units.Units.RPM;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.PassConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers.LaunchSetpoints;
@@ -44,11 +48,30 @@ public final class ZonePassHelpers {
   public static LaunchSetpoints calculateZonePassSetpoints(boolean applyLead) {
     Translation3d target = selectPassTarget();
     Translation3d targetBotRelative = toTargetBotRelative(target);
-    LaunchSetpoints setpoints = LaunchHelpers.calculateLaunchSetpoints(targetBotRelative, applyLead);
 
+    // Heading points straight from bot to target, no lead correction
+    Rotation2d desiredHeading = targetBotRelative.toTranslation2d().getAngle()
+        .minus(LauncherAndIntakeConstants.kLauncherBotHeading);
+
+    // RPM based on current distance to target
+    Distance horizontalDist = Meters.of(targetBotRelative.toTranslation2d().getNorm());
+    AngularVelocity passRPM = LaunchHelpers.calculatePassRPM(horizontalDist);
+
+    LaunchSetpoints setpoints = new LaunchSetpoints(passRPM, desiredHeading);
+
+    // Debug
+    Logger.recordOutput("ZonePass/Debug/PredictedEndpoint",
+        LaunchHelpers.predictPassEndpoint(
+            LaunchHelpers.drive().getPose(),
+            passRPM,
+            desiredHeading));
     Logger.recordOutput("ZonePass/Setpoints/FlywheelRPM", setpoints.flywheelSpeed().in(RPM));
     Logger.recordOutput("ZonePass/Setpoints/BotHeadingDeg", setpoints.botHeading().getDegrees());
-    Logger.recordOutput("ZonePass/Setpoints/ApplyLead", applyLead);
+    Logger.recordOutput("ZonePass/Debug/HorizontalDistMeters", horizontalDist.in(Meters));
+    Logger.recordOutput("ZonePass/Debug/PassRPM", passRPM.in(RPM));
+    Logger.recordOutput("ZonePass/Debug/ActualLaunchYawDeg",
+        Math.toDegrees(desiredHeading.getRadians()
+            + LauncherAndIntakeConstants.kLauncherBotHeading.getRadians()));
 
     return setpoints;
   }

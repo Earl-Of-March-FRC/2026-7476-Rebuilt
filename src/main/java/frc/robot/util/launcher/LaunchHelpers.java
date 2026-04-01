@@ -200,6 +200,82 @@ public class LaunchHelpers {
   }
 
   /**
+   * Calculates RPM for a ground-level pass using a flat launch angle.
+   *
+   * @param horizontalDistance XY-plane distance to the target
+   * @return Required flywheel speed
+   */
+  public static AngularVelocity calculatePassRPM(Distance horizontalDistance) {
+    double d = horizontalDistance.in(Meters);
+    double releaseHeight = LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters);
+    double angle = LauncherAndIntakeConstants.kPassReleaseAngle.in(Radians);
+    double g = 9.81;
+
+    double cosA = Math.cos(angle);
+    double sinA = Math.sin(angle);
+    double tanA = sinA / cosA;
+
+    // V^2 = (g * d^2) / (2 * cos^2A * (d*tanA + releaseHeight))
+    double denominator = 2 * cosA * cosA * (d * tanA + releaseHeight);
+
+    if (denominator <= 0) {
+      DriverStation.reportError("calculatePassRPM: invalid denominator " + denominator, false);
+      return RPM.of(1000);
+    }
+
+    double vBallMPS = Math.sqrt((g * d * d) / denominator);
+    return calculateRequiredAngularVelocity(MetersPerSecond.of(vBallMPS));
+  }
+
+  /**
+   * Predicts the endpoint of a pass shot using the pass release angle.
+   * Used only for debug visualization in AdvantageScope.
+   *
+   * @param botPose              Bot pose at launch time
+   * @param wheelAngularVelocity Flywheel speed
+   * @param desiredHeading       Bot heading
+   * @return 3-D field-frame endpoint of the ball
+   */
+  public static Translation3d predictPassEndpoint(Pose2d botPose,
+      AngularVelocity wheelAngularVelocity, Rotation2d desiredHeading) {
+    double wheelLinearVelocityMPS = LauncherAndIntakeConstants.kWheelRadius.in(Meters)
+        * wheelAngularVelocity.in(RadiansPerSecond);
+    double ballLinearVelocityMPS = wheelLinearVelocityMPS
+        * LauncherAndIntakeConstants.kWheelSlipCoefficient;
+
+    double angle = LauncherAndIntakeConstants.kPassReleaseAngle.in(Radians);
+    double VzMPS = ballLinearVelocityMPS * Math.sin(angle);
+    double VhMPS = ballLinearVelocityMPS * Math.cos(angle);
+    double releaseHeight = LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters);
+    double g = 9.81;
+
+    double a = 0.5 * g;
+    double b = -VzMPS;
+    double c = -releaseHeight;
+    double discriminant = b * b - 4 * a * c;
+
+    if (discriminant < 0) {
+      return new Translation3d(botPose.getX(), botPose.getY(), 0);
+    }
+
+    double t = (-b + Math.sqrt(discriminant)) / (2 * a);
+
+    // desiredHeading already accounts for kLauncherBotHeading offset
+    // so the actual launch direction in field frame is:
+    double actualLaunchYaw = desiredHeading.getRadians()
+        + LauncherAndIntakeConstants.kLauncherBotHeading.getRadians();
+
+    double dx = VhMPS * Math.cos(actualLaunchYaw) * t;
+    double dy = VhMPS * Math.sin(actualLaunchYaw) * t;
+
+    Logger.recordOutput("ZonePass/Debug/AirTime", t);
+    Logger.recordOutput("ZonePass/Debug/VhMPS", VhMPS);
+    Logger.recordOutput("ZonePass/Debug/ActualLaunchYawDeg", Math.toDegrees(actualLaunchYaw));
+
+    return new Translation3d(botPose.getX() + dx, botPose.getY() + dy, 0);
+  }
+
+  /**
    * Calculates the correct RPM for launching at the hub from the <b>current</b>
    * distance.
    */
