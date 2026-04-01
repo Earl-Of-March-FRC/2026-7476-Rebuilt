@@ -147,7 +147,6 @@ public final class Constants {
     // any lookup entry, use interpolation
     public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
 
-    // Found using polynomial regression (degree 2)
     private static final double kRPMCurveA = 69.9;
     private static final double kRPMCurveB = -143;
     private static final double kRPMCurveC = 2640;
@@ -159,6 +158,20 @@ public final class Constants {
       double d = distance.in(Meters);
       double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
+    };
+
+    // Found using polynomial regression (degree 2)
+    private static final double kTOFCurveA = -0.0481;
+    private static final double kTOFCurveB = 0.401;
+    private static final double kTOFCurveC = 0.425;
+    // For fine tuning due to small changes
+    // TODO replace with final value after testing
+    private static final LoggedNetworkNumber kTOFCurveMultiplier = new LoggedNetworkNumber("/Tuning/TOFCurveMultiplier",
+        1.0);
+    public static final Function<Distance, AngularVelocity> kDistanceToTOFCurve = (Distance distance) -> {
+      double d = distance.in(Meters);
+      double rpm = kTOFCurveA * d * d + kTOFCurveB * d + kTOFCurveC;
+      return RPM.of(rpm * kTOFCurveMultiplier.getAsDouble());
     };
 
     public static final Distance kMinLaunchDistance = Meters.of(1.8);
