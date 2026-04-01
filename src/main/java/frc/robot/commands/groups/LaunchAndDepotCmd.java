@@ -7,6 +7,7 @@ package frc.robot.commands.groups;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -43,7 +44,7 @@ public class LaunchAndDepotCmd extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
 
-    final PathPlannerPath depotPath = AutoConstants.depotClimbPath;
+    final PathPlannerPath depotPath = AutoConstants.depotPath;
 
     final Command moveToDepotCmd = PathGenerator.driveToDepotAuto();
 

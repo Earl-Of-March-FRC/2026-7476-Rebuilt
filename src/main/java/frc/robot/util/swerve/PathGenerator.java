@@ -467,8 +467,13 @@ public class PathGenerator {
     if (waypoints.isEmpty()) {
       return new PrintCommand("Depot path for driveToDepotAuto was empty.");
     }
+
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
+
+    Rotation2d targetRotation = isBlueAlliance ? Rotation2d.kZero : Rotation2d.k180deg;
     Pose2d firstWaypoint = waypoints.get(0);
-    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), Rotation2d.k180deg);
+    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), targetRotation);
 
     Logger.recordOutput("Commands/PathGenerator/driveToDepotAuto/DesiredPose", desiredPose);
 
