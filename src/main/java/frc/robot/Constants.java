@@ -100,6 +100,7 @@ public final class Constants {
     public static final File kDeployDirectory = Filesystem.getDeployDirectory();
 
     public static final double kTranslationSlowModeMultiplier = 0.45;
+    public static final double kTranslationSuperSlowModeMultiplier = 0.2;
     public static final double kTurnSlowModeMultiplier = 0.4;
 
     public static final double kButtonPressDebounceSeconds = 0.1;

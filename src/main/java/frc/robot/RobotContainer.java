@@ -285,8 +285,8 @@ public class RobotContainer {
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
-        this::getDriverVx,
-        this::getDriverVy,
+        this::getLaunchVx,
+        this::getLaunchVy,
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
@@ -296,8 +296,8 @@ public class RobotContainer {
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
-        this::getDriverVx,
-        this::getDriverVy,
+        this::getLaunchVx,
+        this::getLaunchVy,
         launchSupplier,
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
@@ -331,8 +331,8 @@ public class RobotContainer {
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
-        this::getDriverVx,
-        this::getDriverVy, launchSupplier,
+        this::getLaunchVx,
+        this::getLaunchVy, launchSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
     driveSub.setDefaultCommand(driveCmd);
@@ -541,6 +541,23 @@ public class RobotContainer {
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis)
             * (driverController.rightStick().getAsBoolean() ? OIConstants.kTurnSlowModeMultiplier : 1),
+        OIConstants.kDeadband);
+  }
+
+  // Use "super slow mode" when launching or passing
+  private double getLaunchVx() {
+    // Apply slow-mode when left stick is pushed down
+    return MathUtil.applyDeadband(
+        -driverController.getRawAxis(OIConstants.kDriverControllerYAxis)
+            * OIConstants.kTranslationSuperSlowModeMultiplier,
+        OIConstants.kDeadband);
+  }
+
+  private double getLaunchVy() {
+    // Apply slow-mode when left stick is pushed down
+    return MathUtil.applyDeadband(
+        -driverController.getRawAxis(OIConstants.kDriverControllerXAxis)
+            * OIConstants.kTranslationSuperSlowModeMultiplier,
         OIConstants.kDeadband);
   }
 
