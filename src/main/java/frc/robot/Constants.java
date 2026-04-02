@@ -48,6 +48,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
@@ -65,6 +66,26 @@ import frc.robot.util.vision.CameraProfile;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+
+  public static final class PhysicsConstants {
+    /** Standard gravitational acceleration at Earth's surface (m/s^2). */
+    public static final LinearAcceleration kGravity = MetersPerSecondPerSecond.of(9.80665);
+    /**
+     * Raw gravitational acceleration as a plain double (m/s^2).
+     * Use this in kinematic equations where units would be cumbersome.
+     */
+    public static final double kGravityMps2 = kGravity.magnitude();
+
+    /** Nominal FRC robot battery voltage (V). */
+    public static final Voltage kNominalBatteryVoltage = Volts.of(12.0);
+
+    /**
+     * Minimum acceptable battery voltage under load before brownout concern (V).
+     */
+    public static final Voltage kBrownoutVoltage = Volts.of(6.8);
+
+  }
+
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
     public static final int kOperatorControllerPort = 1;
@@ -201,6 +222,13 @@ public final class Constants {
       Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
     }
 
+    public static AngularVelocity linearVelocityToAngularVelocity(LinearVelocity ballSpeed) {
+      double wheelLinearMps = ballSpeed.in(MetersPerSecond)
+          / kWheelSlipCoefficient
+          / kWheelRadius.in(Meters);
+      return RadiansPerSecond.of(wheelLinearMps);
+    }
+
     public static final Distance kTestLaunchRadius = Meters.of(2.0);
     public static final Time kTestBallAirTime = Seconds.of(0.5);
 
@@ -300,6 +328,8 @@ public final class Constants {
      * Add a small safety margin on top of the physical half-width.
      */
     public static final Distance kHubLOSRadius = FieldConstants.kHubInsideWidth.div(2.0).plus(Meters.of(0.15));
+
+    public static final Distance kPassLandingTolerance = Meters.of(0.5);
   }
 
   public static final class ClimbAlignConstants {
