@@ -1,108 +1,193 @@
+// NEW CODE
+
 package frc.robot.util.launcher;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Seconds;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.PassConstants;
+import frc.robot.Constants.PhysicsConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers.LaunchSetpoints;
+import frc.robot.util.launcher.LaunchHelpers.ShotPrediction;
 import frc.robot.util.swerve.FieldZones;
 
 /**
  * Helpers for zone-aware ball passing.
  *
  * <p>
- * Behaviour depends on the robot's current field zone:
+ * <b>Zone behaviour:</b>
  * <ul>
- * <li><b>Neutral zone</b>: Pass to the nearer of the two alliance-side bump
- * poses, provided the hub does not block the shot (line-of-sight check).
- * If both are blocked, fall back to the nearer one anyway.</li>
- * <li><b>Enemy zone</b>: Dump the ball to the far back of the alliance zone
- * so a robot can collect it.</li>
+ * <li><b>Neutral zone:</b> Pass to the nearer alliance-side bump pose that is
+ * not blocked by our hub. Falls back to the geometrically nearer pose if both
+ * are blocked.</li>
+ * <li><b>Enemy zone:</b> Dump the ball to the far back of the alliance zone so
+ * a robot can collect it.</li>
  * </ul>
+ *
+ * <p>
+ * All setpoint math flows through {@link LaunchHelpers#calculateSetpoints} so
+ * that hub shots and pass shots share the same heading derivation and lead
+ * correction logic. The only difference is the RPM model: pass shots use
+ * {@link LaunchHelpers#calculatePhysicsRpm} (projectile physics at the pass
+ * release angle), while hub shots use the empirical curve.
  */
 public final class ZonePassHelpers {
 
   private ZonePassHelpers() {
-    throw new UnsupportedOperationException("Launcher Utility class");
+    throw new UnsupportedOperationException("ZonePassHelpers is a static utility class");
   }
 
   /**
-   * Selects the best pass target and returns full launch setpoints
-   * (flywheel RPM + bot heading) for the current robot state.
+   * Selects the best pass target for the current zone and returns complete
+   * launch setpoints (flywheel RPM + bot heading).
    *
-   * @param applyLead whether to lead the shot for drivetrain velocity
-   * @return setpoints ready to feed into the launcher and drivetrain heading
-   *         controller
+   * <p>
+   * Both the target selection and the setpoint math update every call, so this
+   * is safe to call every command cycle.
+   *
+   * @param applyDrivetrainLead If {@code true}, the heading is lead-corrected
+   *                            for the robot's current velocity
+   * @return Setpoints ready to hand to the launcher and heading controller
    */
-  public static LaunchSetpoints calculateZonePassSetpoints(boolean applyLead) {
+  public static LaunchSetpoints calculatePassSetpoints(boolean applyDrivetrainLead) {
     Translation3d target = selectPassTarget();
-    Translation3d targetBotRelative = toTargetBotRelative(target);
 
-    // Heading points straight from bot to target, no lead correction
-    Rotation2d desiredHeading = targetBotRelative.toTranslation2d().getAngle()
+    Pose2d botPose = LaunchHelpers.driveSubsystem().getPose();
+    ChassisSpeeds fieldSpeeds = applyDrivetrainLead
+        ? LaunchHelpers.driveSubsystem().getChassisSpeedsFieldRelative()
+        : new ChassisSpeeds();
+
+    Translation2d robotPos = botPose.getTranslation();
+    Translation2d toTarget2d = target.toTranslation2d().minus(robotPos);
+
+    Translation2d robotVelocity = new Translation2d(
+        fieldSpeeds.vxMetersPerSecond,
+        fieldSpeeds.vyMetersPerSecond);
+
+    double releaseHeight = LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters);
+    double angle = LauncherAndIntakeConstants.kPassReleaseAngle.in(Radians);
+    double cosA = Math.cos(angle);
+    double sinA = Math.sin(angle);
+    double g = PhysicsConstants.kGravityMps2;
+
+    // Root solve for t
+    double tLow = 0.05;
+    double tHigh = 3.0;
+    double t = 1.0;
+
+    Translation2d launcherVelocity = new Translation2d();
+    double adjustedBallSpeed = 0;
+
+    for (int i = 0; i < 25; i++) {
+      t = (tLow + tHigh) / 2.0;
+
+      // Solve horizontal velocity needed
+      launcherVelocity = toTarget2d.div(t).minus(robotVelocity);
+      double requiredVh = launcherVelocity.getNorm();
+
+      // Convert to full velocity using fixed angle
+      adjustedBallSpeed = requiredVh / cosA;
+      double vz = adjustedBallSpeed * sinA;
+
+      // Compute actual airtime from vertical motion
+      double computedT = (vz + Math.sqrt(vz * vz + 2 * g * releaseHeight)) / g;
+
+      // Binary search condition
+      if (computedT > t) {
+        tLow = t;
+      } else {
+        tHigh = t;
+      }
+    }
+    AngularVelocity rpm = LauncherAndIntakeConstants.linearVelocityToAngularVelocity(
+        MetersPerSecond.of(adjustedBallSpeed));
+
+    double launchYaw = Math.atan2(
+        launcherVelocity.getY(),
+        launcherVelocity.getX());
+
+    Rotation2d botHeading = Rotation2d.fromRadians(launchYaw)
         .minus(LauncherAndIntakeConstants.kLauncherBotHeading);
 
-    // RPM based on current distance to target
-    Distance horizontalDist = Meters.of(targetBotRelative.toTranslation2d().getNorm());
-    AngularVelocity passRPM = LaunchHelpers.calculatePassRPM(horizontalDist);
+    LaunchSetpoints setpoints = new LaunchSetpoints(rpm, botHeading);
 
-    LaunchSetpoints setpoints = new LaunchSetpoints(passRPM, desiredHeading);
+    Translation2d totalVelocity = launcherVelocity.plus(robotVelocity);
+    Translation2d landing2d = robotPos.plus(totalVelocity.times(t));
 
-    // Debug
-    Logger.recordOutput("ZonePass/Debug/PredictedEndpoint",
-        LaunchHelpers.predictPassEndpoint(
-            LaunchHelpers.drive().getPose(),
-            passRPM,
-            desiredHeading));
-    Logger.recordOutput("ZonePass/Setpoints/FlywheelRPM", setpoints.flywheelSpeed().in(RPM));
-    Logger.recordOutput("ZonePass/Setpoints/BotHeadingDeg", setpoints.botHeading().getDegrees());
-    Logger.recordOutput("ZonePass/Debug/HorizontalDistMeters", horizontalDist.in(Meters));
-    Logger.recordOutput("ZonePass/Debug/PassRPM", passRPM.in(RPM));
-    Logger.recordOutput("ZonePass/Debug/ActualLaunchYawDeg",
-        Math.toDegrees(desiredHeading.getRadians()
-            + LauncherAndIntakeConstants.kLauncherBotHeading.getRadians()));
+    Translation3d landing = new Translation3d(
+        landing2d.getX(),
+        landing2d.getY(),
+        target.getZ());
+
+    // Validation
+    double distanceToTarget = landing.toTranslation2d().getDistance(target.toTranslation2d());
+
+    boolean outOfField = !PoseHelpers.isInField(
+        new Pose2d(landing.toTranslation2d(), new Rotation2d()));
+
+    double hubRadius = FieldConstants.kHubInsideWidth.div(2).in(Meters);
+
+    boolean blockedByOwnHub = LaunchHelpers.isTrajectoryBlockedByHub(
+        robotPos, landing.toTranslation2d(),
+        PoseHelpers.getAllianceHubtTranslation2d(), hubRadius);
+
+    boolean blockedByEnemyHub = LaunchHelpers.isTrajectoryBlockedByHub(
+        robotPos, landing.toTranslation2d(),
+        PoseHelpers.getEnemyHubTranslation2d(), hubRadius);
+
+    boolean willScore = distanceToTarget < PassConstants.kPassLandingTolerance.in(Meters)
+        && !outOfField && !blockedByOwnHub && !blockedByEnemyHub;
+
+    ShotPrediction prediction = new ShotPrediction(
+        willScore, landing, blockedByOwnHub, blockedByEnemyHub,
+        outOfField, distanceToTarget, t);
+
+    LaunchHelpers.logShotPrediction(prediction, "ZonePass/Prediction");
 
     return setpoints;
   }
 
   /**
-   * Returns the 3-D field-frame position of the currently chosen pass target.
-   * Useful for logging / visualisation.
+   * Returns the 3-D field-frame position of the currently selected pass target.
+   * Useful for visualisation and logging without re-computing setpoints.
    */
   public static Translation3d selectPassTarget() {
     boolean isBlue = PoseHelpers.getAlliance() == Alliance.Blue;
-
-    Translation2d robotPos = LaunchHelpers.drive().getPose().getTranslation();
+    Translation2d robotPos = LaunchHelpers.driveSubsystem().getPose().getTranslation();
 
     double allianceZoneX = FieldConstants.kAllianceZoneXLength.in(Meters);
     double fieldLength = FieldConstants.kFieldLengthX.in(Meters);
     double robotX = robotPos.getX();
 
-    boolean inNeutralZone = robotX > allianceZoneX
-        && robotX < fieldLength - allianceZoneX;
+    boolean inNeutralZone = robotX > allianceZoneX && robotX < fieldLength - allianceZoneX;
 
     Translation2d target2d;
     double targetHeight;
     String zoneLabel;
 
     if (inNeutralZone) {
-      target2d = selectNeutralZoneTarget(robotPos, isBlue);
+      target2d = selectNeutralTarget(robotPos, isBlue);
       targetHeight = PassConstants.kPassTargetHeight.in(Meters);
       zoneLabel = FieldZones.Neutral.toString();
     } else {
-      // Enemy zone (or any unrecognised zone); dump shot to back of alliance zone.
-      target2d = allianceDumpTarget(isBlue);
+      target2d = dumpTarget(isBlue);
       targetHeight = PassConstants.kDumpTargetHeight.in(Meters);
       zoneLabel = FieldZones.Enemy.toString();
     }
@@ -111,164 +196,150 @@ public final class ZonePassHelpers {
 
     Logger.recordOutput("ZonePass/Zone", zoneLabel);
     Logger.recordOutput("ZonePass/Target3d", target3d);
-    Logger.recordOutput("ZonePass/Target2d/X", target2d.getX());
-    Logger.recordOutput("ZonePass/Target2d/Y", target2d.getY());
-    Logger.recordOutput("ZonePass/TargetHeight", targetHeight);
-    Logger.recordOutput("ZonePass/IsBlueAlliance", isBlue);
-    Logger.recordOutput("ZonePass/RobotX", robotX);
 
     return target3d;
   }
 
   /**
-   * Picks the nearer bump-pass pose that has line-of-sight past the hub.
-   * Falls back to the geometrically nearer target if both are blocked.
+   * Predicts whether a pass shot will reach the intended target, and whether it
+   * is blocked by either hub or leaves the field.
    *
-   * @param robotPos current robot XY position (field frame, Blue coordinates)
-   * @param isBlue   true when on Blue alliance
-   * @return chosen 2-D pass target
+   * <p>
+   * Pass landing tolerance is much looser than a hub shot — a robot can chase a
+   * ball that lands within {@link PassConstants#kPassLandingTolerance} of the
+   * intended target. The shot is considered successful if it lands within that
+   * radius, stays in the field, and is not blocked by either hub.
+   *
+   * @param target         The intended 3-D field-frame pass target
+   * @param rpm            The flywheel speed being commanded
+   * @param desiredHeading The bot heading being commanded
+   * @return Full shot prediction including obstruction and landing analysis
    */
-  private static Translation2d selectNeutralZoneTarget(
-      Translation2d robotPos, boolean isBlue) {
+  public static ShotPrediction predictPassShot(
+      Translation3d target, AngularVelocity rpm, Rotation2d desiredHeading) {
 
-    Translation2d[] targets = allianceBumpPassTargets(isBlue);
+    Pose2d botPose = LaunchHelpers.driveSubsystem().getPose();
+    Translation3d landing = LaunchHelpers.predictPassLanding(
+        botPose, rpm, desiredHeading);
+
+    double distanceToTarget = landing.toTranslation2d()
+        .getDistance(target.toTranslation2d());
+
+    boolean outOfField = !PoseHelpers.isInField(
+        new Pose2d(landing.toTranslation2d(), new Rotation2d()));
+
+    double hubRadius = FieldConstants.kHubInsideWidth.div(2).in(Meters);
+
+    boolean blockedByOwnHub = LaunchHelpers.isTrajectoryBlockedByHub(
+        botPose.getTranslation(),
+        landing.toTranslation2d(),
+        PoseHelpers.getAllianceHubtTranslation2d(),
+        hubRadius);
+
+    boolean blockedByEnemyHub = LaunchHelpers.isTrajectoryBlockedByHub(
+        botPose.getTranslation(),
+        landing.toTranslation2d(),
+        PoseHelpers.getEnemyHubTranslation2d(),
+        hubRadius);
+
+    boolean willScore = distanceToTarget < PassConstants.kPassLandingTolerance.in(Meters)
+        && !outOfField
+        && !blockedByOwnHub
+        && !blockedByEnemyHub;
+
+    double airTimeSec = LaunchHelpers.calculateAirTime(
+        Meters.of(target.getZ()), rpm).in(Seconds);
+
+    // DEBUG
+    Logger.recordOutput("ZonePass/Prediction/Debug/LandingX", landing.getX());
+    Logger.recordOutput("ZonePass/Prediction/Debug/LandingY", landing.getY());
+    Logger.recordOutput("ZonePass/Prediction/Debug/Landing3d", landing);
+    Logger.recordOutput("ZonePass/Prediction/Debug/TargetX", target.getX());
+    Logger.recordOutput("ZonePass/Prediction/Debug/TargetY", target.getY());
+    Logger.recordOutput("ZonePass/Prediction/Debug/DistanceToTarget", distanceToTarget);
+    Logger.recordOutput("ZonePass/Prediction/Debug/OutOfField", outOfField);
+    Logger.recordOutput("ZonePass/Prediction/Debug/BlockedByOwnHub", blockedByOwnHub);
+    Logger.recordOutput("ZonePass/Prediction/Debug/BlockedByEnemyHub", blockedByEnemyHub);
+    Logger.recordOutput("ZonePass/Prediction/Debug/Tolerance",
+        PassConstants.kPassLandingTolerance.in(Meters));
+    Logger.recordOutput("ZonePass/Prediction/Debug/AirTimeSec", airTimeSec);
+    Logger.recordOutput("ZonePass/Prediction/Debug/RobotVx",
+        LaunchHelpers.driveSubsystem().getChassisSpeedsFieldRelative().vxMetersPerSecond);
+    Logger.recordOutput("ZonePass/Prediction/Debug/RobotVy",
+        LaunchHelpers.driveSubsystem().getChassisSpeedsFieldRelative().vyMetersPerSecond);
+
+    return new ShotPrediction(
+        willScore, landing, blockedByOwnHub, blockedByEnemyHub,
+        outOfField, distanceToTarget, airTimeSec);
+  }
+
+  /**
+   * Picks the nearer bump-pass pose that has a clear line of sight past our hub.
+   * Falls back to the geometrically nearer pose if both are blocked.
+   *
+   * @param robotPos Robot XY position (field frame, Blue coordinates)
+   * @param isBlue   {@code true} when on Blue alliance
+   * @return The chosen 2-D pass target
+   */
+  private static Translation2d selectNeutralTarget(Translation2d robotPos, boolean isBlue) {
+    Translation2d[] targets = bumpPassTargets(isBlue);
 
     double dist0 = robotPos.getDistance(targets[0]);
     double dist1 = robotPos.getDistance(targets[1]);
-    boolean t0Closer = dist0 <= dist1;
+    boolean target0IsNearer = dist0 <= dist1;
 
-    Translation2d nearerTarget = t0Closer ? targets[0] : targets[1];
-    Translation2d furtherTarget = t0Closer ? targets[1] : targets[0];
+    Translation2d nearer = target0IsNearer ? targets[0] : targets[1];
+    Translation2d further = target0IsNearer ? targets[1] : targets[0];
 
-    Translation2d hubCenter = PoseHelpers.getAllianceHubtTranslation2d();
+    Translation2d ownHub = PoseHelpers.getAllianceHubtTranslation2d();
     double hubRadius = PassConstants.kHubLOSRadius.in(Meters);
 
-    boolean nearerBlocked = segmentIntersectsCircle(robotPos, nearerTarget, hubCenter, hubRadius);
-    boolean furtherBlocked = segmentIntersectsCircle(robotPos, furtherTarget, hubCenter, hubRadius);
+    boolean nearerBlocked = LaunchHelpers.isTrajectoryBlockedByHub(robotPos, nearer, ownHub, hubRadius);
+    boolean furtherBlocked = LaunchHelpers.isTrajectoryBlockedByHub(robotPos, further, ownHub, hubRadius);
 
-    Logger.recordOutput("ZonePass/NeutralZone/DistToTarget0", dist0);
-    Logger.recordOutput("ZonePass/NeutralZone/DistToTarget1", dist1);
-    Logger.recordOutput("ZonePass/NeutralZone/NearerTargetIndex", t0Closer ? 0 : 1);
-    Logger.recordOutput("ZonePass/NeutralZone/NearerBlocked", nearerBlocked);
-    Logger.recordOutput("ZonePass/NeutralZone/FurtherBlocked", furtherBlocked);
-    Logger.recordOutput("ZonePass/NeutralZone/HubCenterX", hubCenter.getX());
-    Logger.recordOutput("ZonePass/NeutralZone/HubCenterY", hubCenter.getY());
-    Logger.recordOutput("ZonePass/NeutralZone/HubLOSRadius", hubRadius);
+    Logger.recordOutput("ZonePass/NeutralZone/NearerTargetBlocked", nearerBlocked);
+    Logger.recordOutput("ZonePass/NeutralZone/FurtherTargetBlocked", furtherBlocked);
 
-    // Prefer the nearer target if it has LOS; otherwise try the further one.
     if (!nearerBlocked) {
       Logger.recordOutput("ZonePass/NeutralZone/ChosenTarget", "Nearer");
-      return nearerTarget;
+      return nearer;
     }
     if (!furtherBlocked) {
       Logger.recordOutput("ZonePass/NeutralZone/ChosenTarget", "Further");
-      return furtherTarget;
+      return further;
     }
 
-    // Both blocked: Default to geometrically nearer target as best effort.
-    Logger.recordOutput("ZonePass/NeutralZone/ChosenTarget", "NearerFallback(BothBlocked)");
-    return nearerTarget;
+    // Both blocked: best-effort fallback to the geometrically closer target
+    Logger.recordOutput("ZonePass/NeutralZone/ChosenTarget", "NearerFallback (both blocked)");
+    return nearer;
   }
 
-  /**
-   * Returns the two bump-pass targets for the current alliance.
-   * Red targets are the Blue targets mirrored across the field centre.
-   */
-  private static Translation2d[] allianceBumpPassTargets(boolean isBlue) {
+  /** Returns the two bump-pass targets for the given alliance. */
+  private static Translation2d[] bumpPassTargets(boolean isBlue) {
     if (isBlue) {
       return PassConstants.kBlueBumpPassTargets;
     }
-    double fieldLength = FieldConstants.kFieldLengthX.in(Meters);
-    double fieldWidth = FieldConstants.kFieldWidthY.in(Meters);
+    double fl = FieldConstants.kFieldLengthX.in(Meters);
+    double fw = FieldConstants.kFieldWidthY.in(Meters);
     return new Translation2d[] {
-        new Translation2d(
-            fieldLength - PassConstants.kBlueBumpPassTargets[0].getX(),
-            fieldWidth - PassConstants.kBlueBumpPassTargets[0].getY()),
-        new Translation2d(
-            fieldLength - PassConstants.kBlueBumpPassTargets[1].getX(),
-            fieldWidth - PassConstants.kBlueBumpPassTargets[1].getY())
+        new Translation2d(fl - PassConstants.kBlueBumpPassTargets[0].getX(),
+            fw - PassConstants.kBlueBumpPassTargets[0].getY()),
+        new Translation2d(fl - PassConstants.kBlueBumpPassTargets[1].getX(),
+            fw - PassConstants.kBlueBumpPassTargets[1].getY())
     };
   }
 
-  /**
-   * Returns the enemy-zone dump target for the current alliance.
-   * Red is derived by mirroring the Blue constant.
-   */
-  private static Translation2d allianceDumpTarget(boolean isBlue) {
+  /** Returns the enemy-zone dump target for the given alliance. */
+  private static Translation2d dumpTarget(boolean isBlue) {
     if (isBlue) {
       return new Translation2d(
           PassConstants.kBlueDumpTargetX.in(Meters),
           PassConstants.kBlueDumpTargetY.in(Meters));
     }
-    double fieldLength = FieldConstants.kFieldLengthX.in(Meters);
-    double fieldWidth = FieldConstants.kFieldWidthY.in(Meters);
+    double fl = FieldConstants.kFieldLengthX.in(Meters);
+    double fw = FieldConstants.kFieldWidthY.in(Meters);
     return new Translation2d(
-        fieldLength - PassConstants.kBlueDumpTargetX.in(Meters),
-        fieldWidth - PassConstants.kBlueDumpTargetY.in(Meters));
-  }
-
-  /**
-   * Returns {@code true} if the line segment from {@code p1} to {@code p2}
-   * passes within {@code radius} of {@code center} (i.e. the hub blocks LOS).
-   *
-   * <p>
-   * Uses the standard parametric closest-point-on-segment formula so only
-   * the actual path of the ball (not the infinite extension of the line) is
-   * tested.
-   *
-   * @param p1     segment start (robot position)
-   * @param p2     segment end (pass target)
-   * @param center circle centre (hub XY position)
-   * @param radius effective hub LOS radius
-   * @return true if the segment is blocked by the circle
-   */
-  static boolean segmentIntersectsCircle(
-      Translation2d p1, Translation2d p2,
-      Translation2d center, double radius) {
-
-    double dx = p2.getX() - p1.getX();
-    double dy = p2.getY() - p1.getY();
-    double lenSq = dx * dx + dy * dy;
-
-    if (lenSq < 1e-12) {
-      // Degenerate zero-length segment: Check whether the point is inside.
-      double ddx = p1.getX() - center.getX();
-      double ddy = p1.getY() - center.getY();
-      return (ddx * ddx + ddy * ddy) <= (radius * radius);
-    }
-
-    // t element of [0,1] is the parameter of the closest point on the segment to
-    // center.
-    double t = ((center.getX() - p1.getX()) * dx
-        + (center.getY() - p1.getY()) * dy) / lenSq;
-    t = Math.max(0.0, Math.min(1.0, t));
-
-    double closestX = p1.getX() + t * dx;
-    double closestY = p1.getY() + t * dy;
-
-    double distX = center.getX() - closestX;
-    double distY = center.getY() - closestY;
-
-    return (distX * distX + distY * distY) <= (radius * radius);
-  }
-
-  /**
-   * Converts a field-frame 3-D target into a bot-relative 3-D vector.
-   * This is the form expected by
-   * {@link LaunchHelpers#calculateLaunchSetpoints(Translation3d, boolean)}.
-   */
-  private static Translation3d toTargetBotRelative(Translation3d fieldTarget) {
-    Translation2d botPos = LaunchHelpers.drive().getPose().getTranslation();
-    Translation2d delta = fieldTarget.toTranslation2d().minus(botPos);
-
-    Translation3d botRelative = new Translation3d(delta.getX(), delta.getY(), fieldTarget.getZ());
-
-    Logger.recordOutput("ZonePass/TargetBotRelative/X", botRelative.getX());
-    Logger.recordOutput("ZonePass/TargetBotRelative/Y", botRelative.getY());
-    Logger.recordOutput("ZonePass/TargetBotRelative/Z", botRelative.getZ());
-    Logger.recordOutput("ZonePass/TargetBotRelative/DistanceMeters",
-        botRelative.toTranslation2d().getNorm());
-
-    return botRelative;
+        fl - PassConstants.kBlueDumpTargetX.in(Meters),
+        fw - PassConstants.kBlueDumpTargetY.in(Meters));
   }
 }

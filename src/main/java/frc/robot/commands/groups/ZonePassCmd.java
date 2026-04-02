@@ -1,5 +1,7 @@
 package frc.robot.commands.groups;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -15,19 +17,20 @@ import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 import frc.robot.util.launcher.LaunchHelpers.LaunchSetpoints;
 import frc.robot.util.launcher.ZonePassHelpers;
+import frc.robot.util.swerve.SwerveConfig;
 
 /**
  * Zone-aware passing command.
  *
  * <p>
- * Behaviour:
- * <ul>
- * <li>Continuously updates the target based on the robot's current zone
- * (neutral -> nearest unobstructed bump pose, enemy -> dump shot).</li>
- * <li>Steers the drivetrain heading toward the chosen target.</li>
- * <li>Spins the flywheel to the calculated RPM for that target.</li>
- * <li>Feeds balls through the indexer when {@code feedSupplier} is true.</li>
- * </ul>
+ * Every cycle this command re-evaluates which pass target to use based on the
+ * robot's zone (neutral vs enemy), then hands the resulting setpoints to the
+ * launcher and heading controller. The driver can still translate freely while
+ * the heading is corrected automatically.
+ *
+ * <p>
+ * Balls are fed through the indexer only when {@code feedSupplier} is true, so
+ * the driver controls the moment of release.
  */
 public class ZonePassCmd extends Command {
 
@@ -79,27 +82,22 @@ public class ZonePassCmd extends Command {
 
   @Override
   public void execute() {
-    // Re-evaluate target every cycle so it updates as the robot moves.
-    LaunchSetpoints setpoints = ZonePassHelpers.calculateZonePassSetpoints(leadShots);
-    Translation3d target = ZonePassHelpers.selectPassTarget();
+    // Re-evaluate target and setpoints every cycle so they update as the bot moves.
+    LaunchSetpoints setpoints = ZonePassHelpers.calculatePassSetpoints(leadShots);
 
-    AngularVelocity flywheelSpeed = setpoints.flywheelSpeed();
-    launcherSub.setReferenceVelocity(flywheelSpeed);
+    launcherSub.setReferenceVelocity(setpoints.flywheelSpeed());
 
-    // Heading correction toward the pass target
     AngularVelocity omega = driveSub.getHeadingCorrectionOmega(setpoints.botHeading());
 
-    // Allow driver to move tangentially while the heading is corrected.
-    var speeds = new ChassisSpeeds(
-        xSupplier.get() * frc.robot.util.swerve.SwerveConfig.kMaxSpeed.in(
-            edu.wpi.first.units.Units.MetersPerSecond),
-        ySupplier.get() * frc.robot.util.swerve.SwerveConfig.kMaxSpeed.in(
-            edu.wpi.first.units.Units.MetersPerSecond),
+    ChassisSpeeds speeds = new ChassisSpeeds(
+        xSupplier.get() * SwerveConfig.kMaxSpeed.in(
+            MetersPerSecond),
+        ySupplier.get() * SwerveConfig.kMaxSpeed.in(
+            MetersPerSecond),
         omega.in(edu.wpi.first.units.Units.RadiansPerSecond));
 
     driveSub.runVelocity(speeds, true, true);
 
-    // Feed balls only when the driver requests it
     if (feedSupplier.getAsBoolean()) {
       indexerSub.setWheelPercent(-IndexerConstants.kWheelLaunchIndexPercent);
       indexerSub.setTreadmillPercent(-IndexerConstants.kTreadmillLaunchIndexPercent);
@@ -108,11 +106,7 @@ public class ZonePassCmd extends Command {
       indexerSub.setWheelPercent(0);
     }
 
-    Logger.recordOutput("Commands/ZonePassCmd/PassTarget", target);
-    Logger.recordOutput("Commands/ZonePassCmd/FlywheelRPM",
-        flywheelSpeed.in(edu.wpi.first.units.Units.RPM));
-    Logger.recordOutput("Commands/ZonePassCmd/DesiredHeadingDeg",
-        setpoints.botHeading().getDegrees());
+    Logger.recordOutput("Commands/ZonePassCmd/DesiredHeadingDeg", setpoints.botHeading().getDegrees());
     Logger.recordOutput("Commands/ZonePassCmd/Feeding", feedSupplier.getAsBoolean());
   }
 
