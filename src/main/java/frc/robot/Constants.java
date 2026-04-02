@@ -285,6 +285,9 @@ public final class Constants {
           .voltageCompensation(12.0);
       kFollowerConfig.follow(kLeaderCanSparkId, true);
     }
+
+    // Trajectory Buffer
+    public static Distance kEpsilonBuffer = Meters.of(0.03);
   }
 
   public static final class PassConstants {

@@ -525,10 +525,7 @@ public final class LaunchHelpers {
       Translation2d hubCenter,
       double hubRadius) {
 
-    // Small buffer to account for precision + real-world error
-    double epsilon = 0.03; // meters (tune between 0.02–0.05 if needed, but I think 0.03 should be fine.)
-
-    double effectiveRadius = hubRadius + epsilon;
+    double effectiveRadius = hubRadius + Constants.LauncherAndIntakeConstants.kEpsilonBuffer.in(Meters);
 
     // Vector from start to end
     Translation2d segment = end.minus(start);
