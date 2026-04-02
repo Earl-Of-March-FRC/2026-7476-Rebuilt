@@ -336,7 +336,7 @@ public class LaunchHelpers {
    * @return Ball linear velocity as a Translation3d, in mps
    */
   public static Translation3d calculateBallLaunchVelocityVector() {
-    return calculateBallLaunchVelocityVector(calculateLaunchRPM());
+    return calculateBallLaunchVelocityVector(launcher().getVelocity());
   }
 
   /**
@@ -354,7 +354,7 @@ public class LaunchHelpers {
 
     Translation3d botVelocity = new Translation3d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, 0);
 
-    return calculateBallLaunchVelocityVector().plus(botVelocity);
+    return calculateBallLaunchVelocityVector(wheelAngularVelocity).plus(botVelocity);
   }
 
   /**
