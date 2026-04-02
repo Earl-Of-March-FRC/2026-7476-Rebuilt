@@ -29,6 +29,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -59,7 +60,11 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
 
     @Override
     public AngularVelocity getVelocity() {
-      return RPM.of(leaderSparkMax.getEncoder().getVelocity());
+      if (Robot.isReal()) {
+        return RPM.of(leaderSparkMax.getEncoder().getVelocity());
+      } else {
+        return RPM.of(closedLoopController.getSetpoint());
+      }
     }
 
     @Override
