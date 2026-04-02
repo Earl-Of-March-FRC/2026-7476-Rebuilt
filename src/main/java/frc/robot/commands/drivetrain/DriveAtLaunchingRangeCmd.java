@@ -86,7 +86,8 @@ public class DriveAtLaunchingRangeCmd extends Command {
 
     Translation2d toHub = toHub3d.toTranslation2d();
 
-    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
+    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateSetpoints(PoseHelpers.getAllianceHubtTranslation3d(),
+        LaunchHelpers.calculateHubRpm(), leadShots);
 
     // Handle edge case where robot is exactly at the hub
     double toHubNorm = toHub.getNorm();

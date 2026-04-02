@@ -167,6 +167,16 @@ public class PoseHelpers {
   }
 
   /**
+   * @return The Translation2d of the <em>enemy</em> hub based on current alliance
+   */
+  public static Translation2d getEnemyHubTranslation2d() {
+    // Enemy hub is the opposite of our own hub
+    return getAlliance() == Alliance.Blue
+        ? FieldConstants.kRedHubTranslation2d
+        : FieldConstants.kBlueHubTranslation2d;
+  }
+
+  /**
    * Returns the current alliance as reported by FMS. Perfoms logging and defaults
    * to blue if no alliance is available
    * 
