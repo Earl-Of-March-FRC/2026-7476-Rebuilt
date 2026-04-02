@@ -369,7 +369,7 @@ public class LaunchHelpers {
    * This is the launcher contribution only (no drivetrain velocity).
    */
   public static Translation3d calculateBallLaunchVelocityVector() {
-    return calculateBallLaunchVelocityVector(calculateLaunchRPM());
+    return calculateBallLaunchVelocityVector(launcher().getVelocity());
   }
 
   /**
