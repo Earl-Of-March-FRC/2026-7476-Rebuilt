@@ -508,14 +508,14 @@ public class RobotContainer {
     testController.leftBumper()
         .whileTrue(new PulsingTreadmillCmd(
             indexerSub,
-            -IndexerConstants.kWheelSpeed,
-            -IndexerConstants.kTreadmillSpeed)
+            0,
+            IndexerConstants.kTreadmillSpeed)
             .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed)));
     testController.rightBumper()
         .whileTrue(new PulsingTreadmillCmd(
             indexerSub,
-            IndexerConstants.kWheelSpeed,
-            IndexerConstants.kTreadmillSpeed)
+            0,
+            -IndexerConstants.kTreadmillSpeed)
             .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed)));
   }
 
