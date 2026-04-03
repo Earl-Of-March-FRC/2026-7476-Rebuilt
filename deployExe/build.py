@@ -4,9 +4,9 @@ import os
 from PIL import Image
 
 # CONFIG
-BAT_FILE = "deploy.bat"
-IMAGE_FILE = "better_icon.jpg"
-EXE_NAME = "RobotDeploy"
+BAT_FILE = "delete_roborio_logs.bat"
+IMAGE_FILE = "exe_icon.jpg"
+EXE_NAME = "Delete_RoboRio_Logs"
 
 # Get the directory where build.py lives
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
