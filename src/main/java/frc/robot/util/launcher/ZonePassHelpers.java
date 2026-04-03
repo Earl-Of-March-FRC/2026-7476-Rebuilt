@@ -82,7 +82,7 @@ public final class ZonePassHelpers {
         fieldSpeeds.vyMetersPerSecond);
 
     double releaseHeight = LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters);
-    double angle = LauncherAndIntakeConstants.kPassReleaseAngle.in(Radians);
+    double angle = LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians);
     double cosA = Math.cos(angle);
     double sinA = Math.sin(angle);
     double g = PhysicsConstants.kGravityMps2;
