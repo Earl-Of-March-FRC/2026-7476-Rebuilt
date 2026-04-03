@@ -170,6 +170,8 @@ public final class Constants {
 
     public static final Distance kMinLaunchDistance;
 
+    public static final double timeTillTheLauncherReachesItsTargetVelocity = 1.5;
+
     static {
       // Minimum vertical velocity needed to reach hub height (from energy
       // conservation,

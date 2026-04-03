@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.ser.std.MapProperty;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
+import edu.wpi.first.wpilibj.Timer;
+
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.net.PortForwarder;
@@ -43,6 +45,7 @@ import frc.robot.util.swerve.ProfileSelector;
  * package after creating
  * this project, you must also update the Main.java file in the project.
  */
+
 public class Robot extends LoggedRobot {
   private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
@@ -66,6 +69,8 @@ public class Robot extends LoggedRobot {
   private boolean isBrownOut = false;
   private boolean brownOutHappened = false;
   private int brownOutInstances = 0;
+
+  private double lastLaunchSeconds = 0;
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -111,14 +116,25 @@ public class Robot extends LoggedRobot {
     double voltage = RobotController.getInputVoltage();
     double current = RobotController.getInputCurrent();
 
+    if (m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM) == 0) {
+      lastLaunchSeconds = Timer.getFPGATimestamp();
+    }
     if (m_robotContainer.launcherAndIntakeSub.getVelocity() // If the current launcher is under the setpoint
         .in(RPM) < m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM)
             * LauncherAndIntakeConstants.kVelocityTolerancePercent) {
-      if (!launcherUnderspeed) { // If it wasn't previously low voltage, count this as the start of an instance.
-        launcherUnderspeedInstances++;
-      }
-      launcherUnderspeed = true;
+
       launcherUnderspeedHappened = true;
+
+      // Say that
+      if (!launcherUnderspeed) { // If it wasn't previously low voltage, count this as the start of an instance.
+
+        if (lastLaunchSeconds
+            - Timer.getFPGATimestamp() > LauncherAndIntakeConstants.timeTillTheLauncherReachesItsTargetVelocity) {
+          launcherUnderspeed = true;
+          launcherUnderspeedInstances++;
+        }
+
+      }
 
     } else {
       launcherUnderspeed = false;
@@ -166,7 +182,11 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putNumber("Launcher Underspeed instances", launcherUnderspeedInstances);
     SmartDashboard.putNumber("Low Voltage instances", lowVoltageInstances);
     SmartDashboard.putNumber("Low Current instances", lowCurrentInstances);
-    SmartDashboard.putNumber("Brown Out instances", brownOutInstances);
+    SmartDashboard.putNumber("Brownout instances", brownOutInstances);
+
+    SmartDashboard.putNumber("Voltage", voltage);
+    SmartDashboard.putNumber("Current", current);
+    SmartDashboard.putNumber("RPM", m_robotContainer.launcherAndIntakeSub.getVelocity().in(RPM));
 
   }
 
