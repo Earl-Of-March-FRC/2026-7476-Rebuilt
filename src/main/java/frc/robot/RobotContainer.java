@@ -73,6 +73,7 @@ import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
+import frc.robot.commands.groups.ZonePassCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -284,8 +285,8 @@ public class RobotContainer {
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
-        this::getDriverVx,
-        this::getDriverVy,
+        this::getLaunchVx,
+        this::getLaunchVy,
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
 
@@ -295,8 +296,8 @@ public class RobotContainer {
         driveSub,
         indexerSub,
         launcherAndIntakeSub,
-        this::getDriverVx,
-        this::getDriverVy,
+        this::getLaunchVx,
+        this::getLaunchVy,
         launchSupplier,
         distanceLockSupplier,
         Constants.LauncherAndIntakeConstants.kLeadShots);
@@ -326,6 +327,13 @@ public class RobotContainer {
         -IndexerConstants.kWheelSpeed,
         -IndexerConstants.kTreadmillSpeed)
         .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1)));
+    Command zonePassCmd = new ZonePassCmd(
+        driveSub,
+        indexerSub,
+        launcherAndIntakeSub,
+        this::getLaunchVx,
+        this::getLaunchVy, launchSupplier,
+        Constants.LauncherAndIntakeConstants.kLeadShots);
 
     driveSub.setDefaultCommand(driveCmd);
 
@@ -441,9 +449,11 @@ public class RobotContainer {
         new ClimbToHeightCmd(climberSub, ClimberConstants.kRaisePosition));
     operatorController.y().whileTrue(
         new ClimbToHeightCmd(climberSub, ClimberConstants.kLatchPosition));
-    // Pass setpoint
-    operatorController.x().whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
-        () -> LauncherAndIntakeConstants.kPassRPMSetpoint));
+    // Pass
+    operatorController.x().toggleOnTrue(
+        Commands.either(zonePassCmd, Commands.none(),
+            () -> driveSub.getCurrentBotZone() != FieldZones.Launch
+                && driveSub.getCurrentBotZone() != FieldZones.Alliance));
 
     driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
         .toggleOnTrue(driveAndManualShootCmd);
@@ -531,6 +541,23 @@ public class RobotContainer {
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis)
             * (driverController.rightStick().getAsBoolean() ? OIConstants.kTurnSlowModeMultiplier : 1),
+        OIConstants.kDeadband);
+  }
+
+  // Use "super slow mode" when launching or passing
+  private double getLaunchVx() {
+    // Apply slow-mode when left stick is pushed down
+    return MathUtil.applyDeadband(
+        -driverController.getRawAxis(OIConstants.kDriverControllerYAxis)
+            * OIConstants.kTranslationSuperSlowModeMultiplier,
+        OIConstants.kDeadband);
+  }
+
+  private double getLaunchVy() {
+    // Apply slow-mode when left stick is pushed down
+    return MathUtil.applyDeadband(
+        -driverController.getRawAxis(OIConstants.kDriverControllerXAxis)
+            * OIConstants.kTranslationSuperSlowModeMultiplier,
         OIConstants.kDeadband);
   }
 

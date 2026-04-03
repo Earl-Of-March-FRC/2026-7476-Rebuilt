@@ -48,6 +48,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
@@ -65,6 +66,26 @@ import frc.robot.util.vision.CameraProfile;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+
+  public static final class PhysicsConstants {
+    /** Standard gravitational acceleration at Earth's surface (m/s^2). */
+    public static final LinearAcceleration kGravity = MetersPerSecondPerSecond.of(9.80665);
+    /**
+     * Raw gravitational acceleration as a plain double (m/s^2).
+     * Use this in kinematic equations where units would be cumbersome.
+     */
+    public static final double kGravityMps2 = kGravity.magnitude();
+
+    /** Nominal FRC robot battery voltage (V). */
+    public static final Voltage kNominalBatteryVoltage = Volts.of(12.0);
+
+    /**
+     * Minimum acceptable battery voltage under load before brownout concern (V).
+     */
+    public static final Voltage kBrownoutVoltage = Volts.of(6.8);
+
+  }
+
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
     public static final int kOperatorControllerPort = 1;
@@ -79,6 +100,7 @@ public final class Constants {
     public static final File kDeployDirectory = Filesystem.getDeployDirectory();
 
     public static final double kTranslationSlowModeMultiplier = 0.45;
+    public static final double kTranslationSuperSlowModeMultiplier = 0.2;
     public static final double kTurnSlowModeMultiplier = 0.4;
 
     public static final double kButtonPressDebounceSeconds = 0.1;
@@ -123,6 +145,8 @@ public final class Constants {
     public static final Distance kBallReleaseHeight = Inches.of(20);
     public static final Angle kBallReleaseAngle = Degree.of(58.016961);
 
+    public static final Angle kPassReleaseAngle = Degree.of(25.0); // TODO: tune this
+
     // Launch heading relative to bot heading (0 means launching straight forward,
     // positive is counterclockwise)
     public static final Rotation2d kLauncherBotHeading = Rotation2d.fromDegrees(180);
@@ -147,7 +171,6 @@ public final class Constants {
     // any lookup entry, use interpolation
     public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
 
-    // Found using polynomial regression (degree 2)
     private static final double kRPMCurveA = 69.9;
     private static final double kRPMCurveB = -143;
     private static final double kRPMCurveC = 2640;
@@ -159,6 +182,20 @@ public final class Constants {
       double d = distance.in(Meters);
       double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
+    };
+
+    // Found using polynomial regression (degree 2)
+    private static final double kTOFCurveA = -0.0481;
+    private static final double kTOFCurveB = 0.401;
+    private static final double kTOFCurveC = 0.425;
+    // For fine tuning due to small changes
+    // TODO replace with final value after testing
+    private static final LoggedNetworkNumber kTOFCurveMultiplier = new LoggedNetworkNumber("/Tuning/TOFCurveMultiplier",
+        1.0);
+    public static final Function<Distance, AngularVelocity> kDistanceToTOFCurve = (Distance distance) -> {
+      double d = distance.in(Meters);
+      double rpm = kTOFCurveA * d * d + kTOFCurveB * d + kTOFCurveC;
+      return RPM.of(rpm * kTOFCurveMultiplier.getAsDouble());
     };
 
     public static final Distance kMinLaunchDistance = Meters.of(1.8);
@@ -197,6 +234,13 @@ public final class Constants {
       // constant
       // kMinLaunchDistance = Meters.of(Math.max(0, minDist));
       Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
+    }
+
+    public static AngularVelocity linearVelocityToAngularVelocity(LinearVelocity ballSpeed) {
+      double wheelLinearMps = ballSpeed.in(MetersPerSecond)
+          / kWheelSlipCoefficient
+          / kWheelRadius.in(Meters);
+      return RadiansPerSecond.of(wheelLinearMps);
     }
 
     public static final Distance kTestLaunchRadius = Meters.of(2.0);
@@ -255,6 +299,54 @@ public final class Constants {
           .voltageCompensation(12.0);
       kFollowerConfig.follow(kLeaderCanSparkId, true);
     }
+
+    // Trajectory Buffer
+    public static Distance kEpsilonBuffer = Meters.of(0.03);
+  }
+
+  public static final class PassConstants {
+
+    /** Depot-side bump pass target (closer to bottom of field). */
+    public static final Translation2d kBlueBumpPassPose1 = new Translation2d(3.6, 2.6);
+
+    /** Outpost-side bump pass target (closer to top of field). */
+    public static final Translation2d kBlueBumpPassPose2 = new Translation2d(3.6, 5.5);
+
+    /**
+     * Both neutral-zone pass targets as an array for convenience.
+     * Index 0 = depot side, index 1 = outpost side.
+     */
+    public static final Translation2d[] kBlueBumpPassTargets = { kBlueBumpPassPose1, kBlueBumpPassPose2 };
+
+    public static final Distance kPassTargetHeight = Meters.of(0.0);
+
+    // Enemy-zone dump target.
+    // When in the enemy zone we just blast the ball to the back of our
+    // alliance zone so a robot can collect it.
+
+    /**
+     * x coord of the landing zone; well inside the alliance
+     * zone, away from the hub.
+     */
+    public static final Distance kBlueDumpTargetX = Meters.of(2.0);
+
+    /**
+     * Y coordinate of the dump target; field centre line so either alliance
+     * robot can reach it.
+     */
+    public static final Distance kBlueDumpTargetY = Meters.of(4.0); // approx field centre
+
+    /** Height to target for the enemy-zone dump shot (ground). */
+    public static final Distance kDumpTargetHeight = Meters.of(0.0);
+
+    /**
+     * Effective radius of the hub structure used when checking whether a pass
+     * trajectory's ground-plane path intersects the hub.
+     * Add a small safety margin on top of the physical half-width.
+     */
+    public static final Distance kHubLOSRadius = FieldConstants.kHubInsideWidth.div(2.0).plus(Meters.of(0.15));
+
+    public static final Distance kPassLandingTolerance = Meters.of(0.5);
   }
 
   public static final class ClimbAlignConstants {
