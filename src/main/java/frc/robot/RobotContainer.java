@@ -321,12 +321,23 @@ public class RobotContainer {
         IndexerConstants.kWheelSpeed,
         IndexerConstants.kTreadmillSpeed)
         .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
-
     Command outakeFrontCmd = new PulsingTreadmillCmd(
         indexerSub,
         -IndexerConstants.kWheelSpeed,
         -IndexerConstants.kTreadmillSpeed)
         .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1)));
+
+    Command intakeBackCmd = new PulsingTreadmillCmd(
+        indexerSub,
+        0,
+        IndexerConstants.kTreadmillSpeed)
+        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
+    Command outakeBackCmd = new PulsingTreadmillCmd(
+        indexerSub,
+        0,
+        -IndexerConstants.kTreadmillSpeed)
+        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed));
+
     Command zonePassCmd = new ZonePassCmd(
         driveSub,
         indexerSub,
@@ -397,8 +408,13 @@ public class RobotContainer {
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
     operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.leftBumper().toggleOnTrue(intakeFrontCmd);
-    driverController.rightBumper().toggleOnTrue(outakeFrontCmd);
+    driverController.leftBumper().toggleOnTrue(intakeBackCmd);
+    driverController.rightBumper().toggleOnTrue(outakeBackCmd);
+
+    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(driveAndManualShootCmd);
+    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(driveAndAutoShootCmd);
 
     driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
@@ -455,14 +471,14 @@ public class RobotContainer {
             () -> driveSub.getCurrentBotZone() != FieldZones.Launch
                 && driveSub.getCurrentBotZone() != FieldZones.Alliance));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
-        .toggleOnTrue(driveAndManualShootCmd);
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
-        .toggleOnTrue(driveAndAutoShootCmd);
+    // operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
+    // .and(operatorController.rightBumper()).and(() -> driveSub.getCurrentBotZone()
+    // == FieldZones.Launch)
+    // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
+    // launcherAndIntakeSub));
 
-    operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
-        .and(operatorController.rightBumper()).and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
-        .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub, launcherAndIntakeSub));
+    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd);
+    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd);
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
@@ -504,19 +520,6 @@ public class RobotContainer {
 
     testController.a()
         .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
-
-    testController.leftBumper()
-        .whileTrue(new PulsingTreadmillCmd(
-            indexerSub,
-            0,
-            IndexerConstants.kTreadmillSpeed)
-            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed)));
-    testController.rightBumper()
-        .whileTrue(new PulsingTreadmillCmd(
-            indexerSub,
-            0,
-            -IndexerConstants.kTreadmillSpeed)
-            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed)));
   }
 
   // Helper methods to reduce repetition
