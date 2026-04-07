@@ -114,7 +114,7 @@ public record SwerveDriveProfile(
               Degrees.of(-20), // pitch
               Degrees.of(0), // yaw
               Meters.of(0.3003719164), // x // 0.3056178546
-              Meters.of(0.2467180994), // y // -0.2415122424
+              Meters.of(-0.2467180994), // y // -0.2415122424
               Meters.of(0.4994001188), // z // 0.5052718622
               VecBuilder.fill(0.9, 0.9, 0.9)),
           new CameraProfile(
@@ -123,8 +123,8 @@ public record SwerveDriveProfile(
               Degrees.of(-12), // pitch
               Degrees.of(90), // yaw
               Meters.of(0.300912657), // x // 0.3107901836
-              Meters.of(-0.2467181248), // y // 0.1993096344
-              Meters.of(0.4994001188), // 0.413481266
+              Meters.of(0.2467181248), // y // 0.1993096344
+              Meters.of(0.405), // z // 0.413481266
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
       true,
