@@ -102,14 +102,14 @@ public record SwerveDriveProfile(
           new CameraProfile(
               "Launcher",
               Degrees.of(0.0), // roll
-              Degrees.of(0), // pitchs
+              Degrees.of(-15), // pitchs
               Degrees.of(180.0), // yaw
-              Meters.of(-0.2712041566), // x
-              Meters.of(0.254), // y
-              Meters.of(0.4480096958), // z
+              Meters.of(0.0187481718), // x
+              Meters.of(0.0781538188), // y
+              Meters.of(0.5350118586), // z
               VecBuilder.fill(0.3, 0.3, 0.3)),
           new CameraProfile(
-              "Intake_Trench",
+              "Climber",
               Degrees.of(0.0), // roll
               Degrees.of(-20), // pitch
               Degrees.of(0), // yaw
@@ -118,10 +118,10 @@ public record SwerveDriveProfile(
               Meters.of(0.4994001188), // z
               VecBuilder.fill(0.9, 0.9, 0.9)),
           new CameraProfile(
-              "Intake_Ground",
+              "Side",
               Degrees.of(0.0), // roll
-              Degrees.of(2), // pitch
-              Degrees.of(0), // yaw
+              Degrees.of(-12), // pitch
+              Degrees.of(90), // yaw
               Meters.of(0.300912657), // x
               Meters.of(-0.2467181248), // y
               Meters.of(0.4994001188), // z
