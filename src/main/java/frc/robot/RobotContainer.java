@@ -42,6 +42,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -316,27 +317,30 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
-    Command intakeFrontCmd = new PulsingTreadmillCmd(
+    // Do not use parallel compostion so that each subsystem can be cancelled
+    // independantly for launching while intaking
+    Command intakeFrontTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         IndexerConstants.kWheelSpeed,
-        IndexerConstants.kTreadmillSpeed)
-        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
-    Command outakeFrontCmd = new PulsingTreadmillCmd(
+        IndexerConstants.kTreadmillSpeed);
+    Command intakeFrontCmd = new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint);
+    Command outakeFrontTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         -IndexerConstants.kWheelSpeed,
-        -IndexerConstants.kTreadmillSpeed)
-        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1)));
+        -IndexerConstants.kTreadmillSpeed);
+    Command outakeFrontCmd = new LauncherCmd(launcherAndIntakeSub,
+        LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1));
 
-    Command intakeBackCmd = new PulsingTreadmillCmd(
+    Command intakeBackTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         0,
-        IndexerConstants.kTreadmillSpeed)
-        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
-    Command outakeBackCmd = new PulsingTreadmillCmd(
+        IndexerConstants.kTreadmillSpeed);
+    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed);
+    Command outakeBackTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         0,
-        -IndexerConstants.kTreadmillSpeed)
-        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed));
+        -IndexerConstants.kTreadmillSpeed);
+    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed);
 
     Command zonePassCmd = new ZonePassCmd(
         driveSub,
@@ -409,7 +413,50 @@ public class RobotContainer {
     operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
     driverController.leftBumper().toggleOnTrue(intakeBackCmd);
+    driverController.leftBumper().onTrue(Commands.runOnce(() -> {
+      CommandScheduler commandScheduler = CommandScheduler.getInstance();
+      Command currentIndexCmd = indexerSub.getCurrentCommand();
+
+      // Toggle the back treadmill only if the indexer subsystem is available
+      // Do not schedule the treadmill if this command has "desynced" with the intake
+      if ((currentIndexCmd == null || !currentIndexCmd.getName().equals("DriveAndLaunchCmd"))
+          && commandScheduler.isScheduled(intakeBackCmd)) {
+        commandScheduler.schedule(intakeBackTreadmillCmd);
+      }
+      if (currentIndexCmd == intakeBackTreadmillCmd) {
+        commandScheduler.cancel(intakeBackTreadmillCmd);
+      }
+    }));
+
     driverController.rightBumper().toggleOnTrue(outakeBackCmd);
+    driverController.rightBumper().onTrue(Commands.runOnce(() -> {
+      CommandScheduler commandScheduler = CommandScheduler.getInstance();
+      Command currentIndexCmd = indexerSub.getCurrentCommand();
+
+      // Toggle the back treadmill only if the indexer subsystem is available
+      // Do not schedule the treadmill if this command has "desynced" with the intake
+      if ((currentIndexCmd == null || !currentIndexCmd.getName().equals("DriveAndLaunchCmd"))
+          && commandScheduler.isScheduled(outakeBackCmd)) {
+        commandScheduler.schedule(outakeBackTreadmillCmd);
+      }
+      if (currentIndexCmd == outakeBackTreadmillCmd) {
+        commandScheduler.cancel(outakeBackTreadmillCmd);
+      }
+    }));
+
+    // Whenever we exit launching mode, resync the intake with the treadmill
+    new Trigger(() -> driveAndManualShootCmd.isScheduled() || driveAndAutoShootCmd.isScheduled())
+        .onFalse(Commands.runOnce(
+            () -> {
+              CommandScheduler commandScheduler = CommandScheduler.getInstance();
+              Command currentIntakeCmd = otbIntakeSub.getCurrentCommand();
+              if (currentIntakeCmd == null)
+                return;
+              if (currentIntakeCmd == intakeBackCmd)
+                commandScheduler.schedule(intakeBackTreadmillCmd);
+              else if (currentIntakeCmd == outakeBackCmd)
+                commandScheduler.schedule(outakeBackTreadmillCmd);
+            }));
 
     driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
         .toggleOnTrue(driveAndManualShootCmd);
@@ -477,8 +524,8 @@ public class RobotContainer {
     // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
     // launcherAndIntakeSub));
 
-    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd);
-    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd);
+    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
