@@ -50,12 +50,12 @@ public class LaunchAndOutpostCmd extends SequentialCommandGroup {
     final Command driveAndClimb = new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right);
 
     addCommands(
-        new XLockAndLaunchCmd(
-            driveSub,
-            indexerSub,
-            launcherAndIntakeSub).withDeadline(
-                Commands.waitUntil(LaunchHelpers::willHitHub)
-                    .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+        // new XLockAndLaunchCmd(
+        // driveSub,
+        // indexerSub,
+        // launcherAndIntakeSub).withDeadline(
+        // Commands.waitUntil(LaunchHelpers::willHitHub)
+        // .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
         moveToOutpost,
         Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
         new ParallelCommandGroup(

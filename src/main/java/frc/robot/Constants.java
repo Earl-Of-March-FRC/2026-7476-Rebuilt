@@ -48,6 +48,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
@@ -65,6 +66,26 @@ import frc.robot.util.vision.CameraProfile;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+
+  public static final class PhysicsConstants {
+    /** Standard gravitational acceleration at Earth's surface (m/s^2). */
+    public static final LinearAcceleration kGravity = MetersPerSecondPerSecond.of(9.80665);
+    /**
+     * Raw gravitational acceleration as a plain double (m/s^2).
+     * Use this in kinematic equations where units would be cumbersome.
+     */
+    public static final double kGravityMps2 = kGravity.magnitude();
+
+    /** Nominal FRC robot battery voltage (V). */
+    public static final Voltage kNominalBatteryVoltage = Volts.of(12.0);
+
+    /**
+     * Minimum acceptable battery voltage under load before brownout concern (V).
+     */
+    public static final Voltage kBrownoutVoltage = Volts.of(6.8);
+
+  }
+
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
     public static final int kOperatorControllerPort = 1;
@@ -79,6 +100,7 @@ public final class Constants {
     public static final File kDeployDirectory = Filesystem.getDeployDirectory();
 
     public static final double kTranslationSlowModeMultiplier = 0.45;
+    public static final double kTranslationSuperSlowModeMultiplier = 0.2;
     public static final double kTurnSlowModeMultiplier = 0.4;
 
     public static final double kButtonPressDebounceSeconds = 0.1;
@@ -123,6 +145,8 @@ public final class Constants {
     public static final Distance kBallReleaseHeight = Inches.of(20);
     public static final Angle kBallReleaseAngle = Degree.of(58.016961);
 
+    public static final Angle kPassReleaseAngle = Degree.of(25.0); // TODO: tune this
+
     // Launch heading relative to bot heading (0 means launching straight forward,
     // positive is counterclockwise)
     public static final Rotation2d kLauncherBotHeading = Rotation2d.fromDegrees(180);
@@ -130,8 +154,7 @@ public final class Constants {
     public static final Distance kWheelRadius = Inches.of(2);
     // Empirical constant describing the ratio between wheel linear velocity and
     // ball launch velocity
-    // TODO determine from video data
-    public static final double kWheelSlipCoefficient = 0.4;
+    public static final double kWheelSlipCoefficient = 0.436;
 
     public static final int kLeaderCanSparkId = 9;
     public static final int kFollowerCanSparkId = 10;
@@ -148,21 +171,34 @@ public final class Constants {
     // any lookup entry, use interpolation
     public static final Distance kLaunchLookupTolerance = Meters.of(0.1);
 
-    // Found using polynomial regression (degree 2)
-    private static final double kRPMCurveA = 43.5;
-    private static final double kRPMCurveB = 119;
-    private static final double kRPMCurveC = 2372;
+    private static final double kRPMCurveA = 69.9;
+    private static final double kRPMCurveB = -143;
+    private static final double kRPMCurveC = 2640;
     // For fine tuning due to small changes
     // TODO replace with final value after testing
     private static final LoggedNetworkNumber kRPMCurveMultiplier = new LoggedNetworkNumber("/Tuning/RPMCurveMultiplier",
-        0.963);
+        1.0);
     public static final Function<Distance, AngularVelocity> kDistanceToRPMCurve = (Distance distance) -> {
       double d = distance.in(Meters);
       double rpm = kRPMCurveA * d * d + kRPMCurveB * d + kRPMCurveC;
       return RPM.of(rpm * kRPMCurveMultiplier.getAsDouble());
     };
 
-    public static final Distance kMinLaunchDistance;
+    // Found using polynomial regression (degree 2)
+    private static final double kTOFCurveA = -0.0481;
+    private static final double kTOFCurveB = 0.401;
+    private static final double kTOFCurveC = 0.425;
+    // For fine tuning due to small changes
+    // TODO replace with final value after testing
+    private static final LoggedNetworkNumber kTOFCurveMultiplier = new LoggedNetworkNumber("/Tuning/TOFCurveMultiplier",
+        1.0);
+    public static final Function<Distance, AngularVelocity> kDistanceToTOFCurve = (Distance distance) -> {
+      double d = distance.in(Meters);
+      double rpm = kTOFCurveA * d * d + kTOFCurveB * d + kTOFCurveC;
+      return RPM.of(rpm * kTOFCurveMultiplier.getAsDouble());
+    };
+
+    public static final Distance kMinLaunchDistance = Meters.of(1.8);
 
     static {
       // Minimum vertical velocity needed to reach hub height (from energy
@@ -194,8 +230,17 @@ public final class Constants {
           ? (-b + Math.sqrt(discriminant)) / (2 * a)
           : 1.5; // fallback if curve never reaches minOmegaRPM
 
-      kMinLaunchDistance = Meters.of(Math.max(0, minDist));
+      // These calculations are not accurate enough, stick with a predetermined
+      // constant
+      // kMinLaunchDistance = Meters.of(Math.max(0, minDist));
       Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
+    }
+
+    public static AngularVelocity linearVelocityToAngularVelocity(LinearVelocity ballSpeed) {
+      double wheelLinearMps = ballSpeed.in(MetersPerSecond)
+          / kWheelSlipCoefficient
+          / kWheelRadius.in(Meters);
+      return RadiansPerSecond.of(wheelLinearMps);
     }
 
     public static final Distance kTestLaunchRadius = Meters.of(2.0);
@@ -218,9 +263,9 @@ public final class Constants {
     public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
     public static final AngularVelocity kPassRPMSetpoint = RPM.of(4500);
     // Visionless backup setpoints
-    public static final AngularVelocity kBumpRPMSetpoint = RPM.of(2750);
-    public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3390);
-    public static final AngularVelocity kTowerRPMSetpoint = RPM.of(3190);
+    public static final AngularVelocity kBumpRPMSetpoint = RPM.of(2500);
+    public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3020);
+    public static final AngularVelocity kTowerRPMSetpoint = RPM.of(2910);
     public static final AngularVelocity kCornerRPMSetpoint = kDistanceToRPMCurve.apply(Meters.of(5.4539));
     // RPM increment per second when doing manual offset
     public static final AngularVelocity kManualRPMOffsetPerSecond = RPM.of(50);
@@ -254,6 +299,54 @@ public final class Constants {
           .voltageCompensation(12.0);
       kFollowerConfig.follow(kLeaderCanSparkId, true);
     }
+
+    // Trajectory Buffer
+    public static Distance kEpsilonBuffer = Meters.of(0.03);
+  }
+
+  public static final class PassConstants {
+
+    /** Depot-side bump pass target (closer to bottom of field). */
+    public static final Translation2d kBlueBumpPassPose1 = new Translation2d(3.6, 2.6);
+
+    /** Outpost-side bump pass target (closer to top of field). */
+    public static final Translation2d kBlueBumpPassPose2 = new Translation2d(3.6, 5.5);
+
+    /**
+     * Both neutral-zone pass targets as an array for convenience.
+     * Index 0 = depot side, index 1 = outpost side.
+     */
+    public static final Translation2d[] kBlueBumpPassTargets = { kBlueBumpPassPose1, kBlueBumpPassPose2 };
+
+    public static final Distance kPassTargetHeight = Meters.of(0.0);
+
+    // Enemy-zone dump target.
+    // When in the enemy zone we just blast the ball to the back of our
+    // alliance zone so a robot can collect it.
+
+    /**
+     * x coord of the landing zone; well inside the alliance
+     * zone, away from the hub.
+     */
+    public static final Distance kBlueDumpTargetX = Meters.of(2.0);
+
+    /**
+     * Y coordinate of the dump target; field centre line so either alliance
+     * robot can reach it.
+     */
+    public static final Distance kBlueDumpTargetY = Meters.of(4.0); // approx field centre
+
+    /** Height to target for the enemy-zone dump shot (ground). */
+    public static final Distance kDumpTargetHeight = Meters.of(0.0);
+
+    /**
+     * Effective radius of the hub structure used when checking whether a pass
+     * trajectory's ground-plane path intersects the hub.
+     * Add a small safety margin on top of the physical half-width.
+     */
+    public static final Distance kHubLOSRadius = FieldConstants.kHubInsideWidth.div(2.0).plus(Meters.of(0.15));
+
+    public static final Distance kPassLandingTolerance = Meters.of(0.5);
   }
 
   public static final class ClimbAlignConstants {
@@ -485,59 +578,24 @@ public final class Constants {
 
   public static final class OTBIntakeConstants {
     public static final int kRollerCanId = 15;
-    public static final int kShoulderCanId = 16;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     // TODO: Verify values for these reductions
     public static final double kRollerReduction = 1.0 / 10.0;
-    public static final double kShoulderReduction = 1.0 / 10.0;
 
-    // // Conversion factors (RPM → rad/s)
-    // public static final double kPositionConversionFactor = 2 * Math.PI;
-    // public static final double kVelocityConversionFactor = 2 * Math.PI / 60.0;
-
-    // Motor Rotations -> Shoulder degrees
-    public static final double kShoulderPositionConversionFactor = 360;
-    // Motor RPM -> Shoulder degrees/Second
-    public static final double kShoulderVelocityConversionFactor = 360 / 60.0;
-
-    public static final AngularVelocity kMaxVelocity = RPM.of(60);
-
-    public static final double kIntakeSpeed = 0.5;
-    public static final double kPlowSpeed = 0.7;
-
-    public static final double kPIDShoulderControllerP = 0;
-    public static final double kPIDShoulderControllerI = 0;
-    public static final double kPIDShoulderControllerD = 0;
-    public static final double kPIDShoulderControllerFF = 0;
-
-    // TODO: Mesure this value
-    public static final Angle kStowPosition = Degrees.of(0);
+    public static final double kIntakeSpeed = 1;
+    public static final double kOutakeSpeed = -1;
 
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
-    public static final SparkMaxConfig kShoulderConfig = new SparkMaxConfig();
 
     static {
       kRollerConfig
           .idleMode(IdleMode.kCoast)
-          .smartCurrentLimit(20);
-      // kRollerConfig.encoder
-      // .positionConversionFactor(kPositionConversionFactor * kRollerReduction)
-      // .velocityConversionFactor(kVelocityConversionFactor * kRollerReduction);
-
-      kShoulderConfig
-          .idleMode(IdleMode.kBrake)
-          .smartCurrentLimit(40);
-      kShoulderConfig.encoder
-          .positionConversionFactor(kShoulderPositionConversionFactor * kShoulderReduction)
-          .velocityConversionFactor(kShoulderVelocityConversionFactor * kShoulderReduction);
-      kShoulderConfig.closedLoop
-          .pid(kPIDShoulderControllerP, kPIDShoulderControllerI, kPIDShoulderControllerD)
-          .outputRange(-1, 1).feedForward
-          .kCos(kPIDShoulderControllerFF)
-          // Feedforward requires the absolute postition of the shoulder in rotations
-          // (horizontal = 0)
-          .kCosRatio(1.0 / kShoulderPositionConversionFactor);
+          // TODO: set this value depending on motor type, 20 is good for a 550, too low
+          // for a neo
+          .smartCurrentLimit(20)
+          // TODO: invert so + is intaking, - is outaking
+          .inverted(false);
     }
   }
 
@@ -664,10 +722,10 @@ public final class Constants {
 
     static {
       kConfigLeft.smartCurrentLimit((int) kSmartCurrentLimit.in(Amps));
-      kConfigLeft.inverted(false); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
-                                   // positive value like 0.1. Watch which direction the arm moves: If it goes up,
-                                   // that motor needs inverted(false) If it goes down, that motor needs
-                                   // inverted(true)
+      kConfigLeft.inverted(true); // TODO: Plug in one motor at a time and run ClimbPercentCmd with a small
+                                  // positive value like 0.1. Watch which direction the arm moves: If it goes up,
+                                  // that motor needs inverted(false) If it goes down, that motor needs
+                                  // inverted(true)
       kConfigLeft.encoder.positionConversionFactor(kRotationsToInchesConversion);
       kConfigLeft.voltageCompensation(12.0);
       kConfigLeft.closedLoop

@@ -56,7 +56,7 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
       BooleanSupplier launchSupplier,
       boolean leadShots) {
     this(indexerSub, launcherAndIntakeSub, launchSupplier,
-        () -> LaunchHelpers.calculateHubLaunchSetpoints(leadShots).flywheelSpeed());
+        (Supplier<AngularVelocity>) () -> LaunchHelpers.calculateHubSetpoints(leadShots).flywheelSpeed());
   }
 
   /**

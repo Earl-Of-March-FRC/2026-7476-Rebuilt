@@ -36,6 +36,7 @@ public class TreadmillOnCmd extends Command {
   @Override
   public void end(boolean interrupted) {
     Logger.recordOutput("Commands/IndexerCmd/TreadmillPulse", false);
+    indexer.stop();
   }
 
   @Override

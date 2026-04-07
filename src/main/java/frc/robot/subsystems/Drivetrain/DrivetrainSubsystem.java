@@ -1052,6 +1052,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     Logger.recordOutput("Drivetrain/Swerve/Module/State", states);
     Logger.recordOutput("Drivetrain/Swerve/Module/Position", positions);
     Logger.recordOutput("Drivetrain/HubBotReative", getHubTranslation3dBotRelative());
+    Logger.recordOutput("Drivetrain/HubDistance2d", getHubTranslation3dBotRelative().toTranslation2d().getNorm());
 
     // Retrieve SmartDashboard settings
     if (simulatedSwerveDrive != null) {
