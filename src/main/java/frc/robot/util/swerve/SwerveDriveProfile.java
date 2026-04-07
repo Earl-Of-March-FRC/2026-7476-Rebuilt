@@ -104,27 +104,27 @@ public record SwerveDriveProfile(
               Degrees.of(0.0), // roll
               Degrees.of(-15), // pitchs
               Degrees.of(180.0), // yaw
-              Meters.of(0.0187481718), // x
-              Meters.of(0.0781538188), // y
-              Meters.of(0.5350118586), // z
+              Meters.of(0.0187481718), // x // 0.0204789786
+              Meters.of(0.0781538188), // y // -0.0190500254
+              Meters.of(0.5350118586), // z // 0.4919337634
               VecBuilder.fill(0.3, 0.3, 0.3)),
           new CameraProfile(
               "Climber",
               Degrees.of(0.0), // roll
               Degrees.of(-20), // pitch
               Degrees.of(0), // yaw
-              Meters.of(0.3003719164), // x
-              Meters.of(0.2467180994), // y
-              Meters.of(0.4994001188), // z
+              Meters.of(0.3003719164), // x // 0.3056178546
+              Meters.of(0.2467180994), // y // -0.2415122424
+              Meters.of(0.4994001188), // z // 0.5052718622
               VecBuilder.fill(0.9, 0.9, 0.9)),
           new CameraProfile(
               "Side",
               Degrees.of(0.0), // roll
               Degrees.of(-12), // pitch
               Degrees.of(90), // yaw
-              Meters.of(0.300912657), // x
-              Meters.of(-0.2467181248), // y
-              Meters.of(0.4994001188), // z
+              Meters.of(0.300912657), // x // 0.3107901836
+              Meters.of(-0.2467181248), // y // 0.1993096344
+              Meters.of(0.4994001188), // 0.413481266
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
       true,
