@@ -424,9 +424,7 @@ public final class LaunchHelpers {
         PoseHelpers.getEnemyHubTranslation2d(),
         FieldConstants.kHubInsideWidth.div(2).in(Meters));
 
-    boolean willScore = distanceToHub < FieldConstants.kHubInsideWidth.div(2).in(Meters)
-        && !outOfField
-        && !blockedByOwnHub;
+    boolean willScore = distanceToHub < FieldConstants.kHubInsideWidth.div(2).in(Meters);
 
     return new ShotPrediction(
         willScore, landing, blockedByOwnHub, blockedByEnemyHub,

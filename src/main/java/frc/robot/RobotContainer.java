@@ -32,7 +32,6 @@ import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathfindThenFollowPath;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -43,11 +42,11 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
@@ -200,8 +199,7 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
         true).until(() -> driveSub.isRadialControllerAtSetpoint()));
 
-    // NamedCommands.registerCommand("Launch", new LauncherCmd(launcherAndIntakeSub,
-    // AutoConstants.kLauncherRPM));
+    NamedCommands.registerCommand("Launch", new LauncherCmd(launcherAndIntakeSub, AutoConstants.kLauncherRPM));
     NamedCommands.registerCommand("Drive to Launch", new DriveAtLaunchingRangeCmd(
         driveSub,
         () -> 0.0,
@@ -222,6 +220,17 @@ public class RobotContainer {
     // AutoBuilder.pathfindToPose(
     // new Pose2d(AutoConstants.depotStartPoint, new Rotation2d(0, 0)),
     // AutoConstants.L1ClimbConstraints));
+
+    NamedCommands.registerCommand("Intake Left Connecting Path",
+        Commands.defer(
+            () -> AutoBuilder.pathfindToPose(new Pose2d(AutoConstants.intakeLeftStartPoint, new Rotation2d(0, 0)),
+                AutoConstants.L1ClimbConstraints),
+            Set.of(driveSub)));
+
+    NamedCommands.registerCommand("Launch Once Connecting Path",
+        Commands.defer(
+            () -> AutoBuilder.pathfindThenFollowPath(AutoConstants.depotClimbPath, AutoConstants.L1ClimbConstraints),
+            Set.of(driveSub)));
 
     configureBindings();
     configureAutos();
@@ -310,17 +319,31 @@ public class RobotContainer {
         Constants.LauncherAndIntakeConstants.kLeadShots)
         .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
 
-    Command intakeFrontCmd = new PulsingTreadmillCmd(
+    // Do not use parallel compostion so that each subsystem can be cancelled
+    // independantly for launching while intaking
+    Command intakeFrontTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         IndexerConstants.kWheelSpeed,
-        IndexerConstants.kTreadmillSpeed)
-        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint));
-
-    Command outakeFrontCmd = new PulsingTreadmillCmd(
+        IndexerConstants.kTreadmillSpeed);
+    Command intakeFrontCmd = new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint);
+    Command outakeFrontTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         -IndexerConstants.kWheelSpeed,
-        -IndexerConstants.kTreadmillSpeed)
-        .alongWith(new LauncherCmd(launcherAndIntakeSub, LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1)));
+        -IndexerConstants.kTreadmillSpeed);
+    Command outakeFrontCmd = new LauncherCmd(launcherAndIntakeSub,
+        LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1));
+
+    Command intakeBackTreadmillCmd = new PulsingTreadmillCmd(
+        indexerSub,
+        0,
+        IndexerConstants.kTreadmillSpeed);
+    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed);
+    Command outakeBackTreadmillCmd = new PulsingTreadmillCmd(
+        indexerSub,
+        0,
+        -IndexerConstants.kTreadmillSpeed);
+    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed);
+
     Command zonePassCmd = new ZonePassCmd(
         driveSub,
         indexerSub,
@@ -391,8 +414,56 @@ public class RobotContainer {
     driverController.y().onTrue(new CalibrateGyroCmd(driveSub));
     operatorController.button(8).onTrue(Commands.runOnce(() -> driveSub.toggleFieldRelative(), driveSub));
 
-    driverController.leftBumper().toggleOnTrue(intakeFrontCmd);
-    driverController.rightBumper().toggleOnTrue(outakeFrontCmd);
+    driverController.leftBumper().toggleOnTrue(intakeBackCmd);
+    driverController.leftBumper().onTrue(Commands.runOnce(() -> {
+      CommandScheduler commandScheduler = CommandScheduler.getInstance();
+      Command currentIndexCmd = indexerSub.getCurrentCommand();
+
+      // Toggle the back treadmill only if the indexer subsystem is available
+      // Do not schedule the treadmill if this command has "desynced" with the intake
+      if ((currentIndexCmd == null || !currentIndexCmd.getName().equals("DriveAndLaunchCmd"))
+          && commandScheduler.isScheduled(intakeBackCmd)) {
+        commandScheduler.schedule(intakeBackTreadmillCmd);
+      }
+      if (currentIndexCmd == intakeBackTreadmillCmd) {
+        commandScheduler.cancel(intakeBackTreadmillCmd);
+      }
+    }));
+
+    driverController.rightBumper().toggleOnTrue(outakeBackCmd);
+    driverController.rightBumper().onTrue(Commands.runOnce(() -> {
+      CommandScheduler commandScheduler = CommandScheduler.getInstance();
+      Command currentIndexCmd = indexerSub.getCurrentCommand();
+
+      // Toggle the back treadmill only if the indexer subsystem is available
+      // Do not schedule the treadmill if this command has "desynced" with the intake
+      if ((currentIndexCmd == null || !currentIndexCmd.getName().equals("DriveAndLaunchCmd"))
+          && commandScheduler.isScheduled(outakeBackCmd)) {
+        commandScheduler.schedule(outakeBackTreadmillCmd);
+      }
+      if (currentIndexCmd == outakeBackTreadmillCmd) {
+        commandScheduler.cancel(outakeBackTreadmillCmd);
+      }
+    }));
+
+    // Whenever we exit launching mode, resync the intake with the treadmill
+    new Trigger(() -> driveAndManualShootCmd.isScheduled() || driveAndAutoShootCmd.isScheduled())
+        .onFalse(Commands.runOnce(
+            () -> {
+              CommandScheduler commandScheduler = CommandScheduler.getInstance();
+              Command currentIntakeCmd = otbIntakeSub.getCurrentCommand();
+              if (currentIntakeCmd == null)
+                return;
+              if (currentIntakeCmd == intakeBackCmd)
+                commandScheduler.schedule(intakeBackTreadmillCmd);
+              else if (currentIntakeCmd == outakeBackCmd)
+                commandScheduler.schedule(outakeBackTreadmillCmd);
+            }));
+
+    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(driveAndManualShootCmd);
+    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
+        .toggleOnTrue(driveAndAutoShootCmd);
 
     driverController.povLeft().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
     driverController.povRight().whileTrue(new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
@@ -449,14 +520,14 @@ public class RobotContainer {
             () -> driveSub.getCurrentBotZone() != FieldZones.Launch
                 && driveSub.getCurrentBotZone() != FieldZones.Alliance));
 
-    driverController.povUp().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
-        .toggleOnTrue(driveAndManualShootCmd);
-    driverController.povDown().and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
-        .toggleOnTrue(driveAndAutoShootCmd);
+    // operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
+    // .and(operatorController.rightBumper()).and(() -> driveSub.getCurrentBotZone()
+    // == FieldZones.Launch)
+    // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
+    // launcherAndIntakeSub));
 
-    operatorController.leftBumper().debounce(OIConstants.kButtonPressDebounceSeconds)
-        .and(operatorController.rightBumper()).and(() -> driveSub.getCurrentBotZone() == FieldZones.Launch)
-        .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub, launcherAndIntakeSub));
+    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
@@ -498,19 +569,6 @@ public class RobotContainer {
 
     testController.a()
         .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
-
-    testController.leftBumper()
-        .whileTrue(new PulsingTreadmillCmd(
-            indexerSub,
-            -IndexerConstants.kWheelSpeed,
-            -IndexerConstants.kTreadmillSpeed)
-            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed)));
-    testController.rightBumper()
-        .whileTrue(new PulsingTreadmillCmd(
-            indexerSub,
-            IndexerConstants.kWheelSpeed,
-            IndexerConstants.kTreadmillSpeed)
-            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed)));
   }
 
   // Helper methods to reduce repetition
@@ -641,12 +699,11 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
-    // if (!selectedAuto.hasRequirement(climberSub)) {
-    // return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is
-    // causing the code to crash when
-    // // autonomous phase runs twice. Prevent this by
-    // // testing autos using the test controller
-    // }
+    if (!selectedAuto.hasRequirement(climberSub)) {
+      return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is causing the code to crash when
+                                                                   // autonomous phase runs twice. Prevent this by
+                                                                   // testing autos using the test controller
+    }
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
 
