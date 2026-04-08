@@ -119,9 +119,10 @@ public class Robot extends LoggedRobot {
     if (m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM) == 0) {
       lastLaunchSeconds = Timer.getFPGATimestamp();
     }
+
     if (m_robotContainer.launcherAndIntakeSub.getVelocity() // If the current launcher is under the setpoint
         .in(RPM) < m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM)
-            * LauncherAndIntakeConstants.kVelocityTolerancePercent) {
+            * (1 - LauncherAndIntakeConstants.kVelocityTolerancePercent)) {
 
       launcherUnderspeedHappened = true;
 
