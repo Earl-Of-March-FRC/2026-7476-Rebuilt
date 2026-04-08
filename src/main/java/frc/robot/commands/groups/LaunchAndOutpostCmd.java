@@ -10,12 +10,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.Constants;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbToHeightCmd;
 import frc.robot.commands.climber.StowClimberCmd;
+import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
@@ -58,6 +60,13 @@ public class LaunchAndOutpostCmd extends SequentialCommandGroup {
         // .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
         moveToOutpost,
         Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
+        new DriveAtLaunchingRangeCmd(
+            driveSub,
+            () -> 0.0,
+            () -> 0.0,
+            Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
+            LauncherAndIntakeConstants.kLeadShots)
+            .until(driveSub::isRadialControllerAtSetpoint),
         new ParallelCommandGroup(
             new XLockAndLaunchCmd(
                 driveSub,
