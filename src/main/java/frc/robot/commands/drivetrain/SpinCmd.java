@@ -1,74 +1,75 @@
-// // Copyright (c) FIRST and other WPILib contributors.
-// // Open Source Software; you can modify and/or share it under the terms of
-// // the WPILib BSD license file in the root directory of this project.
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
 
-// package frc.robot.commands.drivetrain;
+package frc.robot.commands.drivetrain;
 
-// import static edu.wpi.first.units.Units.Degrees;
-// import static edu.wpi.first.units.Units.Radians;
-// import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
-// import edu.wpi.first.math.MathUtil;
-// import edu.wpi.first.math.controller.PIDController;
-// import edu.wpi.first.math.kinematics.ChassisSpeeds;
-// import edu.wpi.first.wpilibj2.command.Command;
-// import frc.robot.Constants.AutoConstants;
-// import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.AutoConstants;
+import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
 
-// /* You should consider using the more terse Command factories API instead
-// https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands
-// */
-// public class SpinCmd extends Command {
-// private final DrivetrainSubsystem driveSub;
-// private double totalRotation;
-// private double currentHeading;
+/* You should consider using the more terse Command factories API instead
+https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands
+*/
+public class SpinCmd extends Command {
+  private final DrivetrainSubsystem driveSub;
+  private double currentHeading;
+  private double accumulatedRotation, totalRotation;
 
-// private final PIDController rotationController = new PIDController(
-// AutoConstants.kPThetaController,
-// AutoConstants.kIThetaController,
-// AutoConstants.kDThetaController);
+  private final PIDController rotationController = new PIDController(
+      AutoConstants.kPThetaController,
+      AutoConstants.kIThetaController,
+      AutoConstants.kDThetaController);
 
-// /** Creates a new SpinCmd. */
-// public SpinCmd(DrivetrainSubsystem driveSub) {
-// this.driveSub = driveSub;
-// rotationController.enableContinuousInput(-Math.PI, Math.PI);
-// rotationController.setTolerance(AutoConstants.kAlignRotationTolerance.in(Radians));
+  /** Creates a new SpinCmd. */
+  public SpinCmd(DrivetrainSubsystem driveSub) {
+    this.driveSub = driveSub;
+    // rotationController.enableContinuousInput(-Math.PI, Math.PI);
+    rotationController.setTolerance(AutoConstants.kAlignRotationTolerance.in(Radians));
 
-// // Use addRequirements() here to declare subsystem dependencies.
-// addRequirements(driveSub);
-// }
+    // Use addRequirements() here to declare subsystem dependencies.
+    addRequirements(driveSub);
+  }
 
-// // Called when the command is initially scheduled.
-// @Override
-// public void initialize() {
-// currentHeading = driveSub.getGyro().getRotation2d().getRadians();
-// totalRotation = 0;
-// // currentHeading + Degrees.of(360).in(Radians);
+  // Called when the command is initially scheduled.
+  @Override
+  public void initialize() {
+    currentHeading = driveSub.getGyro().getRotation2d().getRadians();
+    accumulatedRotation = 0;
+    totalRotation = 2 * Math.PI;
+    rotationController.reset();
+  }
 
-// rotationController.reset();
-// }
+  // Called every time the scheduler runs while the command is scheduled.
+  @Override
+  public void execute() {
+    double previousHeading = currentHeading;
+    currentHeading = driveSub.getGyro().getRotation2d().getRadians();
+    accumulatedRotation += Math.IEEEremainder(currentHeading - previousHeading, 2 * Math.PI);
 
-// // Called every time the scheduler runs while the command is scheduled.
-// @Override
-// public void execute() {
-// currentHeading = driveSub.getGyro().getRotation2d().getRadians();
+    double output = rotationController.calculate(accumulatedRotation, totalRotation);
+    double maxAngular = AutoConstants.kMaxAngularSpeed.in(RadiansPerSecond);
+    double omega = MathUtil.clamp(output, -maxAngular, maxAngular);
 
-// double output = rotationController.calculate(currentHeading, targetHeading);
-// double maxAngular = AutoConstants.kMaxAngularSpeed.in(RadiansPerSecond);
-// double omega = MathUtil.clamp(output, -maxAngular, maxAngular);
+    driveSub.runVelocity(new ChassisSpeeds(0, 0, omega));
+  }
 
-// driveSub.runVelocity(new ChassisSpeeds(0, 0, omega));
-// }
+  // Called once the command ends or is interrupted.
+  @Override
+  public void end(boolean interrupted) {
+    driveSub.runVelocity(new ChassisSpeeds(0, 0, 0));
+  }
 
-// // Called once the command ends or is interrupted.
-// @Override
-// public void end(boolean interrupted) {
-// driveSub.runVelocity(new ChassisSpeeds(0, 0, 0));
-// }
-
-// // Returns true when the command should end.
-// @Override
-// public boolean isFinished() {
-// return rotationController.atSetpoint();
-// }
-// }
+  // Returns true when the command should end.
+  @Override
+  public boolean isFinished() {
+    return rotationController.atSetpoint();
+  }
+}

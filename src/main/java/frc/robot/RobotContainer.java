@@ -46,6 +46,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -68,13 +69,16 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.drivetrain.DriveXLockCmd;
+import frc.robot.commands.drivetrain.SpinCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
-import frc.robot.commands.groups.LaunchAndDepotCmd;
+import frc.robot.commands.groups.DepotAndClimbCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
-import frc.robot.commands.groups.LaunchAndOutpostCmd;
+import frc.robot.commands.groups.OutpostAndClimbCmd;
+import frc.robot.commands.groups.OutpostAndNeutralZoneCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.groups.ZonePassCmd;
 import frc.robot.commands.indexer.IndexerCmd;
@@ -215,22 +219,6 @@ public class RobotContainer {
 
     Logger.recordOutput("Temp/DownPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.465)),
         FieldConstants.kFieldWidthY.minus(Meters.of(5.141)), Rotation2d.kZero));
-
-    // NamedCommands.registerCommand("Launch Once Connecting Path",
-    // AutoBuilder.pathfindToPose(
-    // new Pose2d(AutoConstants.depotStartPoint, new Rotation2d(0, 0)),
-    // AutoConstants.L1ClimbConstraints));
-
-    NamedCommands.registerCommand("Intake Left Connecting Path",
-        Commands.defer(
-            () -> AutoBuilder.pathfindToPose(new Pose2d(AutoConstants.intakeLeftStartPoint, new Rotation2d(0, 0)),
-                AutoConstants.L1ClimbConstraints),
-            Set.of(driveSub)));
-
-    NamedCommands.registerCommand("Launch Once Connecting Path",
-        Commands.defer(
-            () -> AutoBuilder.pathfindThenFollowPath(AutoConstants.depotClimbPath, AutoConstants.L1ClimbConstraints),
-            Set.of(driveSub)));
 
     configureBindings();
     configureAutos();
@@ -684,11 +672,17 @@ public class RobotContainer {
     autoChooser.addOption("Align to Tower Right & Climb",
         new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
 
-    autoChooser.addOption("Launch and Depot Launch",
-        new LaunchAndDepotCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub));
+    autoChooser.addOption("Depot Launch and Climb",
+        new DepotAndClimbCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub));
 
-    autoChooser.addOption("Launch and Outpost Launch",
-        new LaunchAndOutpostCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub));
+    autoChooser.addOption("Depot Launch and Neutral Zone",
+        new DepotAndNeutralZoneCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub));
+
+    autoChooser.addOption("Outpost Launch and Climb",
+        new OutpostAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub));
+
+    autoChooser.addOption("Outpost Launch and Neutral Zone",
+        new OutpostAndNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
@@ -700,11 +694,12 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
-    if (!selectedAuto.hasRequirement(climberSub)) {
-      return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is causing the code to crash when
-                                                                   // autonomous phase runs twice. Prevent this by
-                                                                   // testing autos using the test controller
-    }
+    // // if (!selectedAuto.hasRequirement(climberSub)) {
+    // return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is
+    // causing the code to crash when
+    // // autonomous phase runs twice. Prevent this by
+    // // testing autos using the test controller
+    // }
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
 

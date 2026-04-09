@@ -99,6 +99,8 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Commands", CommandScheduler.getInstance());
     SmartDashboard.putBoolean("is neutral zone", m_robotContainer.driveSub.getCurrentBotZone() == FieldZones.Neutral);
 
+    SmartDashboard.putString("Auto Pose",
+        m_robotContainer.driveSub.getPose().getX() + " " + m_robotContainer.driveSub.getPose().getY());
   }
 
   @Override
