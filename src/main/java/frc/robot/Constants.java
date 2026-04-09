@@ -574,6 +574,11 @@ public final class Constants {
     public static final double kFinalAlignSpeed = -0.1;
     public static final Time kFinalAlignTime = Seconds.of(0.4);
 
+    public static final double kIntakeDeployTimeSeconds = 0.7;
+    public static final double kIntakeDeploySpeedX = 1.0;
+    public static final double kIntakeDeploySpeedY = 0.0;
+    public static final double kIntakeDeploySpeedTheta = 0.0;
+
   }
 
   public static final class OTBIntakeConstants {
@@ -583,8 +588,10 @@ public final class Constants {
     // TODO: Verify values for these reductions
     public static final double kRollerReduction = 1.0 / 10.0;
 
-    public static final double kIntakeSpeed = 1;
-    public static final double kOutakeSpeed = -1;
+    public static LoggedNetworkNumber kIntakeSpeed = new LoggedNetworkNumber("/Tuning/RollerIntakeSpeed",
+        1);
+    public static LoggedNetworkNumber kOuttakeSpeed = new LoggedNetworkNumber("/Tuning/RollerOuttakeSpeed",
+        -1);
 
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
 

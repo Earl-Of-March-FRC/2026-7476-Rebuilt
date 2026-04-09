@@ -56,7 +56,7 @@ public class LaunchAndDepotCmd extends SequentialCommandGroup {
         indexerSub,
         -IndexerConstants.kWheelSpeed,
         -IndexerConstants.kTreadmillSpeed)
-        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
+        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get()));
 
     final Command driveThroughDepotAndIntakeCmd = new ParallelDeadlineGroup(
         driveThroughDepotCmd,

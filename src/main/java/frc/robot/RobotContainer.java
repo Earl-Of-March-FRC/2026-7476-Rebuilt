@@ -68,6 +68,7 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.drivetrain.DriveXLockCmd;
+import frc.robot.commands.groups.AutoDeployIntakeCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
@@ -341,7 +342,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     outakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed);
+    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get());
     Command intakeBackTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         0,
@@ -349,7 +350,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     intakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed);
+    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed.get());
 
     Command zonePassCmd = new ZonePassCmd(
         driveSub,
