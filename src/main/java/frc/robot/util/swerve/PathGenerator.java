@@ -24,6 +24,7 @@ import com.pathplanner.lib.path.Waypoint;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -468,16 +469,61 @@ public class PathGenerator {
       return new PrintCommand("Depot path for driveToDepotAuto was empty.");
     }
 
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
-
-    Rotation2d targetRotation = isBlueAlliance ? Rotation2d.kZero : Rotation2d.k180deg;
+    Rotation2d targetRotation = Rotation2d.kZero;
     Pose2d firstWaypoint = waypoints.get(0);
     Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), targetRotation);
 
     Logger.recordOutput("Commands/PathGenerator/driveToDepotAuto/DesiredPose", desiredPose);
 
     return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  /**
+   * Creates a command that drives to the neutral zone during auto
+   * 
+   * @return Command
+   */
+  public static Command driveToNeutralZoneAuto() {
+    PathPlannerPath neutralZonePath;
+
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
+
+    if (drive().getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneOutpost : AutoConstants.neutralZoneDepot;
+    } else {
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneDepot : AutoConstants.neutralZoneOutpost;
+    }
+
+    if (neutralZonePath == null) {
+      return new PrintCommand("Path for driveToNeutralZoneAuto was null.");
+    }
+
+    return AutoBuilder.pathfindThenFollowPath(neutralZonePath, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  /**
+   * Creates a command that drives to the launch pose during auto
+   * 
+   * @return Command
+   */
+  public static Command driveToLaunchPoseAuto() {
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
+
+    Pose2d startPose = drive().getPose();
+
+    Distance desiredX = FieldConstants.kAllianceZoneXLength.minus(AutoConstants.kAutoLaunchDistanceFromHubX);
+    desiredX = isBlueAlliance ? desiredX : FieldConstants.kFieldLengthX.minus(desiredX);
+
+    // : FieldConstants.kFieldLengthX.minus(AutoConstants.autoLaunchDistance);
+    Distance desiredY = Meters.of(startPose.getY());
+    // : FieldConstants.kFieldWidthY.minus(Meters.of(startPose.getY()));
+    Logger.recordOutput("Commands/PathGenerator/driveToLaunchPoseAuto/StartPoseY", desiredY);
+
+    Pose2d desiredPose = new Pose2d(desiredX, desiredY, startPose.getRotation());
+
+    return AutoBuilder.pathfindToPose(desiredPose, AutoConstants.L1ClimbConstraints)
         .andThen(new DriveStopCmd(drive()));
   }
 

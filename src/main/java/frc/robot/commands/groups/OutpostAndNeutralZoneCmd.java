@@ -4,20 +4,24 @@
 
 package frc.robot.commands.groups;
 
+import java.util.Set;
+
 import com.pathplanner.lib.auto.AutoBuilder;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import frc.robot.Constants;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbToHeightCmd;
 import frc.robot.commands.climber.StowClimberCmd;
-import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
+import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
@@ -30,7 +34,7 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class LaunchAndOutpostCmd extends SequentialCommandGroup {
+public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
   /**
    * Creates a command that launches, intakes at the outpost for a set amount of
    * time ({@link AutoConstants#kAutoOutpostIntakeTime}), and launches again.
@@ -41,40 +45,33 @@ public class LaunchAndOutpostCmd extends SequentialCommandGroup {
    * 
    * @see AutoConstants#kAutoOutpostIntakeTime
    */
-  public LaunchAndOutpostCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public OutpostAndNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, ClimberSubsystem climberSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
 
-    final Command moveToOutpost = AutoBuilder.pathfindToPoseFlipped(AutoConstants.outpostPose,
+    final Command moveToOutpostCmd = AutoBuilder.pathfindToPoseFlipped(AutoConstants.outpostPose,
         AutoConstants.L1ClimbConstraints);
 
-    final Command driveAndClimb = new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right);
+    final Command driveToLaunchCmd = new DeferredCommand(() -> PathGenerator.driveToLaunchPoseAuto(), Set.of(driveSub));
+
+    final Command launchCmd = new ParallelCommandGroup(
+        new XLockAndLaunchCmd(
+            driveSub,
+            indexerSub,
+            launcherAndIntakeSub).withDeadline(
+                Commands.waitUntil(LaunchHelpers::willHitHub)
+                    .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+        new ClimbDownCmd(climberSub));
+
+    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
+        Set.of(driveSub));
 
     addCommands(
-        // new XLockAndLaunchCmd(
-        // driveSub,
-        // indexerSub,
-        // launcherAndIntakeSub).withDeadline(
-        // Commands.waitUntil(LaunchHelpers::willHitHub)
-        // .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
-        moveToOutpost,
+        moveToOutpostCmd,
         Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
-        new DriveAtLaunchingRangeCmd(
-            driveSub,
-            () -> 0.0,
-            () -> 0.0,
-            Constants.LauncherAndIntakeConstants.kTestLaunchRadius,
-            LauncherAndIntakeConstants.kLeadShots)
-            .until(driveSub::isRadialControllerAtSetpoint),
-        new ParallelCommandGroup(
-            new XLockAndLaunchCmd(
-                driveSub,
-                indexerSub,
-                launcherAndIntakeSub).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
-            new ClimbDownCmd(climberSub)),
-        driveAndClimb);
+        driveToLaunchCmd,
+        launchCmd,
+        driveToNeutralZoneCmd);
   }
 }

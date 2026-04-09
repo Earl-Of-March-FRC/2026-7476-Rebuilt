@@ -19,6 +19,7 @@ public class GyroNavX implements Gyro {
 
   public GyroNavX(NavXComType comType) {
     gyro = new AHRS(comType);
+    gyro.getAngle();
   }
 
   /**

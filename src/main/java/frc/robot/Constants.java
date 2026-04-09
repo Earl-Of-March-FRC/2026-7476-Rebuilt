@@ -6,6 +6,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -520,7 +521,7 @@ public final class Constants {
     // Translation2d(10.075, 2.68), new Rotation2d(0));
 
     public static final PathConstraints L1ClimbConstraints = new PathConstraints(
-        3.0, 4.0,
+        3.0, 2.5,
         3 * Math.PI, 4 * Math.PI);
 
     public static final AngularVelocity kLauncherRPM = RPM.of(0); // TODO replace with auto launch RPM
@@ -533,10 +534,14 @@ public final class Constants {
     public static PathPlannerPath outpostClimbVeryCurvedPath;
     public static PathPlannerPath outpostPath;
     public static PathPlannerPath depotPath;
+    public static PathPlannerPath neutralZoneDepot;
+    public static PathPlannerPath neutralZoneOutpost;
     public static PathConstraints kPathfindingConstraints;
 
+    // TODO requires testing
     public static Pose2d outpostPose = new Pose2d(Meters.of(0.455), Meters.of(0.651), Rotation2d.kZero);
-    public static Time kAutoOutpostIntakeTime = Seconds.of(3); // TODO to be updated
+    public static Time kAutoOutpostIntakeTime = Seconds.of(2); // TODO to be updated
+    public static Distance kAutoLaunchDistanceFromHubX = Meters.of(2.5);
 
     static {
       try {
@@ -547,6 +552,8 @@ public final class Constants {
         outpostClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb) Extra Curve");
         depotPath = PathPlannerPath.fromPathFile("Depot Intake");
         outpostPath = PathPlannerPath.fromPathFile("Outpost Intake");
+        neutralZoneDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot)");
+        neutralZoneOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost)");
       } catch (Exception e) {
         e.printStackTrace();
       }
