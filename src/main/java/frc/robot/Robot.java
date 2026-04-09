@@ -155,7 +155,7 @@ public class Robot extends LoggedRobot {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
 
-    Logger.start();
+    // Logger.start();
   }
 
   /** This function is called periodically during autonomous. */
