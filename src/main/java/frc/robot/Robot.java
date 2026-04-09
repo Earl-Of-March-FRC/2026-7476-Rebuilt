@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.RPM;
+
 import java.io.File;
 import java.util.function.Supplier;
 
@@ -18,13 +20,20 @@ import com.fasterxml.jackson.databind.ser.std.MapProperty;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
+import edu.wpi.first.wpilibj.Timer;
+
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.ElectricalConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
+import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.ProfileSelector;
@@ -36,6 +45,7 @@ import frc.robot.util.swerve.ProfileSelector;
  * package after creating
  * this project, you must also update the Main.java file in the project.
  */
+
 public class Robot extends LoggedRobot {
   private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
@@ -43,6 +53,24 @@ public class Robot extends LoggedRobot {
 
   private Command autonomousCommand;
   private boolean simulateFuel = false;
+
+  private boolean launcherUnderspeed = false;
+  private boolean launcherUnderspeedHappened = false;
+  private int launcherUnderspeedInstances = 0;
+
+  private boolean isLowVoltage = false;
+  private boolean lowVoltageHappened = false;
+  private int lowVoltageInstances = 0;
+
+  private boolean isLowCurrent = false;
+  private boolean lowCurrentHappened = false;
+  private int lowCurrentInstances = 0;
+
+  private boolean isBrownOut = false;
+  private boolean brownOutHappened = false;
+  private int brownOutInstances = 0;
+
+  private double lastLaunchSeconds = 0;
 
   /*
    * This function is run when the robot is first started up and should be used
@@ -83,6 +111,86 @@ public class Robot extends LoggedRobot {
    * and
    * SmartDashboard integrated updating.
    */
+
+  public void lowVoltageAndUnderspeedCounter() {
+    double voltage = RobotController.getInputVoltage();
+    double current = RobotController.getInputCurrent();
+
+    if (m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM) == 0) {
+      lastLaunchSeconds = Timer.getFPGATimestamp();
+    }
+
+    if (m_robotContainer.launcherAndIntakeSub.getVelocity() // If the current launcher is under the setpoint
+        .in(RPM) < m_robotContainer.launcherAndIntakeSub.getTargetRPM().in(RPM)
+            * (1 - LauncherAndIntakeConstants.kVelocityTolerancePercent)) {
+
+      launcherUnderspeedHappened = true;
+
+      // Say that
+      if (!launcherUnderspeed) { // If it wasn't previously low voltage, count this as the start of an instance.
+
+        if (lastLaunchSeconds
+            - Timer.getFPGATimestamp() > LauncherAndIntakeConstants.timeTillTheLauncherReachesItsTargetVelocity) {
+          launcherUnderspeed = true;
+          launcherUnderspeedInstances++;
+        }
+
+      }
+
+    } else {
+      launcherUnderspeed = false;
+    }
+
+    if (voltage < ElectricalConstants.kBatteryWarningVoltage) {
+      if (!isLowVoltage) { // If it wasn't previously low voltage, count this as the start of an instance.
+        lowVoltageInstances++;
+      }
+      isLowVoltage = true;
+      lowVoltageHappened = true;
+    } else {
+      isLowVoltage = false;
+    }
+
+    if (current < ElectricalConstants.kBatteryWarningCurrent) {
+      if (!isLowCurrent) { // If it wasn't previously low voltage, count this as the start of an instance.
+        lowCurrentInstances++;
+      }
+      isLowCurrent = true;
+      lowCurrentHappened = true;
+    } else {
+      isLowCurrent = false;
+    }
+
+    if (RobotController.isBrownedOut()) {
+      if (!isBrownOut) {
+        brownOutInstances++;
+      }
+      isBrownOut = true;
+      brownOutHappened = true;
+    } else {
+      isBrownOut = false;
+    }
+
+    SmartDashboard.putBoolean("Launcher Underspeed Happened", launcherUnderspeedHappened);
+    SmartDashboard.putBoolean("Low Voltage Happened", lowVoltageHappened);
+    SmartDashboard.putBoolean("Low Current Happened", lowCurrentHappened);
+    SmartDashboard.putBoolean("Brown Out Happened", brownOutHappened);
+
+    SmartDashboard.putBoolean("Low Voltage", isLowVoltage);
+    SmartDashboard.putBoolean("Low Current", isLowCurrent);
+    SmartDashboard.putBoolean("Launcher Underspeed", launcherUnderspeed);
+
+    SmartDashboard.putNumber("Launcher Underspeed instances", launcherUnderspeedInstances);
+    SmartDashboard.putNumber("Low Voltage instances", lowVoltageInstances);
+    SmartDashboard.putNumber("Low Current instances", lowCurrentInstances);
+    SmartDashboard.putNumber("Brownout instances", brownOutInstances);
+
+    SmartDashboard.putNumber("Voltage", voltage);
+    SmartDashboard.putNumber("Current", current);
+    SmartDashboard.putNumber("RPM", m_robotContainer.launcherAndIntakeSub.getVelocity().in(RPM));
+
+  }
+
   @Override
   public void robotPeriodic() {
     // Runs the Scheduler. This is responsible for polling buttons, adding
@@ -98,6 +206,8 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putBoolean("Auto?", isAutonomous());
     SmartDashboard.putData("Commands", CommandScheduler.getInstance());
     SmartDashboard.putBoolean("is neutral zone", m_robotContainer.driveSub.getCurrentBotZone() == FieldZones.Neutral);
+
+    lowVoltageAndUnderspeedCounter();
 
   }
 

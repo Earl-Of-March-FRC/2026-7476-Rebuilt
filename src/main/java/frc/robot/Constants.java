@@ -136,6 +136,12 @@ public final class Constants {
     public static final double kTurningFFSim = 0;
   }
 
+  public static final class ElectricalConstants {
+    // TODO: The point where we start worrying about battery health
+    public static final double kBatteryWarningVoltage = 7.5;
+    public static final double kBatteryWarningCurrent = 0.001;
+  }
+
   public static final class NeoMotorConstants {
     public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(5676.0 / 60.0);
   }
@@ -199,6 +205,8 @@ public final class Constants {
     };
 
     public static final Distance kMinLaunchDistance = Meters.of(1.8);
+
+    public static final double timeTillTheLauncherReachesItsTargetVelocity = 1.5;
 
     static {
       // Minimum vertical velocity needed to reach hub height (from energy
@@ -277,6 +285,9 @@ public final class Constants {
     public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
     // TODO: Test this value
     public static final Time kAutoLaunchTime = Seconds.of(6);
+
+    // TODO: make this more accurate through testing
+    public static final double kVelocityTolerancePercent = 0.10;
 
     static {
       kLeaderConfig
