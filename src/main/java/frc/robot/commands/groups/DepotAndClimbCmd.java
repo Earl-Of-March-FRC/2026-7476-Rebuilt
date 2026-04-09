@@ -50,7 +50,6 @@ public class DepotAndClimbCmd extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
 
-    final Command autoDeployIntakeCmd = new AutoDeployIntakeCmd(driveSub);
     final Command moveToDepotCmd = PathGenerator.driveToDepotAuto();
 
     final PathPlannerPath depotPath = AutoConstants.depotPath;
@@ -80,7 +79,6 @@ public class DepotAndClimbCmd extends SequentialCommandGroup {
     final Command driveAndClimbCmd = new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left);
 
     addCommands(
-        autoDeployIntakeCmd,
         moveToDepotCmd,
         driveThroughDepotAndIntakeCmd,
         Commands.defer(() -> driveToLaunchCmd, getRequirements()),

@@ -23,7 +23,6 @@ import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
-import frc.robot.commands.drivetrain.SpinCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
@@ -51,14 +50,17 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
       LauncherAndIntakeSubsystem launcherAndIntakeSub, ClimberSubsystem climberSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
-    final Command dropOTBIntake = new SpinCmd(driveSub);
 
     final Command moveToDepotCmd = PathGenerator.driveToDepotAuto();
 
     final PathPlannerPath depotPath = AutoConstants.depotPath;
     final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
 
-    final Command intakeCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed);
+    final Command intakeCmd = new PulsingTreadmillCmd(
+        indexerSub,
+        -IndexerConstants.kWheelSpeed,
+        -IndexerConstants.kTreadmillSpeed)
+        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get()));
 
     final Command driveThroughDepotAndIntakeCmd = new ParallelDeadlineGroup(
         driveThroughDepotCmd,
@@ -79,7 +81,6 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
         Set.of(driveSub));
 
     addCommands(
-        dropOTBIntake,
         moveToDepotCmd,
         driveThroughDepotAndIntakeCmd,
         driveToLaunchCmd,
