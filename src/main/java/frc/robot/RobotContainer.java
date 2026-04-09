@@ -326,11 +326,17 @@ public class RobotContainer {
         indexerSub,
         0,
         IndexerConstants.kTreadmillSpeed);
+    // Use the name to differentiate the purpose of the treadmill command (launch vs
+    // intake)
+    outakeBackTreadmillCmd.setName("OTBTreadmill");
     Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed);
     Command intakeBackTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         0,
         -IndexerConstants.kTreadmillSpeed);
+    // Use the name to differentiate the purpose of the treadmill command (launch vs
+    // intake)
+    intakeBackTreadmillCmd.setName("OTBTreadmill");
     Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed);
 
     Command zonePassCmd = new ZonePassCmd(
@@ -410,7 +416,7 @@ public class RobotContainer {
 
       // Toggle the back treadmill only if the indexer subsystem is available
       // Do not schedule the treadmill if this command has "desynced" with the intake
-      if ((currentIndexCmd == null || !currentIndexCmd.getName().equals("DriveAndLaunchCmd"))
+      if ((currentIndexCmd == null || currentIndexCmd.getName().equals("OTBTreadmill"))
           && commandScheduler.isScheduled(outakeBackCmd)) {
         commandScheduler.schedule(outakeBackTreadmillCmd);
       }
@@ -426,7 +432,7 @@ public class RobotContainer {
 
       // Toggle the back treadmill only if the indexer subsystem is available
       // Do not schedule the treadmill if this command has "desynced" with the intake
-      if ((currentIndexCmd == null || !currentIndexCmd.getName().equals("DriveAndLaunchCmd"))
+      if ((currentIndexCmd == null || currentIndexCmd.getName().equals("OTBTreadmill"))
           && commandScheduler.isScheduled(intakeBackCmd)) {
         commandScheduler.schedule(intakeBackTreadmillCmd);
       }
@@ -436,7 +442,9 @@ public class RobotContainer {
     }));
 
     // Whenever we exit launching mode, resync the intake with the treadmill
-    new Trigger(() -> driveAndManualShootCmd.isScheduled() || driveAndAutoShootCmd.isScheduled())
+    new Trigger(
+        () -> indexerSub.getCurrentCommand() != null
+            && !indexerSub.getCurrentCommand().getName().equals("OTBTreadmill"))
         .onFalse(Commands.runOnce(
             () -> {
               CommandScheduler commandScheduler = CommandScheduler.getInstance();
