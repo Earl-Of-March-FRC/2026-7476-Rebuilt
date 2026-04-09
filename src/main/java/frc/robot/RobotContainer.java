@@ -452,7 +452,9 @@ public class RobotContainer {
     }));
 
     // Whenever we exit launching mode, resync the intake with the treadmill
-    new Trigger(() -> driveAndManualShootCmd.isScheduled() || driveAndAutoShootCmd.isScheduled())
+    new Trigger(
+        () -> indexerSub.getCurrentCommand() != null
+            && !indexerSub.getCurrentCommand().getName().equals("OTBTreadmill"))
         .onFalse(Commands.runOnce(
             () -> {
               CommandScheduler commandScheduler = CommandScheduler.getInstance();

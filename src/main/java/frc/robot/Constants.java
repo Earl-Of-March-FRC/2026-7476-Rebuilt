@@ -612,8 +612,8 @@ public final class Constants {
     public static final double kWheelDiameterMeters = 0.17;
 
     // TODO: Tune these values
-    public static final double kTreadmillLaunchIndexPercent = 0.5;
-    public static final double kTreadmillStoreIndexPercent = 0.5;
+    public static final double kTreadmillLaunchIndexPercent = 1;
+    public static final double kTreadmillStoreIndexPercent = 1;
     public static final double kWheelLaunchIndexPercent = 1;
 
     // Treadmill pulse timing
