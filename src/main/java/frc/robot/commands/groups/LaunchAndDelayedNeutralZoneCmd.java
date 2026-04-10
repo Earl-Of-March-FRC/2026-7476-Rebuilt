@@ -55,9 +55,6 @@ public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
-        // new ParallelDeadlineGroup(
-        // Commands.waitUntil(() -> 20 - delayTime >= DriverStation.getMatchTime()),
-        // launchCmd)
         new ParallelCommandGroup(
             new XLockAndLaunchCmd(
                 driveSub,
