@@ -706,6 +706,8 @@ public class RobotContainer {
         new AutoDeployIntakeCmd(driveSub),
         new OutpostAndNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
+    autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub));
+
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
 
