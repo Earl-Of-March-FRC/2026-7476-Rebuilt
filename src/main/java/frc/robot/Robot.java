@@ -125,6 +125,8 @@ public class Robot extends LoggedRobot {
 
     SmartDashboard.putBoolean("is Neutral Zone", false);
 
+    SmartDashboard.putNumber("Delayed Crossing Time (Auto)", 5);
+
     PathPlannerLogging.clearLoggingCallbacks();
   }
 

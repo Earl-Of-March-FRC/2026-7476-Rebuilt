@@ -19,6 +19,7 @@ import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -77,6 +78,7 @@ import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.DepotAndClimbCmd;
 import frc.robot.commands.groups.DepotAndNeutralZoneCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
+import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneCmd;
 import frc.robot.commands.groups.OutpostAndClimbCmd;
 import frc.robot.commands.groups.OutpostAndNeutralZoneCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
@@ -705,6 +707,10 @@ public class RobotContainer {
     autoChooser.addOption("Outpost Launch and Neutral Zone", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub),
         new OutpostAndNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Launch and Delayed Crossing", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new LaunchAndDelayedNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub));
 
