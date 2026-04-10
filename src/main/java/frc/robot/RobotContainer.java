@@ -523,8 +523,31 @@ public class RobotContainer {
     // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
     // launcherAndIntakeSub));
 
-    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
-    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    // operatorController.rightBumper().toggleOnTrue((outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
+    operatorController.rightBumper().toggleOnTrue(new SequentialCommandGroup(
+        new ParallelCommandGroup(
+            new XLockAndLaunchCmd(
+                driveSub,
+                indexerSub,
+                launcherAndIntakeSub).withDeadline(
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+            new ClimbDownCmd(climberSub)),
+        Commands.defer(
+            () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
+            Set.of(driveSub))));
+    // operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    operatorController.leftBumper().toggleOnTrue(
+        new SequentialCommandGroup(
+            new XLockAndLaunchCmd(
+                driveSub,
+                indexerSub,
+                launcherAndIntakeSub).withDeadline(
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+            Commands.defer(
+                () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
+                Set.of(driveSub))));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
@@ -674,13 +697,13 @@ public class RobotContainer {
     // autoChooser.addOption("Align to Tower Then Climb",
     // new NearestClimbCmd(driveSub, climberSub));
 
-    autoChooser.addOption("Align to Tower Left", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
-        new DriveToTowerSideCmd(driveSub, TowerSide.Left)));
+    // autoChooser.addOption("Align to Tower Left", new SequentialCommandGroup(
+    // new AutoDeployIntakeCmd(driveSub),
+    // new DriveToTowerSideCmd(driveSub, TowerSide.Left)));
 
-    autoChooser.addOption("Align to Tower Right", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
-        new DriveToTowerSideCmd(driveSub, TowerSide.Right)));
+    // autoChooser.addOption("Align to Tower Right", new SequentialCommandGroup(
+    // new AutoDeployIntakeCmd(driveSub),
+    // new DriveToTowerSideCmd(driveSub, TowerSide.Right)));
 
     autoChooser.addOption("Align to Tower Left & Climb", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub),
