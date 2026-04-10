@@ -305,7 +305,7 @@ public class RobotContainer {
         // Always lock distance in auto, since the driver isn't controlling movement
         () -> true,
         Constants.LauncherAndIntakeConstants.kLeadShots)
-        .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
+        .withTimeout(Constants.AutoConstants.kAutoLaunch8Time);
 
     // Do not use parallel compostion so that each subsystem can be cancelled
     // independantly for launching while intaking
@@ -630,7 +630,7 @@ public class RobotContainer {
                 indexerSub,
                 launcherAndIntakeSub).withDeadline(
                     Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
             Commands.defer(
                 () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
                 Set.of(driveSub))));
@@ -644,7 +644,7 @@ public class RobotContainer {
                     indexerSub,
                     launcherAndIntakeSub).withDeadline(
                         Commands.waitUntil(LaunchHelpers::willHitHub)
-                            .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                            .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
                 new ClimbDownCmd(climberSub)),
             Commands.defer(
                 () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),

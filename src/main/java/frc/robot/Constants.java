@@ -276,8 +276,6 @@ public final class Constants {
 
     public static final SparkMaxConfig kLeaderConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
-    // TODO: Test this value
-    public static final Time kAutoLaunchTime = Seconds.of(6);
 
     static {
       kLeaderConfig
@@ -542,6 +540,9 @@ public final class Constants {
     public static Pose2d outpostPose = new Pose2d(Meters.of(0.455), Meters.of(0.651), Rotation2d.kZero);
     public static Time kAutoOutpostIntakeTime = Seconds.of(2); // TODO to be updated
     public static Distance kAutoLaunchDistanceFromHubX = Meters.of(2.5);
+    // TODO: Test this value
+    public static final Time kAutoLaunch8Time = Seconds.of(6);
+    public static final Time kAutoLaunch32Time = Seconds.of(12);
 
     static {
       try {
@@ -581,10 +582,11 @@ public final class Constants {
     public static final double kFinalAlignSpeed = -0.1;
     public static final Time kFinalAlignTime = Seconds.of(0.4);
 
-    public static final double kIntakeDeployTimeSeconds = 0.7;
-    public static final double kIntakeDeploySpeedX = 1.0;
-    public static final double kIntakeDeploySpeedY = 0.0;
-    public static final double kIntakeDeploySpeedTheta = 0.0;
+    public static final double kIntakeDeployDriveTimeSeconds = 0.4;
+    public static final double kIntakeDeployStopTimeSeconds = 0.3;
+    // public static final double kIntakeDeploySpeedX = 1.0;
+    // public static final double kIntakeDeploySpeedY = 0.0;
+    // public static final double kIntakeDeploySpeedTheta = 0.0;
 
   }
 

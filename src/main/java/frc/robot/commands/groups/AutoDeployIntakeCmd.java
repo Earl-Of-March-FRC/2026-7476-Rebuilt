@@ -25,9 +25,14 @@ public class AutoDeployIntakeCmd extends SequentialCommandGroup {
     addCommands(
         // 0, 1, 0
         new DriveLockedHeadingCmd(driveSub,
-            () -> AutoConstants.kIntakeDeploySpeedX * (PoseHelpers.getAlliance() == Alliance.Blue ? 1 : -1),
-            () -> AutoConstants.kIntakeDeploySpeedY,
+            () -> (PoseHelpers.getAlliance() == Alliance.Blue ? 1.0 : -1.0),
+            () -> 0.0,
             PoseHelpers.getAlliance() == Alliance.Blue ? new Rotation2d(0) : new Rotation2d(Math.PI))
-            .withTimeout(AutoConstants.kIntakeDeployTimeSeconds));
+            .withTimeout(AutoConstants.kIntakeDeployDriveTimeSeconds),
+        new DriveLockedHeadingCmd(driveSub,
+            () -> 0.0,
+            () -> 0.0,
+            PoseHelpers.getAlliance() == Alliance.Blue ? new Rotation2d(0) : new Rotation2d(Math.PI))
+            .withTimeout(AutoConstants.kIntakeDeployStopTimeSeconds));
   }
 }

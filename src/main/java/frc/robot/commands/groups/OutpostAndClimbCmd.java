@@ -60,7 +60,7 @@ public class OutpostAndClimbCmd extends SequentialCommandGroup {
             indexerSub,
             launcherAndIntakeSub).withDeadline(
                 Commands.waitUntil(LaunchHelpers::willHitHub)
-                    .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                    .andThen(Commands.waitTime(AutoConstants.kAutoLaunch32Time))),
         new ClimbDownCmd(climberSub));
 
     final Command driveAndClimb = new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right);

@@ -7,6 +7,7 @@ package frc.robot.commands.groups;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
@@ -42,7 +43,7 @@ public class LaunchAndClimbCmd extends SequentialCommandGroup {
                 indexer,
                 launcherAndIntake).withDeadline(
                     Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
             new ClimbDownCmd(climber)),
         new DriveAndClimbCmd(drivetrain, climber, climbSide));
   }
