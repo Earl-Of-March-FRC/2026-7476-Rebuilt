@@ -4,6 +4,8 @@
 
 package frc.robot.commands.groups;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import java.util.Set;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -67,13 +69,18 @@ public class DepotAndClimbCmd extends SequentialCommandGroup {
 
     final Command driveToLaunchCmd = new DeferredCommand(() -> PathGenerator.driveToLaunchPoseAuto(), Set.of(driveSub));
 
+    final Command launchWaitCmd = Commands.defer(
+        () -> Commands.waitTime(Seconds.of(
+            SmartDashboard.getNumber("32 Fuel Launch Time (Auto)", AutoConstants.kAutoLaunch32Time.in(Seconds)))),
+        Set.of());
+
     final Command launchCmd = new ParallelCommandGroup(
         new XLockAndLaunchCmd(
             driveSub,
             indexerSub,
             launcherAndIntakeSub).withDeadline(
                 Commands.waitUntil(LaunchHelpers::willHitHub)
-                    .andThen(Commands.waitTime(AutoConstants.kAutoLaunch32Time))),
+                    .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
     final Command driveAndClimbCmd = new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left);

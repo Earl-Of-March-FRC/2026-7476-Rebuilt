@@ -18,6 +18,7 @@ import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Seconds;
 
 import java.nio.file.Path;
 import java.util.Set;
@@ -655,7 +656,11 @@ public class RobotContainer {
                 indexerSub,
                 launcherAndIntakeSub).withDeadline(
                     Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+                        .andThen(Commands.defer(
+                            () -> Commands.waitTime(Seconds.of(
+                                SmartDashboard.getNumber("8 Fuel Launch Time (Auto)",
+                                    AutoConstants.kAutoLaunch8Time.in(Seconds)))),
+                            Set.of()))),
             Commands.defer(
                 () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
                 Set.of(driveSub))));
@@ -669,7 +674,11 @@ public class RobotContainer {
                     indexerSub,
                     launcherAndIntakeSub).withDeadline(
                         Commands.waitUntil(LaunchHelpers::willHitHub)
-                            .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+                            .andThen(Commands.defer(
+                                () -> Commands.waitTime(Seconds.of(
+                                    SmartDashboard.getNumber("8 Fuel Launch Time (Auto)",
+                                        AutoConstants.kAutoLaunch8Time.in(Seconds)))),
+                                Set.of()))),
                 new ClimbDownCmd(climberSub)),
             Commands.defer(
                 () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
@@ -731,7 +740,7 @@ public class RobotContainer {
         new AutoDeployIntakeCmd(driveSub),
         new OutpostAndNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Launch and Delayed Crossing", new SequentialCommandGroup(
+    autoChooser.addOption("Launch and Delayed Neutral Zone", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub),
         new LaunchAndDelayedNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 

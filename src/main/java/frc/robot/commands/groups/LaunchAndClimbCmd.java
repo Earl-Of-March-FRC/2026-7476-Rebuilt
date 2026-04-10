@@ -4,6 +4,12 @@
 
 package frc.robot.commands.groups;
 
+import static edu.wpi.first.units.Units.Seconds;
+
+import java.util.Set;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -36,6 +42,12 @@ public class LaunchAndClimbCmd extends SequentialCommandGroup {
    */
   public LaunchAndClimbCmd(DrivetrainSubsystem drivetrain, IndexerSubsystem indexer,
       LauncherAndIntakeSubsystem launcherAndIntake, ClimberSubsystem climber, TowerSide climbSide) {
+
+    Command launchWaitCmd = Commands.defer(
+        () -> Commands.waitTime(Seconds.of(
+            SmartDashboard.getNumber("8 Fuel Launch Time (Auto)", AutoConstants.kAutoLaunch8Time.in(Seconds)))),
+        Set.of());
+
     addCommands(
         new ParallelCommandGroup(
             new XLockAndLaunchCmd(
@@ -43,7 +55,7 @@ public class LaunchAndClimbCmd extends SequentialCommandGroup {
                 indexer,
                 launcherAndIntake).withDeadline(
                     Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+                        .andThen(launchWaitCmd)),
             new ClimbDownCmd(climber)),
         new DriveAndClimbCmd(drivetrain, climber, climbSide));
   }

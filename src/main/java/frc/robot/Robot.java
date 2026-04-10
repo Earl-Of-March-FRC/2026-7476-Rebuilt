@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import java.io.File;
 import java.util.function.Supplier;
 
@@ -126,6 +128,8 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putBoolean("is Neutral Zone", false);
 
     SmartDashboard.putNumber("Delayed Crossing Time (Auto)", 5);
+    SmartDashboard.putNumber("8 Fuel Launch Time (Auto)", AutoConstants.kAutoLaunch8Time.in(Seconds));
+    SmartDashboard.putNumber("32 Fuel Launch Time (Auto)", AutoConstants.kAutoLaunch32Time.in(Seconds));
 
     PathPlannerLogging.clearLoggingCallbacks();
   }

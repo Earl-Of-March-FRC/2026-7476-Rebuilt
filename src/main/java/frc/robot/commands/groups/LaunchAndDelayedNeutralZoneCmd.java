@@ -37,17 +37,18 @@ public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
       LauncherAndIntakeSubsystem launcherAndIntakeSub,
       ClimberSubsystem climberSub) {
 
-    // double delayTime = SmartDashboard.getNumber("Delayed Crossing Time (Auto)",
-    // 5);
+    final Command launchWaitCmd = Commands.waitUntil(
+        () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)", 5) >= DriverStation
+            .getMatchTime());
 
-    // final Command launchCmd = new ParallelCommandGroup(
-    // new XLockAndLaunchCmd(
-    // driveSub,
-    // indexerSub,
-    // launcherAndIntakeSub).withDeadline(
-    // Commands.waitUntil(LaunchHelpers::willHitHub)
-    // .andThen(Commands.waitTime(AutoConstants.kAutoLaunch32Time))),
-    // new ClimbDownCmd(climberSub));
+    final Command launchCmd = new ParallelCommandGroup(
+        new XLockAndLaunchCmd(
+            driveSub,
+            indexerSub,
+            launcherAndIntakeSub).withDeadline(
+                Commands.waitUntil(LaunchHelpers::willHitHub)
+                    .andThen(launchWaitCmd)),
+        new ClimbDownCmd(climberSub));
 
     final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
         Set.of(driveSub));
@@ -55,16 +56,7 @@ public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
-        new ParallelCommandGroup(
-            new XLockAndLaunchCmd(
-                driveSub,
-                indexerSub,
-                launcherAndIntakeSub).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitUntil(
-                            () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)", 5) >= DriverStation
-                                .getMatchTime()))),
-            new ClimbDownCmd(climberSub)),
+        launchCmd,
         driveToNeutralZoneCmd);
   }
 }
