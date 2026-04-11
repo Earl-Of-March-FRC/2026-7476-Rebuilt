@@ -527,7 +527,7 @@ public class RobotContainer {
     // launcherAndIntakeSub));
 
     // operatorController.rightBumper().toggleOnTrue((outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
-    operatorController.rightBumper().toggleOnTrue(new SequentialCommandGroup(
+    operatorController.leftBumper().toggleOnTrue(new SequentialCommandGroup(
         new ParallelCommandGroup(
             new XLockAndLaunchCmd(
                 driveSub,
@@ -540,7 +540,7 @@ public class RobotContainer {
             () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
             Set.of(driveSub))));
     // operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
-    operatorController.leftBumper().toggleOnTrue(
+    operatorController.rightBumper().toggleOnTrue(
         new SequentialCommandGroup(
             new XLockAndLaunchCmd(
                 driveSub,
