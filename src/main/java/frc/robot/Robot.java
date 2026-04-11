@@ -5,15 +5,25 @@
 package frc.robot;
 
 import java.io.File;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.SimulatedArena;
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.std.MapProperty;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.PathPlannerLogging;
@@ -28,6 +38,8 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.ProfileSelector;
+import frc.robot.util.swerve.SwerveConfig;
+import frc.robot.util.vision.CameraProfile;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -121,9 +133,131 @@ public class Robot extends LoggedRobot {
     PortForwarder.add(1185, "photonvision.local", 1185);
     PortForwarder.add(1186, "photonvision.local", 1186);
 
+    new Thread(() -> {
+      try {
+        // Poll until PhotonVision is up (not blindly waiting)
+        // Tries every 100ms for a max of 10 seconds
+        for (int i = 0; i < 100; i++) {
+          try {
+            // Attempt a test connection to see if PhotonVision is ready
+            URI uri = new URI("ws://photonvision.local:5800/websocket_data");
+            WebSocketClient test = new WebSocketClient(uri) {
+              @Override
+              public void onOpen(ServerHandshake h) {
+                close();
+              }
+
+              @Override
+              public void onMessage(String m) {
+              }
+
+              @Override
+              public void onMessage(ByteBuffer b) {
+              }
+
+              @Override
+              public void onClose(int c, String r, boolean remote) {
+              }
+
+              @Override
+              public void onError(Exception e) {
+              }
+            };
+
+            // If this succeeds without an exception, PhotonVision is up
+            test.connectBlocking(100, TimeUnit.MILLISECONDS);
+            test.close();
+            break; // Exit the polling loop
+          } catch (Exception e) {
+            // PhotonVision not ready yet, wait 100ms and retry
+            Thread.sleep(100);
+          }
+        }
+
+        ObjectMapper msgpackMapper = new ObjectMapper(new MessagePackFactory());
+
+        // Iterate over each camera and toggle auto exposure ON -> OFF -> ON
+        // This forces the camera driver to reinitialize exposure correctly on boot
+        for (CameraProfile cameraProfile : SwerveConfig.kCameraProfiles) {
+          String camera = cameraProfile.name();
+
+          // Build the ON payload
+          Map<String, Object> inner = new HashMap<>();
+          inner.put("cameraUniqueName", camera);
+          inner.put("cameraAutoExposure", true);
+
+          Map<String, Object> payload = new HashMap<>();
+          payload.put("changePipelineSetting", inner);
+
+          byte[] onBytes = msgpackMapper.writeValueAsBytes(payload);
+
+          // Build the OFF payload (reuses same inner map)
+          inner.put("cameraAutoExposure", false);
+          byte[] offBytes = msgpackMapper.writeValueAsBytes(payload);
+
+          // Send ON -> OFF -> ON to force exposure reinitialization
+          sendMsgPackWS("photonvision.local", 5800, onBytes);
+          Thread.sleep(300);
+          sendMsgPackWS("photonvision.local", 5800, offBytes);
+          Thread.sleep(300);
+          sendMsgPackWS("photonvision.local", 5800, onBytes);
+          Thread.sleep(300);
+        }
+      } catch (Exception e) {
+        System.err.println("PhotonVision exposure fix failed: " + e.getMessage());
+      }
+    }).start();
+
     SmartDashboard.putBoolean("is Neutral Zone", false);
 
     PathPlannerLogging.clearLoggingCallbacks();
+  }
+
+  /**
+   * Sends a MessagePack-encoded binary message to the PhotonVision WebSocket
+   * server.
+   * Opens a connection, sends the data, waits for confirmation, then closes.
+   *
+   * @param host the hostname of the PhotonVision server (e.g.
+   *             "photonvision.local")
+   * @param port the port of the PhotonVision server (e.g. 5800)
+   * @param data the MessagePack-encoded binary payload to send
+   * @throws Exception if the URI is malformed or the connection times out
+   */
+  private void sendMsgPackWS(String host, int port, byte[] data) throws Exception {
+    URI uri = new URI("ws://" + host + ":" + port + "/websocket_data");
+    CountDownLatch latch = new CountDownLatch(1);
+
+    WebSocketClient client = new WebSocketClient(uri) {
+      @Override
+      public void onOpen(ServerHandshake handshake) {
+        send(data);
+        latch.countDown();
+      }
+
+      @Override
+      public void onMessage(String message) {
+      }
+
+      @Override
+      public void onMessage(ByteBuffer bytes) {
+      }
+
+      @Override
+      public void onClose(int code, String reason, boolean remote) {
+      }
+
+      @Override
+      public void onError(Exception ex) {
+        System.err.println("WS error: " + ex.getMessage());
+        latch.countDown();
+      }
+    };
+
+    client.connect();
+    latch.await(3, TimeUnit.SECONDS);
+    Thread.sleep(200);
+    client.close();
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

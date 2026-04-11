@@ -57,6 +57,9 @@ dependencies {
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
 
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation 'org.msgpack:jackson-dataformat-msgpack:0.9.6'
+    
     roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
     roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
 
