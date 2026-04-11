@@ -612,6 +612,8 @@ public final class Constants {
 
     public static final Time kIntakeDeployDriveTime = Seconds.of(0.4);
     public static final Time kIntakeDeployStopTime = Seconds.of(0.3);
+
+    public static final Time kIntakeDeployIntakeTime = Seconds.of(1.0);
     // public static final double kIntakeDeploySpeedX = 1.0;
     // public static final double kIntakeDeploySpeedY = 0.0;
     // public static final double kIntakeDeploySpeedTheta = 0.0;
