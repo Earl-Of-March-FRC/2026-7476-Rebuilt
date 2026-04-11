@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Seconds;
 
 import java.io.File;
@@ -104,6 +106,7 @@ public class Robot extends LoggedRobot {
 
     SmartDashboard.putString("Auto Pose",
         m_robotContainer.driveSub.getPose().getX() + " " + m_robotContainer.driveSub.getPose().getY());
+    Logger.recordOutput("Launcher/LaunchAngle/", LauncherAndIntakeConstants.kBallReleaseAngle().in(Degrees));
   }
 
   @Override
