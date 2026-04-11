@@ -612,10 +612,10 @@ public class RobotContainer {
   }
 
   private double getDriverOmega() {
-    // Use max speed by default, and use low sensitivity when right stick is pushed
+    // Use low sensitivity by default, and use max speed when right stick is pushed
     return MathUtil.applyDeadband(
         -driverController.getRawAxis(OIConstants.kDriverControllerRotAxis)
-            * (driverController.rightStick().getAsBoolean() ? OIConstants.kTurnSlowModeMultiplier : 1),
+            * (driverController.rightStick().getAsBoolean() ? 1 : OIConstants.kTurnSlowModeMultiplier),
         OIConstants.kDeadband);
   }
 
