@@ -64,8 +64,8 @@ public class PulsingTreadmillCmd extends Command {
     double wheel = wheelSpeed.getAsDouble();
 
     if (t < onDuration) {
-      // ON phase — apply envelope
-      double normalizedT = t / onDuration; // 0→1 within ON window
+      // ON phase, apply envelope
+      double normalizedT = t / onDuration; // 0 to 1 within ON window
       double envelope = computeEnvelope(normalizedT, shape);
       double treadmill = treadmillSpeed.getAsDouble() * envelope;
       indexer.setWheelPercent(wheel);
