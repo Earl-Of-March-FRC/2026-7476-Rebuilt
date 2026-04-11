@@ -63,6 +63,8 @@ public class PulsingTreadmillCmd extends Command {
 
     double wheel = wheelSpeed.getAsDouble();
 
+    Logger.recordOutput("Commands/IndexerCmd/TreadmillPulse", true);
+
     if (t < onDuration) {
       // ON phase, apply envelope
       double normalizedT = t / onDuration; // 0 to 1 within ON window
