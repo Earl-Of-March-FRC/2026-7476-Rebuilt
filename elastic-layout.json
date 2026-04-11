@@ -223,6 +223,34 @@
               "true_icon": "None",
               "false_icon": "None"
             }
+          },
+          {
+            "title": "32 Fuel Launch Time (Auto)",
+            "x": 0.0,
+            "y": 512.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/32 Fuel Launch Time (Auto)",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "8 Fuel Launch Time (Auto)",
+            "x": 128.0,
+            "y": 512.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/8 Fuel Launch Time (Auto)",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
           }
         ]
       }
