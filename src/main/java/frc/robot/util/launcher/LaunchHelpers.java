@@ -251,7 +251,7 @@ public final class LaunchHelpers {
   public static AngularVelocity calculatePhysicsRpm(Distance horizontalDistance) {
     double d = horizontalDistance.in(Meters);
     double releaseHeight = LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters);
-    double angle = LauncherAndIntakeConstants.kPassReleaseAngle.in(Radians);
+    double angle = LauncherAndIntakeConstants.kBallReleaseAngle().in(Radians);
     double g = PhysicsConstants.kGravityMps2;
 
     double cosA = Math.cos(angle);
@@ -290,9 +290,9 @@ public final class LaunchHelpers {
 
     // Robot-relative: forward component along the release angle, zero lateral
     Translation3d robotRelative = new Translation3d(
-        Math.cos(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians)),
+        Math.cos(LauncherAndIntakeConstants.kBallReleaseAngle().in(Radians)),
         0,
-        Math.sin(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians)))
+        Math.sin(LauncherAndIntakeConstants.kBallReleaseAngle().in(Radians)))
         .times(ballSpeedMps)
         .rotateBy(new Rotation3d(LauncherAndIntakeConstants.kLauncherBotHeading));
 
@@ -365,7 +365,7 @@ public final class LaunchHelpers {
         * rpm.in(RadiansPerSecond);
     double ballSpeedMps = wheelLinearMps * LauncherAndIntakeConstants.kWheelSlipCoefficient;
 
-    double angle = LauncherAndIntakeConstants.kPassReleaseAngle.in(Radians);
+    double angle = LauncherAndIntakeConstants.kBallReleaseAngle().in(Radians);
     double Vz = ballSpeedMps * Math.sin(angle);
     double Vh = ballSpeedMps * Math.cos(angle);
     double releaseHeight = LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters);

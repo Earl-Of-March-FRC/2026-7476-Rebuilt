@@ -82,7 +82,7 @@ public final class ZonePassHelpers {
         fieldSpeeds.vyMetersPerSecond);
 
     double releaseHeight = LauncherAndIntakeConstants.kBallReleaseHeight.in(Meters);
-    double angle = LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians);
+    double angle = LauncherAndIntakeConstants.kBallReleaseAngle().in(Radians);
     double cosA = Math.cos(angle);
     double sinA = Math.sin(angle);
     double g = PhysicsConstants.kGravityMps2;
@@ -187,8 +187,10 @@ public final class ZonePassHelpers {
       targetHeight = PassConstants.kPassTargetHeight.in(Meters);
       zoneLabel = FieldZones.Neutral.toString();
     } else {
-      target2d = dumpTarget(isBlue);
-      targetHeight = PassConstants.kDumpTargetHeight.in(Meters);
+      // target2d = dumpTarget(isBlue);
+      // targetHeight = PassConstants.kDumpTargetHeight.in(Meters);
+      target2d = selectNeutralTarget(robotPos, isBlue);
+      targetHeight = PassConstants.kPassTargetHeight.in(Meters);
       zoneLabel = FieldZones.Enemy.toString();
     }
 
