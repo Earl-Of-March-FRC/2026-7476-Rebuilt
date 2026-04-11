@@ -53,6 +53,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
 
@@ -664,11 +665,14 @@ public final class Constants {
     public static final double kWheelLaunchIndexPercent = 1;
 
     // Treadmill pulse timing
-    public static final double kPulseDutyCycle = 1;
-    public static final double kPulsePeriod = 0.2;
+    public static final PulsingTreadmillCmd.PulseShape kDefaultPulseShape = PulsingTreadmillCmd.PulseShape.SIN_SQUARED;
 
-    public static final double kPulseOnSeconds = kPulsePeriod * kPulseDutyCycle;
-    public static final double kPulseOffSeconds = kPulsePeriod * (1 - kPulseDutyCycle);
+    // Total period ~0.4s, 65% on / 35% off
+    public static final double kPulseDutyCycle = 0.65;
+    public static final double kPulsePeriod = 0.4;
+
+    public static final double kPulseOnSeconds = kPulsePeriod * kPulseDutyCycle; // 0.26s
+    public static final double kPulseOffSeconds = kPulsePeriod * (1 - kPulseDutyCycle); // 0.14s
 
     public static final SparkMaxConfig kWheelConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kTreadmillConfig = new SparkMaxConfig();
