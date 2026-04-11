@@ -98,7 +98,8 @@ public class ZonePassCmd extends Command {
 
     driveSub.runVelocity(speeds, true, true);
 
-    if (feedSupplier.getAsBoolean()) {
+    boolean shotIsSafe = setpoints.isShotSafe();
+    if (feedSupplier.getAsBoolean() && shotIsSafe) {
       indexerSub.setWheelPercent(-IndexerConstants.kWheelLaunchIndexPercent);
       indexerSub.setTreadmillPercent(-IndexerConstants.kTreadmillLaunchIndexPercent);
     } else {
@@ -106,6 +107,7 @@ public class ZonePassCmd extends Command {
       indexerSub.setWheelPercent(0);
     }
 
+    Logger.recordOutput("Commands/ZonePassCmd/ShotIsSafe", shotIsSafe);
     Logger.recordOutput("Commands/ZonePassCmd/DesiredHeadingDeg", setpoints.botHeading().getDegrees());
     Logger.recordOutput("Commands/ZonePassCmd/Feeding", feedSupplier.getAsBoolean());
   }

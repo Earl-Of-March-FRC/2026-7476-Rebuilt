@@ -56,7 +56,11 @@ public final class LaunchHelpers {
    * @param botHeading    Field-relative heading the robot should face so the
    *                      launcher points at the target
    */
-  public record LaunchSetpoints(AngularVelocity flywheelSpeed, Rotation2d botHeading) {
+  public record LaunchSetpoints(AngularVelocity flywheelSpeed, Rotation2d botHeading, boolean isShotSafe) {
+    /** Convenience constructor for hub shots where safety is not checked here. */
+    public LaunchSetpoints(AngularVelocity flywheelSpeed, Rotation2d botHeading) {
+      this(flywheelSpeed, botHeading, true); // hub shots gate elsewhere via willHitHub()
+    }
   }
 
   /**
