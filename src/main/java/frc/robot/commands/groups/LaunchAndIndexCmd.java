@@ -33,12 +33,14 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
    */
   public LaunchAndIndexCmd(IndexerSubsystem indexerSub, LauncherAndIntakeSubsystem launcherAndIntakeSub,
       BooleanSupplier launchSupplier, Supplier<AngularVelocity> rpmSupplier) {
-    addCommands(
-        new PulsingTreadmillCmd(
-            indexerSub,
-            () -> launchSupplier.getAsBoolean() ? -IndexerConstants.kWheelLaunchIndexPercent : 0,
-            () -> launchSupplier.getAsBoolean() ? -IndexerConstants.kTreadmillLaunchIndexPercent : 0),
-        new LauncherCmd(launcherAndIntakeSub, rpmSupplier));
+    addCommands(new TreadmillOnCmd(
+        indexerSub,
+        () -> launchSupplier.getAsBoolean()
+            ? -IndexerConstants.kWheelLaunchIndexPercent
+            : 0,
+        () -> -IndexerConstants.kTreadmillLaunchIndexPercent),
+        new LauncherCmd(launcherAndIntakeSub,
+            rpmSupplier));
   }
 
   /**
