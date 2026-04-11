@@ -526,31 +526,31 @@ public class RobotContainer {
     // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
     // launcherAndIntakeSub));
 
-    // operatorController.rightBumper().toggleOnTrue((outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
-    operatorController.leftBumper().toggleOnTrue(new SequentialCommandGroup(
-        new ParallelCommandGroup(
-            new XLockAndLaunchCmd(
-                driveSub,
-                indexerSub,
-                launcherAndIntakeSub).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
-            new ClimbDownCmd(climberSub)),
-        Commands.defer(
-            () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
-            Set.of(driveSub))));
-    // operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
-    operatorController.rightBumper().toggleOnTrue(
-        new SequentialCommandGroup(
-            new XLockAndLaunchCmd(
-                driveSub,
-                indexerSub,
-                launcherAndIntakeSub).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
-            Commands.defer(
-                () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
-                Set.of(driveSub))));
+    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
+    // operatorController.leftBumper().toggleOnTrue(new SequentialCommandGroup(
+    // new ParallelCommandGroup(
+    // new XLockAndLaunchCmd(
+    // driveSub,
+    // indexerSub,
+    // launcherAndIntakeSub).withDeadline(
+    // Commands.waitUntil(LaunchHelpers::willHitHub)
+    // .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+    // new ClimbDownCmd(climberSub)),
+    // Commands.defer(
+    // () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
+    // Set.of(driveSub))));
+    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    // operatorController.rightBumper().toggleOnTrue(
+    // new SequentialCommandGroup(
+    // new XLockAndLaunchCmd(
+    // driveSub,
+    // indexerSub,
+    // launcherAndIntakeSub).withDeadline(
+    // Commands.waitUntil(LaunchHelpers::willHitHub)
+    // .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+    // Commands.defer(
+    // () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
+    // Set.of(driveSub))));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
