@@ -316,20 +316,20 @@ public class RobotContainer {
     Command outakeFrontTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
         () -> -IndexerConstants.kWheelSpeed,
-        () -> -IndexerConstants.kTreadmillSpeed);
+        () -> -IndexerConstants.kTreadmillStoreIndexPercent);
     Command outakeFrontCmd = new LauncherCmd(launcherAndIntakeSub,
         LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1));
     Command intakeFrontTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
         () -> IndexerConstants.kWheelSpeed,
-        () -> IndexerConstants.kTreadmillSpeed);
+        () -> IndexerConstants.kTreadmillStoreIndexPercent);
     Command intakeFrontCmd = new LauncherCmd(launcherAndIntakeSub,
         LauncherAndIntakeConstants.kIntakeRPMSetpoint);
 
     Command outakeBackTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
         () -> 0.0,
-        () -> IndexerConstants.kTreadmillSpeed);
+        () -> IndexerConstants.kTreadmillStoreIndexPercent);
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     outakeBackTreadmillCmd.setName("OTBTreadmill");
@@ -337,7 +337,7 @@ public class RobotContainer {
     Command intakeBackTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
         () -> 0.0,
-        () -> -IndexerConstants.kTreadmillSpeed);
+        () -> -IndexerConstants.kTreadmillStoreIndexPercent);
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     intakeBackTreadmillCmd.setName("OTBTreadmill");

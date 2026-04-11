@@ -61,7 +61,7 @@ public class DepotAndClimbCmd extends SequentialCommandGroup {
     final Command intakeCmd = new TreadmillOnCmd(
         indexerSub,
         () -> -IndexerConstants.kWheelSpeed,
-        () -> -IndexerConstants.kTreadmillSpeed)
+        () -> -IndexerConstants.kTreadmillStoreIndexPercent)
         .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get()));
 
     final Command driveThroughDepotAndIntakeCmd = new ParallelDeadlineGroup(
