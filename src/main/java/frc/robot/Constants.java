@@ -332,10 +332,10 @@ public final class Constants {
   public static final class PassConstants {
 
     /** Depot-side bump pass target (closer to bottom of field). */
-    public static final Translation2d kBlueBumpPassPose1 = new Translation2d(3.6, 2.6);
+    public static final Translation2d kBlueBumpPassPose1 = new Translation2d(2.6, 2.6);
 
     /** Outpost-side bump pass target (closer to top of field). */
-    public static final Translation2d kBlueBumpPassPose2 = new Translation2d(3.6, 5.5);
+    public static final Translation2d kBlueBumpPassPose2 = new Translation2d(2.6, 5.5);
 
     /**
      * Both neutral-zone pass targets as an array for convenience.
