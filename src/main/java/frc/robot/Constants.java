@@ -51,6 +51,8 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.util.swerve.SwerveConfig;
 import frc.robot.util.vision.CameraProfile;
 
@@ -144,9 +146,33 @@ public final class Constants {
   public static final class LauncherAndIntakeConstants {
 
     public static final Distance kBallReleaseHeight = Inches.of(20);
-    public static final Angle kBallReleaseAngle = Degree.of(58.016961);
 
-    public static final Angle kPassReleaseAngle = Degree.of(25.0); // TODO: tune this
+    /** High arc release angle (default, tuned for hub shots). */
+    public static final Angle kBallReleaseAngleHigh = Degree.of(58.016961);
+    /** Low arc release angle (alternative, flatter trajectory). */
+    public static final Angle kBallReleaseAngleLow = Degree.of(48.0);
+
+    private static SendableChooser<Angle> kReleaseAngleChooser = null;
+
+    public static void initReleaseAngleChooser() {
+      if (kReleaseAngleChooser != null)
+        return;
+      kReleaseAngleChooser = new SendableChooser<>();
+      kReleaseAngleChooser.setDefaultOption("High Arc (58 deg)", kBallReleaseAngleHigh);
+      kReleaseAngleChooser.addOption("Low Arc (48 deg)", kBallReleaseAngleLow);
+      SmartDashboard.putData("Launch Angle", kReleaseAngleChooser);
+    }
+
+    /**
+     * Returns the currently selected ball release angle.
+     * Falls back to the high-arc angle if the chooser has not been initialised.
+     */
+    public static Angle kBallReleaseAngle() {
+      if (kReleaseAngleChooser == null)
+        return kBallReleaseAngleHigh;
+      Angle selected = kReleaseAngleChooser.getSelected();
+      return selected != null ? selected : kBallReleaseAngleHigh;
+    }
 
     // Launch heading relative to bot heading (0 means launching straight forward,
     // positive is counterclockwise)
@@ -214,7 +240,7 @@ public final class Constants {
       // ballSpeed = wheelLinearSpeed * slipCoeff
       // wheelLinearSpeed = omega * radius
       double minOmegaRPM = (minVz
-          / Math.sin(LauncherAndIntakeConstants.kBallReleaseAngle.in(Radians))
+          / Math.sin(LauncherAndIntakeConstants.kBallReleaseAngleHigh.in(Radians))
           / LauncherAndIntakeConstants.kWheelSlipCoefficient
           / LauncherAndIntakeConstants.kWheelRadius.in(Meters))
           * (60.0 / (2 * Math.PI));

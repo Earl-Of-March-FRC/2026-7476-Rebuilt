@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.ProfileSelector;
@@ -113,6 +114,7 @@ public class Robot extends LoggedRobot {
     // calibrate while disabled and stationary -- this call blocks (~5s)
     m_robotContainer.getGyro().calibrate();
     ProfileSelector.init();
+    LauncherAndIntakeConstants.initReleaseAngleChooser();
     gyroCalibrated = true;
 
     // Port forward Photonvision
