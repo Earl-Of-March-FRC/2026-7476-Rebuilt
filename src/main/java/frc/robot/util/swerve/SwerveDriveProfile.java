@@ -95,36 +95,36 @@ public record SwerveDriveProfile(
       Inches.of(23.5),
       Meters.of(0.75),
       Meters.of(0.75),
-      Pounds.of(104.85),
+      Pounds.of(114.35),
       KilogramSquareMeters.of(5),
       GyroType.NavX_MXP_SPI,
       new CameraProfile[] {
           new CameraProfile(
               "Launcher",
               Degrees.of(0.0), // roll
-              Degrees.of(0), // pitchs
+              Degrees.of(-15), // pitchs
               Degrees.of(180.0), // yaw
-              Meters.of(-0.2712041566), // x
-              Meters.of(0.254), // y
-              Meters.of(0.4480096958), // z
+              Meters.of(0.0187481718), // x // 0.0204789786
+              Meters.of(0.0781538188), // y // -0.0190500254
+              Meters.of(0.505), // z // 0.4919337634
               VecBuilder.fill(0.3, 0.3, 0.3)),
           new CameraProfile(
-              "Intake_Trench",
+              "Climber",
               Degrees.of(0.0), // roll
               Degrees.of(-20), // pitch
               Degrees.of(0), // yaw
-              Meters.of(0.3003719164), // x
-              Meters.of(0.2467180994), // y
-              Meters.of(0.4994001188), // z
+              Meters.of(0.3003719164), // x // 0.3056178546
+              Meters.of(-0.2467180994), // y // -0.2415122424
+              Meters.of(0.4994001188), // z // 0.5052718622
               VecBuilder.fill(0.9, 0.9, 0.9)),
           new CameraProfile(
-              "Intake_Ground",
+              "Side",
               Degrees.of(0.0), // roll
-              Degrees.of(2), // pitch
-              Degrees.of(0), // yaw
-              Meters.of(0.300912657), // x
-              Meters.of(-0.2467181248), // y
-              Meters.of(0.4994001188), // z
+              Degrees.of(-12), // pitch
+              Degrees.of(90), // yaw
+              Meters.of(0.300912657), // x // 0.3107901836
+              Meters.of(0.2467181248), // y // 0.1993096344
+              Meters.of(0.405), // z // 0.413481266
               VecBuilder.fill(0.5, 0.5, 0.5))
       },
       true,

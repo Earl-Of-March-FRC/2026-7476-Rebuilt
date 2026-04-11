@@ -104,7 +104,8 @@ public class DriveTrackHubCmd extends Command {
           xDir * DriveConstants.kTooCloseBackAwaySpeed.in(MetersPerSecond), 0);
 
       // Still rotate to face hub so we're ready the instant we can shoot
-      LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
+      LaunchSetpoints launchSetpoints = LaunchHelpers.calculateSetpoints(PoseHelpers.getAllianceHubtTranslation3d(),
+          LaunchHelpers.calculateHubRpm(), leadShots);
       AngularVelocity omega = driveSub.getHeadingCorrectionOmega(launchSetpoints.botHeading());
 
       driveSub.runVelocity(
@@ -117,7 +118,8 @@ public class DriveTrackHubCmd extends Command {
 
     Logger.recordOutput("Drivetrain/DriveTrackHub/TooClose", false);
 
-    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateLaunchSetpoints(toHub3d, leadShots);
+    LaunchSetpoints launchSetpoints = LaunchHelpers.calculateSetpoints(PoseHelpers.getAllianceHubtTranslation3d(),
+        LaunchHelpers.calculateHubRpm(), leadShots);
     Rotation2d desiredHeading = launchSetpoints.botHeading();
     AngularVelocity omega = driveSub.getHeadingCorrectionOmega(desiredHeading);
 

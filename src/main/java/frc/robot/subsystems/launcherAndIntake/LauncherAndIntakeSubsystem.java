@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -28,6 +29,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -58,7 +60,11 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
 
     @Override
     public AngularVelocity getVelocity() {
-      return RPM.of(leaderSparkMax.getEncoder().getVelocity());
+      if (Robot.isReal()) {
+        return RPM.of(leaderSparkMax.getEncoder().getVelocity());
+      } else {
+        return RPM.of(closedLoopController.getSetpoint());
+      }
     }
 
     @Override
@@ -196,26 +202,32 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     Logger.recordOutput("Launcher/UseHighVelocities", useHighVelocities);
     Logger.recordOutput("Launcher/Measured/AppliedOutput", motor.getAppliedOutput());
     Logger.recordOutput("Launcher/Measured/CurrentAmps", motor.getCurrent());
-    Logger.recordOutput("Launcher/Prediction/BallAirTimeSeconds",
-        LaunchHelpers.calculateBallAirTime(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
-    Logger.recordOutput("Launcher/Prediction/PredictedBallEndpointHubHeight",
-        LaunchHelpers.predictBallEndpoint(PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ()));
 
-    Translation3d ballEndPointGroundHeight = LaunchHelpers.predictBallEndpoint(Meters.zero());
+    // Predict the current shot and log detailed obstruction/scoring info.
+    // LaunchHelpers.predictHubShot() is safe to call when LaunchHelpers has been
+    // configured (i.e. after RobotContainer sets up subsystems).
+    LaunchHelpers.ShotPrediction prediction = LaunchHelpers.predictHubShot();
+    LaunchHelpers.logShotPrediction(prediction, "Launcher/Prediction/Hub");
 
-    Logger.recordOutput("Launcher/Prediction/PredictedBallEndpointGroundHeight",
-        ballEndPointGroundHeight);
+    // Air-time at hub height for reference
+    Logger.recordOutput("Launcher/Prediction/AirTimeSeconds",
+        LaunchHelpers.calculateAirTime(
+            PoseHelpers.getAllianceHubtTranslation3d().getMeasureZ(),
+            measuredVelocity).in(Seconds));
+
+    // Ground-plane ball endpoint (z = 0) for trajectory arc visualisation
+    Translation3d groundEndpoint = LaunchHelpers.predictBallLanding(
+        Meters.zero());
+    Logger.recordOutput("Launcher/Prediction/GroundEndpoint", groundEndpoint);
     Logger.recordOutput("WillBallLeaveField",
-        !PoseHelpers.isInField(new Pose3d(ballEndPointGroundHeight, new Rotation3d())));
+        !PoseHelpers.isInField(new Pose2d(
+            groundEndpoint.toTranslation2d(),
+            new Rotation2d())));
 
-    Logger.recordOutput("Launcher/Prediction/BallLaunchVelocityMPS",
-        LaunchHelpers.calculateBallLaunchVelocityVector());
-    Logger.recordOutput("Launcher/Prediction/BallInitialVelocityMPS",
-        LaunchHelpers.calculateBallResultantVelocityVector());
-    Logger.recordOutput("Launcher/Prediction/WillHitHub",
-        LaunchHelpers.willHitHub());
-    Logger.recordOutput("Launcher/Prediction/HubTranslation2D",
-        PoseHelpers.getAllianceHubtTranslation2d());
+    Logger.recordOutput("Launcher/Prediction/LaunchVelocityVector",
+        LaunchHelpers.calculateLaunchVelocityVector(measuredVelocity));
+    Logger.recordOutput("Launcher/Prediction/ResultantVelocityVector",
+        LaunchHelpers.calculateResultantVelocityVector(measuredVelocity));
   }
 
   public AngularVelocity getVelocity() {

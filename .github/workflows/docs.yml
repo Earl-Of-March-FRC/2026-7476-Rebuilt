@@ -1,0 +1,67 @@
+# ============================================================
+# FRC 2026 Robot Code Continuous Integration
+# Builds and deploys Javadoc on every push and pull request to the main branch
+# ============================================================
+
+name: Docs
+on:
+  push: 
+    branches: ["main"]
+
+# Set permissions for page deployement
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy Javadoc
+    runs-on: ubuntu-22.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Mark repo as safe for Git inside container
+      - name: Mark repository as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # Allow Gradle wrapper to run
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Set up Java 17 (required for WPILib 2026)
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Build Javadoc
+      - name: Build Javadoc
+        run: ./gradlew javadoc
+
+      # Set up GitHub pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # Upload Javadoc
+      - name: Upload Javadoc Artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+
+      # Deploy Javadoc
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      
