@@ -12,11 +12,15 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.OTBIntakeConstants;
+import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.swerve.SwerveConfig;
 
@@ -25,7 +29,7 @@ import frc.robot.util.swerve.SwerveConfig;
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class AutoDeployIntakeCmd extends SequentialCommandGroup {
   /** Creates a new AutoDeployIntakeCmd. */
-  public AutoDeployIntakeCmd(DrivetrainSubsystem driveSub) {
+  public AutoDeployIntakeCmd(DrivetrainSubsystem driveSub, OTBIntakeSubsystem otbIntakeSub) {
 
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
@@ -45,7 +49,9 @@ public class AutoDeployIntakeCmd extends SequentialCommandGroup {
                 / SwerveConfig.kMaxAngularSpeed.in(RadiansPerSecond);
           }
         }).withTimeout(AutoConstants.kIntakeDeployDriveTime),
-        Commands.waitTime(AutoConstants.kIntakeDeployStopTime));
+        Commands.waitTime(AutoConstants.kIntakeDeployStopTime),
+        new IntakeCmd(otbIntakeSub, OTBIntakeConstants.kIntakeSpeed)
+            .withTimeout(AutoConstants.kIntakeDeployIntakeTime));
     // .withTimeout(AutoConstants.kIntakeDeployDriveTime),
     // Commands.waitTime(AutoConstants.kIntakeDeployStopTime));
 

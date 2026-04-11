@@ -651,7 +651,7 @@ public class RobotContainer {
 
     autoChooser.addOption("Launch and Cross Bump Auto",
         new SequentialCommandGroup(
-            new AutoDeployIntakeCmd(driveSub),
+            new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
             new XLockAndLaunchCmd(
                 driveSub,
                 indexerSub,
@@ -668,7 +668,7 @@ public class RobotContainer {
 
     autoChooser.addOption("Launch and Cross Trench Auto",
         new SequentialCommandGroup(
-            new AutoDeployIntakeCmd(driveSub),
+            new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
             new ParallelCommandGroup(
                 new XLockAndLaunchCmd(
                     driveSub,
@@ -686,18 +686,18 @@ public class RobotContainer {
                 Set.of(driveSub))));
 
     autoChooser.addOption("Launch", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new XLockAndLaunchCmd(
             driveSub,
             indexerSub,
             launcherAndIntakeSub)));
 
     autoChooser.addOption("Launch Then Climb Left", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Left)));
 
     autoChooser.addOption("Launch Then Climb Right", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Right)));
 
     // autoChooser.addOption("Align to Climb",
@@ -718,34 +718,34 @@ public class RobotContainer {
     // new DriveToTowerSideCmd(driveSub, TowerSide.Right)));
 
     autoChooser.addOption("Align to Tower Left & Climb", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left)));
 
     autoChooser.addOption("Align to Tower Right & Climb", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right)));
 
     autoChooser.addOption("Depot Launch and Climb", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new DepotAndClimbCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Depot Launch and Neutral Zone", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new DepotAndNeutralZoneCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Outpost Launch and Climb", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new OutpostAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Outpost Launch and Neutral Zone", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new OutpostAndNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Launch and Delayed Neutral Zone", new SequentialCommandGroup(
-        new AutoDeployIntakeCmd(driveSub),
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new LaunchAndDelayedNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub));
+    autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub, otbIntakeSub));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
