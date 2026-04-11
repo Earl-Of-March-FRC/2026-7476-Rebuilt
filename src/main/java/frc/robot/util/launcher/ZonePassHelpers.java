@@ -98,24 +98,21 @@ public final class ZonePassHelpers {
     for (int i = 0; i < 25; i++) {
       t = (tLow + tHigh) / 2.0;
 
-      // Solve horizontal velocity needed
       launcherVelocity = toTarget2d.div(t).minus(robotVelocity);
       double requiredVh = launcherVelocity.getNorm();
 
-      // Convert to full velocity using fixed angle
       adjustedBallSpeed = requiredVh / cosA;
       double vz = adjustedBallSpeed * sinA;
 
-      // Compute actual airtime from vertical motion
       double computedT = (vz + Math.sqrt(vz * vz + 2 * g * releaseHeight)) / g;
 
-      // Binary search condition
       if (computedT > t) {
         tLow = t;
       } else {
         tHigh = t;
       }
     }
+
     AngularVelocity rpm = LauncherAndIntakeConstants.linearVelocityToAngularVelocity(
         MetersPerSecond.of(adjustedBallSpeed));
 
@@ -126,8 +123,7 @@ public final class ZonePassHelpers {
     Rotation2d botHeading = Rotation2d.fromRadians(launchYaw)
         .minus(LauncherAndIntakeConstants.kLauncherBotHeading);
 
-    LaunchSetpoints setpoints = new LaunchSetpoints(rpm, botHeading);
-
+    // Compute prediction BEFORE building setpoints
     Translation2d totalVelocity = launcherVelocity.plus(robotVelocity);
     Translation2d landing2d = robotPos.plus(totalVelocity.times(t));
 
@@ -136,7 +132,6 @@ public final class ZonePassHelpers {
         landing2d.getY(),
         target.getZ());
 
-    // Validation
     double distanceToTarget = landing.toTranslation2d().getDistance(target.toTranslation2d());
 
     boolean outOfField = !PoseHelpers.isInField(
@@ -152,8 +147,11 @@ public final class ZonePassHelpers {
         robotPos, landing.toTranslation2d(),
         PoseHelpers.getEnemyHubTranslation2d(), hubRadius);
 
+    boolean shotIsSafe = !outOfField && !blockedByOwnHub && !blockedByEnemyHub && !LaunchHelpers.isTooCloseToHub();
+    LaunchSetpoints setpoints = new LaunchSetpoints(rpm, botHeading, shotIsSafe);
+
     boolean willScore = distanceToTarget < PassConstants.kPassLandingTolerance.in(Meters)
-        && !outOfField && !blockedByOwnHub && !blockedByEnemyHub;
+        && shotIsSafe;
 
     ShotPrediction prediction = new ShotPrediction(
         willScore, landing, blockedByOwnHub, blockedByEnemyHub,
