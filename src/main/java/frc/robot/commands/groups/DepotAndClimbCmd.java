@@ -26,6 +26,7 @@ import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
+import frc.robot.commands.indexer.TreadmillOnCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
@@ -57,10 +58,10 @@ public class DepotAndClimbCmd extends SequentialCommandGroup {
     final PathPlannerPath depotPath = AutoConstants.depotPath;
     final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
 
-    final Command intakeCmd = new PulsingTreadmillCmd(
+    final Command intakeCmd = new TreadmillOnCmd(
         indexerSub,
-        -IndexerConstants.kWheelSpeed,
-        -IndexerConstants.kTreadmillSpeed)
+        () -> -IndexerConstants.kWheelSpeed,
+        () -> -IndexerConstants.kTreadmillSpeed)
         .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get()));
 
     final Command driveThroughDepotAndIntakeCmd = new ParallelDeadlineGroup(

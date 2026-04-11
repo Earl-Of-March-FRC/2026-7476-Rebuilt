@@ -86,6 +86,7 @@ import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.groups.ZonePassCmd;
 import frc.robot.commands.indexer.IndexerCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
+import frc.robot.commands.indexer.TreadmillOnCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -312,31 +313,31 @@ public class RobotContainer {
 
     // Do not use parallel compostion so that each subsystem can be cancelled
     // independantly for launching while intaking
-    Command outakeFrontTreadmillCmd = new PulsingTreadmillCmd(
+    Command outakeFrontTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
-        -IndexerConstants.kWheelSpeed,
-        -IndexerConstants.kTreadmillSpeed);
+        () -> -IndexerConstants.kWheelSpeed,
+        () -> -IndexerConstants.kTreadmillSpeed);
     Command outakeFrontCmd = new LauncherCmd(launcherAndIntakeSub,
         LauncherAndIntakeConstants.kIntakeRPMSetpoint.times(-1));
-    Command intakeFrontTreadmillCmd = new PulsingTreadmillCmd(
+    Command intakeFrontTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
-        IndexerConstants.kWheelSpeed,
-        IndexerConstants.kTreadmillSpeed);
+        () -> IndexerConstants.kWheelSpeed,
+        () -> IndexerConstants.kTreadmillSpeed);
     Command intakeFrontCmd = new LauncherCmd(launcherAndIntakeSub,
         LauncherAndIntakeConstants.kIntakeRPMSetpoint);
 
-    Command outakeBackTreadmillCmd = new PulsingTreadmillCmd(
+    Command outakeBackTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
-        0,
-        IndexerConstants.kTreadmillSpeed);
+        () -> 0.0,
+        () -> IndexerConstants.kTreadmillSpeed);
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     outakeBackTreadmillCmd.setName("OTBTreadmill");
     Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get());
-    Command intakeBackTreadmillCmd = new PulsingTreadmillCmd(
+    Command intakeBackTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
-        0,
-        -IndexerConstants.kTreadmillSpeed);
+        () -> 0.0,
+        () -> -IndexerConstants.kTreadmillSpeed);
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     intakeBackTreadmillCmd.setName("OTBTreadmill");

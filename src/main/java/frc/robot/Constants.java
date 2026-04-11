@@ -653,19 +653,19 @@ public final class Constants {
      */
     public static final double kDirectionConstant = -1.0;
 
-    public static final double kTreadmillSpeed = 1.0;
+    public static final double kTreadmillSpeed = 0.5;
     public static final double kWheelSpeed = 1.0;
 
     public static final double kWheelMotorReduction = 1.0;
     public static final double kWheelDiameterMeters = 0.17;
 
     // TODO: Tune these values
-    public static final double kTreadmillLaunchIndexPercent = 1;
-    public static final double kTreadmillStoreIndexPercent = 1;
+    public static final double kTreadmillLaunchIndexPercent = 0.5;
+    public static final double kTreadmillStoreIndexPercent = 0.5;
     public static final double kWheelLaunchIndexPercent = 1;
 
     // Treadmill pulse timing
-    public static final double kPulseDutyCycle = 0.9;
+    public static final double kPulseDutyCycle = 1;
     public static final double kPulsePeriod = 0.2;
 
     public static final double kPulseOnSeconds = kPulsePeriod * kPulseDutyCycle;
@@ -685,7 +685,7 @@ public final class Constants {
 
       kTreadmillConfig
           .idleMode(IdleMode.kBrake)
-          .smartCurrentLimit(20);
+          .smartCurrentLimit(10);
     }
   }
 
