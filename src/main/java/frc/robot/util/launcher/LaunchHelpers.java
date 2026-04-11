@@ -231,8 +231,9 @@ public final class LaunchHelpers {
     double discriminant = b * b - 4 * a * c;
 
     if (Double.isNaN(discriminant) || discriminant < 0) {
-      DriverStation.reportError(
-          "calculateHubRpm: discriminant is NaN or negative (" + discriminant + ")", false);
+      // DriverStation.reportError(
+      // "calculateHubRpm: discriminant is NaN or negative (" + discriminant + ")",
+      // false);
       return RPM.zero();
     }
 
@@ -265,8 +266,8 @@ public final class LaunchHelpers {
     // Solve: V^2 = (g * d^2) / (2 * cos^2A * (d*tanA + releaseHeight))
     double denominator = 2 * cosA * cosA * (d * tanA + releaseHeight);
     if (denominator <= 0) {
-      DriverStation.reportError(
-          "calculatePhysicsRpm: invalid denominator " + denominator, false);
+      // DriverStation.reportError(
+      // "calculatePhysicsRpm: invalid denominator " + denominator, false);
       return RPM.of(1000);
     }
 
@@ -491,15 +492,17 @@ public final class LaunchHelpers {
     double discriminant = Vz * Vz - 2 * g * deltaHeight;
 
     if (Double.isNaN(discriminant) || discriminant < 0) {
-      DriverStation.reportError(
-          "calculateAirTime: discriminant is NaN or negative (" + discriminant + ")", false);
+      // DriverStation.reportError(
+      // "calculateAirTime: discriminant is NaN or negative (" + discriminant + ")",
+      // false);
       return Seconds.zero();
     }
 
     double t = (Vz + Math.sqrt(discriminant)) / g;
     if (Double.isNaN(t) || t < 0) {
-      DriverStation.reportError(
-          String.format("calculateAirTime: non-positive flight time t=%.4fs", t), false);
+      // DriverStation.reportError(
+      // String.format("calculateAirTime: non-positive flight time t=%.4fs", t),
+      // false);
       return Seconds.zero();
     }
 
