@@ -2,6 +2,8 @@ package frc.robot.util.swerve;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +24,7 @@ import com.pathplanner.lib.path.Waypoint;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -406,12 +409,12 @@ public class PathGenerator {
     PathPlannerPath selectedPath = getTowerPathFromSide(side);
 
     if (selectedPath == null) {
-      return new PrintCommand("Selected path for driveToTowerSideAuto was null.");
+      return new PrintCommand("Selected path for driveToTowerFrontAuto was null.");
     }
 
     List<Pose2d> waypoints = selectedPath.getPathPoses();
     if (waypoints.isEmpty()) {
-      return new PrintCommand("Selected path for driveToTowerSideAuto was empty.");
+      return new PrintCommand("Selected path for driveToTowerFrontAuto was empty.");
     }
 
     Pose2d firstWaypoint = waypoints.get(0);
@@ -447,6 +450,80 @@ public class PathGenerator {
     Logger.recordOutput("Commands/PathGenerator/driveToTowerSideAuto/DesiredPose", desiredClimbPose);
 
     return AutoBuilder.pathfindThenFollowPath(selectedPath, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  /**
+   * Creates a command that drives to the start of the depot intake path
+   * 
+   * @return Command
+   */
+  public static Command driveToDepotAuto() {
+    PathPlannerPath depotPath = AutoConstants.depotPath;
+    if (depotPath == null) {
+      return new PrintCommand("Depot path for driveToDepotAuto was null.");
+    }
+
+    List<Pose2d> waypoints = depotPath.getPathPoses();
+    if (waypoints.isEmpty()) {
+      return new PrintCommand("Depot path for driveToDepotAuto was empty.");
+    }
+
+    Rotation2d targetRotation = Rotation2d.kZero;
+    Pose2d firstWaypoint = waypoints.get(0);
+    Pose2d desiredPose = new Pose2d(firstWaypoint.getX(), firstWaypoint.getY(), targetRotation);
+
+    Logger.recordOutput("Commands/PathGenerator/driveToDepotAuto/DesiredPose", desiredPose);
+
+    return AutoBuilder.pathfindToPoseFlipped(desiredPose, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  /**
+   * Creates a command that drives to the neutral zone during auto
+   * 
+   * @return Command
+   */
+  public static Command driveToNeutralZoneAuto() {
+    PathPlannerPath neutralZonePath;
+
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
+
+    if (drive().getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneOutpost : AutoConstants.neutralZoneDepot;
+    } else {
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneDepot : AutoConstants.neutralZoneOutpost;
+    }
+
+    if (neutralZonePath == null) {
+      return new PrintCommand("Path for driveToNeutralZoneAuto was null.");
+    }
+
+    return AutoBuilder.pathfindThenFollowPath(neutralZonePath, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  /**
+   * Creates a command that drives to the launch pose during auto
+   * 
+   * @return Command
+   */
+  public static Command driveToLaunchPoseAuto() {
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
+
+    Pose2d startPose = drive().getPose();
+
+    Distance desiredX = FieldConstants.kAllianceZoneXLength.minus(AutoConstants.kAutoLaunchDistanceFromHubX);
+    desiredX = isBlueAlliance ? desiredX : FieldConstants.kFieldLengthX.minus(desiredX);
+
+    // : FieldConstants.kFieldLengthX.minus(AutoConstants.autoLaunchDistance);
+    Distance desiredY = Meters.of(startPose.getY());
+    // : FieldConstants.kFieldWidthY.minus(Meters.of(startPose.getY()));
+    Logger.recordOutput("Commands/PathGenerator/driveToLaunchPoseAuto/StartPoseY", desiredY);
+
+    Pose2d desiredPose = new Pose2d(desiredX, desiredY, startPose.getRotation());
+
+    return AutoBuilder.pathfindToPose(desiredPose, AutoConstants.L1ClimbConstraints)
         .andThen(new DriveStopCmd(drive()));
   }
 

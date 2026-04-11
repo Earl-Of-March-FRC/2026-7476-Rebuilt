@@ -93,10 +93,10 @@ public record SwerveDriveProfile(
       MetersPerSecondPerSecond.of(3),
       Inches.of(23.5),
       Inches.of(23.5),
-      Meters.of(0.75),
-      Meters.of(0.75),
-      Pounds.of(114.35),
-      KilogramSquareMeters.of(5),
+      Meters.of(0.813),
+      Meters.of(0.813),
+      Pounds.of(127.35),
+      KilogramSquareMeters.of(6.5),
       GyroType.NavX_MXP_SPI,
       new CameraProfile[] {
           new CameraProfile(

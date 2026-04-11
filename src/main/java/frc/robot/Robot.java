@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import java.io.File;
 import java.util.function.Supplier;
 
@@ -99,6 +101,8 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Commands", CommandScheduler.getInstance());
     SmartDashboard.putBoolean("is neutral zone", m_robotContainer.driveSub.getCurrentBotZone() == FieldZones.Neutral);
 
+    SmartDashboard.putString("Auto Pose",
+        m_robotContainer.driveSub.getPose().getX() + " " + m_robotContainer.driveSub.getPose().getY());
   }
 
   @Override
@@ -122,6 +126,10 @@ public class Robot extends LoggedRobot {
     PortForwarder.add(1186, "photonvision.local", 1186);
 
     SmartDashboard.putBoolean("is Neutral Zone", false);
+
+    SmartDashboard.putNumber("Delayed Crossing Time (Auto)", 5);
+    SmartDashboard.putNumber("8 Fuel Launch Time (Auto)", AutoConstants.kAutoLaunch8Time.in(Seconds));
+    SmartDashboard.putNumber("32 Fuel Launch Time (Auto)", AutoConstants.kAutoLaunch32Time.in(Seconds));
 
     PathPlannerLogging.clearLoggingCallbacks();
   }
@@ -153,7 +161,7 @@ public class Robot extends LoggedRobot {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
 
-    Logger.start();
+    // Logger.start();
   }
 
   /** This function is called periodically during autonomous. */

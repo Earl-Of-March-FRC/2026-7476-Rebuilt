@@ -18,7 +18,9 @@ import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Seconds;
 
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -46,6 +48,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -68,11 +71,17 @@ import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.drivetrain.DriveXLockCmd;
+import frc.robot.commands.groups.AutoDeployIntakeCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
+import frc.robot.commands.groups.DepotAndClimbCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
+import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneCmd;
+import frc.robot.commands.groups.OutpostAndClimbCmd;
+import frc.robot.commands.groups.OutpostAndNeutralZoneCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.groups.ZonePassCmd;
 import frc.robot.commands.indexer.IndexerCmd;
@@ -214,22 +223,6 @@ public class RobotContainer {
     Logger.recordOutput("Temp/DownPos", new Pose2d(FieldConstants.kFieldLengthX.minus(Meters.of(15.465)),
         FieldConstants.kFieldWidthY.minus(Meters.of(5.141)), Rotation2d.kZero));
 
-    // NamedCommands.registerCommand("Launch Once Connecting Path",
-    // AutoBuilder.pathfindToPose(
-    // new Pose2d(AutoConstants.depotStartPoint, new Rotation2d(0, 0)),
-    // AutoConstants.L1ClimbConstraints));
-
-    NamedCommands.registerCommand("Intake Left Connecting Path",
-        Commands.defer(
-            () -> AutoBuilder.pathfindToPose(new Pose2d(AutoConstants.intakeLeftStartPoint, new Rotation2d(0, 0)),
-                AutoConstants.L1ClimbConstraints),
-            Set.of(driveSub)));
-
-    NamedCommands.registerCommand("Launch Once Connecting Path",
-        Commands.defer(
-            () -> AutoBuilder.pathfindThenFollowPath(AutoConstants.depotClimbPath, AutoConstants.L1ClimbConstraints),
-            Set.of(driveSub)));
-
     configureBindings();
     configureAutos();
   }
@@ -315,7 +308,7 @@ public class RobotContainer {
         // Always lock distance in auto, since the driver isn't controlling movement
         () -> true,
         Constants.LauncherAndIntakeConstants.kLeadShots)
-        .withTimeout(Constants.LauncherAndIntakeConstants.kAutoLaunchTime);
+        .withTimeout(Constants.AutoConstants.kAutoLaunch8Time);
 
     // Do not use parallel compostion so that each subsystem can be cancelled
     // independantly for launching while intaking
@@ -339,7 +332,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     outakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed);
+    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get());
     Command intakeBackTreadmillCmd = new PulsingTreadmillCmd(
         indexerSub,
         0,
@@ -347,7 +340,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     intakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOutakeSpeed);
+    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed.get());
 
     Command zonePassCmd = new ZonePassCmd(
         driveSub,
@@ -533,8 +526,31 @@ public class RobotContainer {
     // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
     // launcherAndIntakeSub));
 
-    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
-    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    // operatorController.rightBumper().toggleOnTrue((outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
+    operatorController.leftBumper().toggleOnTrue(new SequentialCommandGroup(
+        new ParallelCommandGroup(
+            new XLockAndLaunchCmd(
+                driveSub,
+                indexerSub,
+                launcherAndIntakeSub).withDeadline(
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+            new ClimbDownCmd(climberSub)),
+        Commands.defer(
+            () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
+            Set.of(driveSub))));
+    // operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    operatorController.rightBumper().toggleOnTrue(
+        new SequentialCommandGroup(
+            new XLockAndLaunchCmd(
+                driveSub,
+                indexerSub,
+                launcherAndIntakeSub).withDeadline(
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                        .andThen(Commands.waitTime(AutoConstants.kAutoLaunch8Time))),
+            Commands.defer(
+                () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
+                Set.of(driveSub))));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
@@ -634,40 +650,54 @@ public class RobotContainer {
 
     autoChooser.addOption("Launch and Cross Bump Auto",
         new SequentialCommandGroup(
+            new AutoDeployIntakeCmd(driveSub),
             new XLockAndLaunchCmd(
                 driveSub,
                 indexerSub,
                 launcherAndIntakeSub).withDeadline(
                     Commands.waitUntil(LaunchHelpers::willHitHub)
-                        .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                        .andThen(Commands.defer(
+                            () -> Commands.waitTime(Seconds.of(
+                                SmartDashboard.getNumber("8 Fuel Launch Time (Auto)",
+                                    AutoConstants.kAutoLaunch8Time.in(Seconds)))),
+                            Set.of()))),
             Commands.defer(
                 () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
                 Set.of(driveSub))));
 
     autoChooser.addOption("Launch and Cross Trench Auto",
         new SequentialCommandGroup(
+            new AutoDeployIntakeCmd(driveSub),
             new ParallelCommandGroup(
                 new XLockAndLaunchCmd(
                     driveSub,
                     indexerSub,
                     launcherAndIntakeSub).withDeadline(
                         Commands.waitUntil(LaunchHelpers::willHitHub)
-                            .andThen(Commands.waitTime(LauncherAndIntakeConstants.kAutoLaunchTime))),
+                            .andThen(Commands.defer(
+                                () -> Commands.waitTime(Seconds.of(
+                                    SmartDashboard.getNumber("8 Fuel Launch Time (Auto)",
+                                        AutoConstants.kAutoLaunch8Time.in(Seconds)))),
+                                Set.of()))),
                 new ClimbDownCmd(climberSub)),
             Commands.defer(
                 () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
                 Set.of(driveSub))));
 
-    autoChooser.addOption("Launch", new XLockAndLaunchCmd(
-        driveSub,
-        indexerSub,
-        launcherAndIntakeSub));
+    autoChooser.addOption("Launch", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new XLockAndLaunchCmd(
+            driveSub,
+            indexerSub,
+            launcherAndIntakeSub)));
 
-    autoChooser.addOption("Launch Then Climb Left",
-        new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Left));
+    autoChooser.addOption("Launch Then Climb Left", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Left)));
 
-    autoChooser.addOption("Launch Then Climb Right",
-        new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Right));
+    autoChooser.addOption("Launch Then Climb Right", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new LaunchAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub, TowerSide.Right)));
 
     // autoChooser.addOption("Align to Climb",
     // Commands.defer(
@@ -678,17 +708,43 @@ public class RobotContainer {
     // autoChooser.addOption("Align to Tower Then Climb",
     // new NearestClimbCmd(driveSub, climberSub));
 
-    autoChooser.addOption("Align to Tower Left",
-        new DriveToTowerSideCmd(driveSub, TowerSide.Left));
+    // autoChooser.addOption("Align to Tower Left", new SequentialCommandGroup(
+    // new AutoDeployIntakeCmd(driveSub),
+    // new DriveToTowerSideCmd(driveSub, TowerSide.Left)));
 
-    autoChooser.addOption("Align to Tower Right",
-        new DriveToTowerSideCmd(driveSub, TowerSide.Right));
+    // autoChooser.addOption("Align to Tower Right", new SequentialCommandGroup(
+    // new AutoDeployIntakeCmd(driveSub),
+    // new DriveToTowerSideCmd(driveSub, TowerSide.Right)));
 
-    autoChooser.addOption("Align to Tower Left & Climb",
-        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left));
+    autoChooser.addOption("Align to Tower Left & Climb", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Left)));
 
-    autoChooser.addOption("Align to Tower Right & Climb",
-        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right));
+    autoChooser.addOption("Align to Tower Right & Climb", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new DriveAndClimbCmd(driveSub, climberSub, TowerSide.Right)));
+
+    autoChooser.addOption("Depot Launch and Climb", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new DepotAndClimbCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Depot Launch and Neutral Zone", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new DepotAndNeutralZoneCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Outpost Launch and Climb", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new OutpostAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Outpost Launch and Neutral Zone", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new OutpostAndNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Launch and Delayed Neutral Zone", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub),
+        new LaunchAndDelayedNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub));
 
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
@@ -700,11 +756,12 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command selectedAuto = autoChooser.get();
-    if (!selectedAuto.hasRequirement(climberSub)) {
-      return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is causing the code to crash when
-                                                                   // autonomous phase runs twice. Prevent this by
-                                                                   // testing autos using the test controller
-    }
+    // // if (!selectedAuto.hasRequirement(climberSub)) {
+    // return selectedAuto.alongWith(new ClimbDownCmd(climberSub)); // This line is
+    // causing the code to crash when
+    // // autonomous phase runs twice. Prevent this by
+    // // testing autos using the test controller
+    // }
     Logger.recordOutput("Drivetrain/SelectedAuto", selectedAuto == null ? "Null" : selectedAuto.getName());
     return selectedAuto;
 
