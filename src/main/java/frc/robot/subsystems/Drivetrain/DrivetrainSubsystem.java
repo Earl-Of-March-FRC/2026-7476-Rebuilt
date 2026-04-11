@@ -186,7 +186,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
       CameraProfile currentProfile = cameraProfiles[i];
       cameras[i] = new PhotonCamera(currentProfile.name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.AVERAGE_BEST_TARGETS,
           currentProfile.getRobotToCameraTransform());
 
       if (Robot.isSimulation()) {
