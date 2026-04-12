@@ -49,9 +49,9 @@ public class AutoDeployIntakeCmd extends SequentialCommandGroup {
                 / SwerveConfig.kMaxAngularSpeed.in(RadiansPerSecond);
           }
         }).withTimeout(AutoConstants.kIntakeDeployDriveTime),
-        new DriveCmd(driveSub, () -> 0.0, () -> 0.0, () -> 0.0).withTimeout(AutoConstants.kIntakeDeployStopTime));
-    // new IntakeCmd(otbIntakeSub, OTBIntakeConstants.kIntakeSpeed)
-    // .withTimeout(AutoConstants.kIntakeDeployIntakeTime));
+        new DriveCmd(driveSub, () -> 0.0, () -> 0.0, () -> 0.0).withTimeout(AutoConstants.kIntakeDeployStopTime),
+        new IntakeCmd(otbIntakeSub, () -> -OTBIntakeConstants.kIntakeSpeed.get())
+            .withTimeout(AutoConstants.kIntakeDeployIntakeTime));
     // .withTimeout(AutoConstants.kIntakeDeployDriveTime),
     // Commands.waitTime(AutoConstants.kIntakeDeployStopTime));
 

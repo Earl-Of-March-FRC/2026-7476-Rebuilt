@@ -186,7 +186,7 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
 
   // Main Launcher Subsystem
   private final LauncherAndIntakeMotorInterface motor;
-  private double velocityOffsetRPM = 0.0;
+  private double velocityOffsetRPM = 50;
   private boolean useHighVelocities = true;
 
   public LauncherAndIntakeSubsystem(LauncherAndIntakeMotorInterface motor) {
