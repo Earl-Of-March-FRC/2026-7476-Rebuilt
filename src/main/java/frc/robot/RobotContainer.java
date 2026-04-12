@@ -68,6 +68,7 @@ import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
 import frc.robot.commands.climber.ClimbToHeightCmd;
 import frc.robot.commands.climber.ClimbUpCmd;
+import frc.robot.commands.drivetrain.ActiveXLockCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
@@ -473,7 +474,8 @@ public class RobotContainer {
 
     // Cancel all driveSub commands and disables xLock, returning manual control
     driverController.button(7).onTrue(Commands.runOnce(() -> driveSub.setXLock(false), driveSub));
-    driverController.button(8).onTrue(Commands.runOnce(driveSub::toggleXLock));
+    driverController.button(8)
+        .toggleOnTrue(new ActiveXLockCmd(driveSub, this::getDriverVx, this::getDriverVy, this::getDriverOmega));
 
     // driverController.rightBumper().onTrue(Commands.defer(
     // () -> PathGenerator.crossNearestBump(MetersPerSecond.of(0)),
