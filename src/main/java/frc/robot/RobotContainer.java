@@ -750,8 +750,8 @@ public class RobotContainer {
     autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub, otbIntakeSub));
 
     autoChooser.addOption("Forward10Seconds",
-        Commands.run(() -> driveSub.runVelocity(new ChassisSpeeds(0.25, 0, 0), false, false, false))
-            .withTimeout(Seconds.of(10)).andThen(new DriveStopCmd(driveSub)));
+        Commands.run(() -> driveSub.runVelocity(new ChassisSpeeds(0.4, 0, 0), false, false, false))
+            .withTimeout(Seconds.of(15)).andThen(new DriveStopCmd(driveSub)));
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
 
