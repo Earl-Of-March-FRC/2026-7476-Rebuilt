@@ -208,6 +208,7 @@ public class LauncherAndIntakeSubsystem extends SubsystemBase {
     // configured (i.e. after RobotContainer sets up subsystems).
     LaunchHelpers.ShotPrediction prediction = LaunchHelpers.predictHubShot();
     LaunchHelpers.logShotPrediction(prediction, "Launcher/Prediction/Hub");
+    Logger.recordOutput("Launcher/Prediction/Hub/AtSetpoints", LaunchHelpers.atSetpoints());
 
     // Air-time at hub height for reference
     Logger.recordOutput("Launcher/Prediction/AirTimeSeconds",
