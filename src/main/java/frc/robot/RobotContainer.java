@@ -747,6 +747,8 @@ public class RobotContainer {
 
     autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub, otbIntakeSub));
 
+    autoChooser.addOption("Forward10Seconds",
+        new DriveCmd(driveSub, () -> 0.05, () -> 0.0, () -> 0.0).withTimeout(Seconds.of(10)));
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
 
