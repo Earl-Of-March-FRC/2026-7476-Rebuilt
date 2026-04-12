@@ -186,7 +186,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
       CameraProfile currentProfile = cameraProfiles[i];
       cameras[i] = new PhotonCamera(currentProfile.name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
-          PoseStrategy.AVERAGE_BEST_TARGETS,
+          PoseStrategy.LOWEST_AMBIGUITY, // AVERAGE_BEST_TARGETS averages the best and alternate PnP solutions per tag.
+                                         // With single tags, the alternate solution is often a mirror-image reflection
+                                         // that is completely wrong. Averaging them gives you a garbage pose.
           currentProfile.getRobotToCameraTransform());
 
       if (Robot.isSimulation()) {
@@ -853,22 +855,22 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
         double totalX = 0;
         double totalY = 0;
-        double totalZRot = 0;
+        double sumSin = 0;
+        double sumCos = 0;
 
         for (Pose3d pose : validPoses) {
           totalX += pose.getX();
           totalY += pose.getY();
-
-          totalZRot += pose.getRotation().getZ();
+          sumSin += Math.sin(pose.getRotation().getZ());
+          sumCos += Math.cos(pose.getRotation().getZ());
         }
 
         final int count = validPoses.size();
         Pose3d averagePose = new Pose3d(
-            totalX / count, // X average
-            totalY / count, // Y average
-            0, // Z forced to 0 (validated by isOnGround)
-            new Rotation3d(0, 0, totalZRot / count) // Average Z rotation
-        );
+            totalX / count,
+            totalY / count,
+            0,
+            new Rotation3d(0, 0, Math.atan2(sumSin / count, sumCos / count)));
 
         Logger.recordOutput("Vision/" + camera.getName() + "/FallbackPose", averagePose);
 
@@ -954,6 +956,13 @@ public class DrivetrainSubsystem extends SubsystemBase {
         }
 
         Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
+
+        double jumpDistance = estimatedPose.getTranslation()
+            .getDistance(robotPose.getTranslation());
+        if (jumpDistance > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
+          Logger.recordOutput("Vision/" + cameras[i].getName() + "/RejectedJump", jumpDistance);
+          continue;
+        }
 
         // Calculate dynamic standard deviations based on measurement quality
         final Vector<N3> stdDevs;
