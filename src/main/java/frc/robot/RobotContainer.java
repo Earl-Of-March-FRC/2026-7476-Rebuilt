@@ -38,6 +38,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -70,6 +71,7 @@ import frc.robot.commands.climber.ClimbUpCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
+import frc.robot.commands.drivetrain.DriveStopCmd;
 import frc.robot.commands.drivetrain.DriveXLockCmd;
 import frc.robot.commands.groups.AutoDeployIntakeCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
@@ -748,8 +750,8 @@ public class RobotContainer {
     autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub, otbIntakeSub));
 
     autoChooser.addOption("Forward10Seconds",
-        new DriveCmd(driveSub, () -> 0.05, () -> 0.0, () -> 0.0).withTimeout(Seconds.of(10)));
-    SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
+        Commands.run(() -> driveSub.runVelocity(new ChassisSpeeds(0.25, 0, 0), false, true, true))
+            .withTimeout(Seconds.of(10)).andThen(new DriveStopCmd(driveSub)));
   }
 
   /**
