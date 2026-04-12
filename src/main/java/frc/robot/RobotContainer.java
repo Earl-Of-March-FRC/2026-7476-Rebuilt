@@ -660,7 +660,7 @@ public class RobotContainer {
                 driveSub,
                 indexerSub,
                 launcherAndIntakeSub).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::atSetpoints)
+                    Commands.waitUntil(LaunchHelpers::willHitHub)
                         .andThen(Commands.defer(
                             () -> Commands.waitTime(Seconds.of(
                                 SmartDashboard.getNumber("8 Fuel Launch Time (Auto)",
@@ -678,7 +678,7 @@ public class RobotContainer {
                     driveSub,
                     indexerSub,
                     launcherAndIntakeSub).withDeadline(
-                        Commands.waitUntil(LaunchHelpers::atSetpoints)
+                        Commands.waitUntil(LaunchHelpers::willHitHub)
                             .andThen(Commands.defer(
                                 () -> Commands.waitTime(Seconds.of(
                                     SmartDashboard.getNumber("8 Fuel Launch Time (Auto)",

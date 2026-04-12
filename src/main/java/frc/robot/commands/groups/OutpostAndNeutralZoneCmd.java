@@ -67,7 +67,7 @@ public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
             driveSub,
             indexerSub,
             launcherAndIntakeSub).withDeadline(
-                Commands.waitUntil(LaunchHelpers::atSetpoints)
+                Commands.waitUntil(LaunchHelpers::willHitHub)
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
