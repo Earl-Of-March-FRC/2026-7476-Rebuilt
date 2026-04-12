@@ -73,7 +73,7 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
     this(
         indexerSub,
         launcherAndIntakeSub,
-        LaunchHelpers::atSetpoints,
+        LaunchHelpers::willHitHub,
         leadShots);
   }
 
