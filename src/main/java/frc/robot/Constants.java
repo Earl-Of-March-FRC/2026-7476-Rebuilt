@@ -613,8 +613,8 @@ public final class Constants {
     public static final double kFinalAlignSpeed = -0.15;
     public static final Time kFinalAlignTime = Seconds.of(0.4);
 
-    public static final Time kIntakeDeployDriveTime = Seconds.of(0.4);
-    public static final Time kIntakeDeployStopTime = Seconds.of(0.3);
+    public static final Time kIntakeDeployDriveTime = Seconds.of(0.6);
+    public static final Time kIntakeDeployStopTime = Seconds.of(0.2);
 
     public static final Time kIntakeDeployIntakeTime = Seconds.of(1.0);
     // public static final double kIntakeDeploySpeedX = 1.0;
