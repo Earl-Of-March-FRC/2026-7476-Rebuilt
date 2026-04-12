@@ -106,7 +106,7 @@ public record SwerveDriveProfile(
               Degrees.of(180.0), // yaw
               Meters.of(0.0), // x // 0.0204789786
               Meters.of(0.0), // y // -0.0190500254
-              Meters.of(0.505), // z // 0.4919337634
+              Inches.of(20.75), // z // 0.4919337634
               VecBuilder.fill(0.3, 0.3, 0.3)),
           new CameraProfile(
               "Climber",
