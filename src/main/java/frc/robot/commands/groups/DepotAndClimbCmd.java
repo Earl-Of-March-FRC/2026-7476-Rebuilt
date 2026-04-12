@@ -80,7 +80,7 @@ public class DepotAndClimbCmd extends SequentialCommandGroup {
             driveSub,
             indexerSub,
             launcherAndIntakeSub).withDeadline(
-                Commands.waitUntil(LaunchHelpers::willHitHub)
+                Commands.waitUntil(LaunchHelpers::atSetpoints)
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 

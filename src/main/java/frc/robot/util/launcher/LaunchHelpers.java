@@ -24,6 +24,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.PhysicsConstants;
@@ -442,6 +443,18 @@ public final class LaunchHelpers {
    */
   public static boolean willHitHub() {
     return predictHubShot().willScore();
+  }
+
+  /**
+   * @return True if the flywheel speed and bot heading are both within tolerance
+   *         of the ideal hub shot setpoints.
+   *         Note that this does not guarantee the shot will score
+   */
+  public static boolean atSetpoints() {
+    LaunchSetpoints setpoints = calculateHubSetpoints(LauncherAndIntakeConstants.kLeadShots);
+    return launcherSub.getVelocity().isNear(setpoints.flywheelSpeed, LauncherAndIntakeConstants.kRPMTolerance)
+        && driveSub.getPose().getRotation().minus(setpoints.botHeading).getMeasure()
+            .abs(Radians) < DriveConstants.kLaunchHeadingTolerance.getRadians();
   }
 
   /**

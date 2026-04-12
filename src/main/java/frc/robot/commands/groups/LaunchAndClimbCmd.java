@@ -54,7 +54,7 @@ public class LaunchAndClimbCmd extends SequentialCommandGroup {
                 drivetrain,
                 indexer,
                 launcherAndIntake).withDeadline(
-                    Commands.waitUntil(LaunchHelpers::willHitHub)
+                    Commands.waitUntil(LaunchHelpers::atSetpoints)
                         .andThen(launchWaitCmd)),
             new ClimbDownCmd(climber)),
         new DriveAndClimbCmd(drivetrain, climber, climbSide));

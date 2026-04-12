@@ -304,6 +304,8 @@ public final class Constants {
     public static final SparkMaxConfig kLeaderConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
 
+    public static final AngularVelocity kRPMTolerance = RPM.of(100);
+
     static {
       kLeaderConfig
           .idleMode(IdleMode.kCoast)
@@ -504,6 +506,7 @@ public final class Constants {
     };
 
     public static final LinearVelocity kTooCloseBackAwaySpeed = MetersPerSecond.of(1.5);
+    public static final Rotation2d kLaunchHeadingTolerance = Rotation2d.fromDegrees(10);
   }
 
   public static final class AutoConstants {
