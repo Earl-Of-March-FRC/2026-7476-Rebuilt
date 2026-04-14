@@ -12,8 +12,10 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import edu.wpi.first.math.Vector;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -21,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -89,6 +92,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   List<Double> stdDevsX = new ArrayList<>();
   List<Double> stdDevsY = new ArrayList<>();
   List<Double> stdDevsTheta = new ArrayList<>();
+  Deque<Pose2d> rejectedPoses = new ArrayDeque<>();
+  LoggedNetworkBoolean useRejectedAverage = new LoggedNetworkBoolean("/Tuning/UseRejectedAverage");
 
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
   private static final SwerveDriveKinematics kinematics = SwerveConfig.kDriveKinematics;
@@ -960,8 +965,30 @@ public class DrivetrainSubsystem extends SubsystemBase {
         double jumpDistance = estimatedPose.getTranslation()
             .getDistance(robotPose.getTranslation());
         if (jumpDistance > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
-          Logger.recordOutput("Vision/" + cameras[i].getName() + "/RejectedJump", jumpDistance);
-          continue;
+          // If all of the 5 past mesurements are within the jump tolerance of
+          // the average, we use that average, otherwise discard it
+          if (rejectedPoses.size() > PhotonConstants.kRejectedPosesQueueSize) {
+            rejectedPoses.remove();
+          }
+          rejectedPoses.addLast(estimatedPose);
+
+          Pose2d average = PoseHelpers.average((Pose2d[]) rejectedPoses.toArray());
+
+          boolean useAverage = true;
+          for (Pose2d pose : rejectedPoses) {
+            if (PoseHelpers.distanceBetween(average, pose) > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
+              useAverage = false;
+              break;
+            }
+          }
+
+          if (useAverage && rejectedPoses.size() == PhotonConstants.kRejectedPosesQueueSize
+              && useRejectedAverage.get()) {
+            estimatedPose = average;
+          } else {
+            Logger.recordOutput("Vision/" + cameras[i].getName() + "/RejectedJump", jumpDistance);
+            continue;
+          }
         }
 
         // Calculate dynamic standard deviations based on measurement quality

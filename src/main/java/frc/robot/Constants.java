@@ -973,6 +973,8 @@ public final class Constants {
     public static final Distance kVisionJumpDistanceThreshold = Meters.of(1.0);
 
     public static final double kVisionHighAmbiguityMultiplier = 1.5;
+
+    public static final int kRejectedPosesQueueSize = 10;
   }
 
   public static class FieldConstants {
