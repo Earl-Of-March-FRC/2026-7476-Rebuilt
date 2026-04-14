@@ -306,6 +306,8 @@ public final class Constants {
 
     public static final AngularVelocity kRPMTolerance = RPM.of(100);
 
+    public static final Time kAutoAimIndexDebounce = Seconds.of(0.05);
+
     static {
       kLeaderConfig
           .idleMode(IdleMode.kCoast)

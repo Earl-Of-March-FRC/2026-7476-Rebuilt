@@ -4,12 +4,16 @@
 
 package frc.robot.commands.groups;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.indexer.TreadmillOnCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -73,7 +77,7 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
     this(
         indexerSub,
         launcherAndIntakeSub,
-        LaunchHelpers::willHitHub,
+        new Trigger(LaunchHelpers::willHitHub).debounce(LauncherAndIntakeConstants.kAutoAimIndexDebounce.in(Seconds)),
         leadShots);
   }
 
