@@ -974,8 +974,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
           Pose2d[] poses = rejectedPoses.toArray(new Pose2d[rejectedPoses.size()]);
           Pose2d average = PoseHelpers.average(poses);
-          // Logger.recordOutput("Vision/RejectedPoses/Poses", poses);
-          // Logger.recordOutput("Vision/RejectedPoses/Average", average);
+          Logger.recordOutput("Vision/RejectedPoses/Poses", poses);
+          Logger.recordOutput("Vision/RejectedPoses/Average", average);
 
           boolean acceptJump = true;
           for (Pose2d pose : rejectedPoses) {
