@@ -93,7 +93,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   List<Double> stdDevsY = new ArrayList<>();
   List<Double> stdDevsTheta = new ArrayList<>();
   Deque<Pose2d> rejectedPoses = new ArrayDeque<>();
-  LoggedNetworkBoolean useRejectedAverage = new LoggedNetworkBoolean("/Tuning/UseRejectedAverage");
+  LoggedNetworkBoolean useRejectedAverage = new LoggedNetworkBoolean("/Tuning/UseRejectedAverage", true);
 
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
   private static final SwerveDriveKinematics kinematics = SwerveConfig.kDriveKinematics;
@@ -967,24 +967,28 @@ public class DrivetrainSubsystem extends SubsystemBase {
         if (jumpDistance > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
           // If all of the 5 past mesurements are within the jump tolerance of
           // the average, we use that average, otherwise discard it
-          if (rejectedPoses.size() > PhotonConstants.kRejectedPosesQueueSize) {
+          if (rejectedPoses.size() >= PhotonConstants.kRejectedPosesQueueSize) {
             rejectedPoses.remove();
           }
           rejectedPoses.addLast(estimatedPose);
 
-          Pose2d average = PoseHelpers.average((Pose2d[]) rejectedPoses.toArray());
+          Pose2d[] poses = rejectedPoses.toArray(new Pose2d[rejectedPoses.size()]);
+          Pose2d average = PoseHelpers.average(poses);
+          // Logger.recordOutput("Vision/RejectedPoses/Poses", poses);
+          // Logger.recordOutput("Vision/RejectedPoses/Average", average);
 
-          boolean useAverage = true;
+          boolean acceptJump = true;
           for (Pose2d pose : rejectedPoses) {
             if (PoseHelpers.distanceBetween(average, pose) > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
-              useAverage = false;
+              acceptJump = false;
               break;
             }
           }
 
-          if (useAverage && rejectedPoses.size() == PhotonConstants.kRejectedPosesQueueSize
+          if (acceptJump && rejectedPoses.size() == PhotonConstants.kRejectedPosesQueueSize
               && useRejectedAverage.get()) {
-            estimatedPose = average;
+            // estimatedPose = average;
+            Logger.recordOutput("Vision/RejectedPoses/AcceptJump", acceptJump);
           } else {
             Logger.recordOutput("Vision/" + cameras[i].getName() + "/RejectedJump", jumpDistance);
             continue;
