@@ -573,6 +573,10 @@ public final class Constants {
     // TODO: Test this value
     public static final Time kAutoLaunch8Time = Seconds.of(6);
     public static final Time kAutoLaunch32Time = Seconds.of(12);
+    public static final Time kDefaultAutoDelay = Seconds.of(15);
+
+    public static Pose2d depotCorner = new Pose2d(Meters.of(0.5), Meters.of(7.5), Rotation2d.kZero);
+    public static Pose2d outpostCorner = new Pose2d(Meters.of(0.5), Meters.of(0.5), Rotation2d.kZero);
 
     static {
       try {

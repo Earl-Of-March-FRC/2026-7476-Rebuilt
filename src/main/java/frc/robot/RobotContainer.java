@@ -77,6 +77,8 @@ import frc.robot.commands.drivetrain.DriveXLockCmd;
 import frc.robot.commands.groups.AutoDeployIntakeCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
+import frc.robot.commands.groups.DriveToCornerDepotCmd;
+import frc.robot.commands.groups.DriveToCornerOutpostCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.DepotAndClimbCmd;
@@ -749,11 +751,20 @@ public class RobotContainer {
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new LaunchAndDelayedNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
+    autoChooser.addOption("Drive to Corner Depot", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerDepotCmd(driveSub)));
+
+    autoChooser.addOption("Drive to Corner Outpost", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerOutpostCmd(driveSub)));
+
     autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub, otbIntakeSub));
 
     autoChooser.addOption("Forward10Seconds",
         Commands.run(() -> driveSub.runVelocity(new ChassisSpeeds(0.4, 0, 0), false, false, false))
             .withTimeout(Seconds.of(15)).andThen(new DriveStopCmd(driveSub)));
+
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
 
