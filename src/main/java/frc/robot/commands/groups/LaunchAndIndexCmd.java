@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Seconds;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -77,7 +78,8 @@ public class LaunchAndIndexCmd extends ParallelCommandGroup {
     this(
         indexerSub,
         launcherAndIntakeSub,
-        new Trigger(LaunchHelpers::willHitHub).debounce(LauncherAndIntakeConstants.kAutoAimIndexDebounce.in(Seconds)),
+        new Trigger(LaunchHelpers::willHitHub).debounce(LauncherAndIntakeConstants.kAutoAimIndexDebounce.in(Seconds),
+            DebounceType.kBoth),
         leadShots);
   }
 
