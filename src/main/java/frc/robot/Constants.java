@@ -306,6 +306,8 @@ public final class Constants {
 
     public static final AngularVelocity kRPMTolerance = RPM.of(100);
 
+    public static final Time kAutoAimIndexDebounce = Seconds.of(0.05);
+
     static {
       kLeaderConfig
           .idleMode(IdleMode.kCoast)
@@ -958,7 +960,7 @@ public final class Constants {
     };
 
     public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
-    public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
+    public static final double kAmbiguityDiscardThreshold = 0.2; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
     public static final TargetModel kTargetModel = TargetModel.kAprilTag36h11;
@@ -974,8 +976,11 @@ public final class Constants {
     public static final double kVisionDistanceScaleFactor = 0.5;
 
     public static final double kVisionHighAmbiguityThreshold = 0.2;
+    public static final Distance kVisionJumpDistanceThreshold = Meters.of(1.0);
 
     public static final double kVisionHighAmbiguityMultiplier = 1.5;
+
+    public static final int kRejectedPosesQueueSize = 10;
   }
 
   public static class FieldConstants {

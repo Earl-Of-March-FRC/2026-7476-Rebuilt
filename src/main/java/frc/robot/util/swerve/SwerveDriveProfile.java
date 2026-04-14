@@ -125,7 +125,7 @@ public record SwerveDriveProfile(
               Meters.of(0.2160912657), // x // 0.3107901836
               Meters.of(0.3267181248), // y // 0.1993096344
               Meters.of(0.405), // z // 0.413481266
-              VecBuilder.fill(0.5, 0.5, 0.5))
+              VecBuilder.fill(0.2, 0.2, 9999.0)) // Trust the side camera less because it is more prone to bad ambiguity
       },
       true,
       SwerveDriveProfileID.COMP_BOT,

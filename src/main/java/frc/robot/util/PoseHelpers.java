@@ -92,6 +92,32 @@ public class PoseHelpers {
   }
 
   /**
+   * Calculates the average translation and heading of the supplied poses, uses
+   * sin/cos to average angles to avoid jumps at +/-PI
+   * 
+   * @param poses The poses to average
+   * @return The average pose
+   */
+  public static Pose2d average(Pose2d... poses) {
+    double avgX = 0;
+    double avgY = 0;
+    double sumSin = 0;
+    double sumCos = 0;
+
+    for (Pose2d pose : poses) {
+      avgX += pose.getX();
+      avgY += pose.getY();
+      sumSin += Math.sin(pose.getRotation().getRadians());
+      sumCos += Math.cos(pose.getRotation().getRadians());
+    }
+    avgX = avgX / poses.length;
+    avgY = avgY / poses.length;
+    double avgTheta = Math.atan2(sumSin, sumCos);
+
+    return new Pose2d(avgX, avgY, Rotation2d.fromRadians(avgTheta));
+  }
+
+  /**
    * Takes a list of Translation2ds and returns the index of the one closest to
    * the given pose
    * 

@@ -12,8 +12,10 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import edu.wpi.first.math.Vector;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -21,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -89,6 +92,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   List<Double> stdDevsX = new ArrayList<>();
   List<Double> stdDevsY = new ArrayList<>();
   List<Double> stdDevsTheta = new ArrayList<>();
+  Deque<Pose2d> rejectedPoses = new ArrayDeque<>();
+  LoggedNetworkBoolean useRejectedAverage = new LoggedNetworkBoolean("/Tuning/UseRejectedAverage", true);
 
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
   private static final SwerveDriveKinematics kinematics = SwerveConfig.kDriveKinematics;
@@ -186,7 +191,9 @@ public class DrivetrainSubsystem extends SubsystemBase {
       CameraProfile currentProfile = cameraProfiles[i];
       cameras[i] = new PhotonCamera(currentProfile.name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
-          PoseStrategy.AVERAGE_BEST_TARGETS,
+          PoseStrategy.LOWEST_AMBIGUITY, // AVERAGE_BEST_TARGETS averages the best and alternate PnP solutions per tag.
+                                         // With single tags, the alternate solution is often a mirror-image reflection
+                                         // that is completely wrong. Averaging them gives you a garbage pose.
           currentProfile.getRobotToCameraTransform());
 
       if (Robot.isSimulation()) {
@@ -853,22 +860,22 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
         double totalX = 0;
         double totalY = 0;
-        double totalZRot = 0;
+        double sumSin = 0;
+        double sumCos = 0;
 
         for (Pose3d pose : validPoses) {
           totalX += pose.getX();
           totalY += pose.getY();
-
-          totalZRot += pose.getRotation().getZ();
+          sumSin += Math.sin(pose.getRotation().getZ());
+          sumCos += Math.cos(pose.getRotation().getZ());
         }
 
         final int count = validPoses.size();
         Pose3d averagePose = new Pose3d(
-            totalX / count, // X average
-            totalY / count, // Y average
-            0, // Z forced to 0 (validated by isOnGround)
-            new Rotation3d(0, 0, totalZRot / count) // Average Z rotation
-        );
+            totalX / count,
+            totalY / count,
+            0,
+            new Rotation3d(0, 0, Math.atan2(sumSin / count, sumCos / count)));
 
         Logger.recordOutput("Vision/" + camera.getName() + "/FallbackPose", averagePose);
 
@@ -954,6 +961,39 @@ public class DrivetrainSubsystem extends SubsystemBase {
         }
 
         Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
+
+        double jumpDistance = estimatedPose.getTranslation()
+            .getDistance(robotPose.getTranslation());
+        if (jumpDistance > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
+          // If all of the 5 past mesurements are within the jump tolerance of
+          // the average, we use that average, otherwise discard it
+          if (rejectedPoses.size() >= PhotonConstants.kRejectedPosesQueueSize) {
+            rejectedPoses.remove();
+          }
+          rejectedPoses.addLast(estimatedPose);
+
+          Pose2d[] poses = rejectedPoses.toArray(new Pose2d[rejectedPoses.size()]);
+          Pose2d average = PoseHelpers.average(poses);
+          Logger.recordOutput("Vision/RejectedPoses/Poses", poses);
+          Logger.recordOutput("Vision/RejectedPoses/Average", average);
+
+          boolean acceptJump = true;
+          for (Pose2d pose : rejectedPoses) {
+            if (PoseHelpers.distanceBetween(average, pose) > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
+              acceptJump = false;
+              break;
+            }
+          }
+
+          if (acceptJump && rejectedPoses.size() == PhotonConstants.kRejectedPosesQueueSize
+              && useRejectedAverage.get()) {
+            // estimatedPose = average;
+            Logger.recordOutput("Vision/RejectedPoses/AcceptJump", acceptJump);
+          } else {
+            Logger.recordOutput("Vision/" + cameras[i].getName() + "/RejectedJump", jumpDistance);
+            continue;
+          }
+        }
 
         // Calculate dynamic standard deviations based on measurement quality
         final Vector<N3> stdDevs;
