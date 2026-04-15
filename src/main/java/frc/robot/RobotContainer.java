@@ -338,7 +338,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     outakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get());
+    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed);
     Command intakeBackTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
         () -> 0.0,
@@ -346,7 +346,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     intakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed.get());
+    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed);
 
     Command zonePassCmd = new ZonePassCmd(
         driveSub,

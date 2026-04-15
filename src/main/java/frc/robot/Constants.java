@@ -637,10 +637,8 @@ public final class Constants {
     // TODO: Verify values for these reductions
     public static final double kRollerReduction = 1.0 / 10.0;
 
-    public static LoggedNetworkNumber kIntakeSpeed = new LoggedNetworkNumber("/Tuning/RollerIntakeSpeed",
-        1);
-    public static LoggedNetworkNumber kOuttakeSpeed = new LoggedNetworkNumber("/Tuning/RollerOuttakeSpeed",
-        -1);
+    public static double kOuttakeSpeed = 1;
+    public static double kIntakeSpeed = -1;
 
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
 

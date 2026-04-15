@@ -50,7 +50,7 @@ public class AutoDeployIntakeCmd extends SequentialCommandGroup {
           }
         }).withTimeout(AutoConstants.kIntakeDeployDriveTime),
         new DriveCmd(driveSub, () -> 0.0, () -> 0.0, () -> 0.0).withTimeout(AutoConstants.kIntakeDeployStopTime),
-        new IntakeCmd(otbIntakeSub, () -> -OTBIntakeConstants.kIntakeSpeed.get())
+        new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed)
             .withTimeout(AutoConstants.kIntakeDeployIntakeTime));
     // .withTimeout(AutoConstants.kIntakeDeployDriveTime),
     // Commands.waitTime(AutoConstants.kIntakeDeployStopTime));
