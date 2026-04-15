@@ -28,7 +28,7 @@ public class DriveToCornerDepotCmd extends SequentialCommandGroup {
   public DriveToCornerDepotCmd(DrivetrainSubsystem driveSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
-    final Command driveToCornerCmd = AutoBuilder.pathfindToPoseFlipped(AutoConstants.outpostCorner,
+    final Command driveToCornerCmd = AutoBuilder.pathfindToPoseFlipped(AutoConstants.depotCorner,
         AutoConstants.L1ClimbConstraints);
 
     final Command waitInCornerCmd = Commands.waitUntil(
