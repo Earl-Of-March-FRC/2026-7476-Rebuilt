@@ -575,7 +575,7 @@ public final class Constants {
     public static Distance kAutoLaunchDistanceFromHubX = Meters.of(2.5);
     // TODO: Test this value
     public static final Time kAutoLaunch8Time = Seconds.of(6);
-    public static final Time kAutoLaunch32Time = Seconds.of(12);
+    public static final Time kAutoLaunch32Time = Seconds.of(8);
     public static final Time kDefaultAutoDelay = Seconds.of(15);
 
     public static Pose2d depotCorner = new Pose2d(Meters.of(0.5), Meters.of(7.5), Rotation2d.kZero);

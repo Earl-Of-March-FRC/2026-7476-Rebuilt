@@ -24,7 +24,15 @@ import frc.robot.util.swerve.PathGenerator;
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class DriveToCornerDepotCmd extends SequentialCommandGroup {
-  /** Creates a new DriveToCornerOutpostCmd. */
+  /**
+   * Creates a command that drives to the depot corner and waits until a specific
+   * amount of time has passed in auto ({@link AutoConstants#kDefaultAutoDelay}
+   * before crossing to the neutral zone.
+   * 
+   * @param driveSub Drivetrain subsystem
+   * 
+   * @see AutoConstants#kDefaultAutoDelay Can be modified in Elastic
+   */
   public DriveToCornerDepotCmd(DrivetrainSubsystem driveSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());

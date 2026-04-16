@@ -297,6 +297,13 @@ public class PathGenerator {
     return nearestIndex;
   }
 
+  /**
+   * Create a command to drive through the nearest bump (without pathfinding)
+   * 
+   * @param trenchWaypoints A list of waypoints to consider when finding the
+   *                        nearest bump
+   * @return The command to schedule
+   */
   public static Command crossBumpAuto(Translation2d[] bumpWaypoints) {
     Rotation2d targetHeading = drive()
         .getNearestTargetAngle(Rotation2d.fromDegrees(DriveConstants.kBumpHeadingRestriction.in(Degrees)), true);
@@ -325,12 +332,13 @@ public class PathGenerator {
         .until(isCrossingFinished);
   }
 
-  public static Command crossTrenchAuto() {
-    return crossTrenchAuto(FieldConstants.kTrenchPathWaypoints);
-  }
-
-  // FieldConstants.kTrenchPathWaypoints[trenchID < 4 ? trenchID + 4 : trenchID
-  // -4]
+  /**
+   * Create a command to drive through the nearest trench (without pathfinding)
+   * 
+   * @param trenchWaypoints A list of waypoints to consider when finding the
+   *                        nearest trench
+   * @return The command to schedule
+   */
   public static Command crossTrenchAuto(Translation2d[] trenchWaypoints) {
     Optional<Alliance> alliance = DriverStation.getAlliance();
     boolean isBlueAlliance = !alliance.isPresent() || alliance.get() == Alliance.Blue;
