@@ -533,7 +533,7 @@ public class RobotContainer {
     // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
     // launcherAndIntakeSub));
 
-    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
+    // operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
     // operatorController.leftBumper().toggleOnTrue(new SequentialCommandGroup(
     // new ParallelCommandGroup(
     // new XLockAndLaunchCmd(
@@ -546,7 +546,7 @@ public class RobotContainer {
     // Commands.defer(
     // () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
     // Set.of(driveSub))));
-    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    // operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
     // operatorController.rightBumper().toggleOnTrue(
     // new SequentialCommandGroup(
     // new XLockAndLaunchCmd(
@@ -558,6 +558,11 @@ public class RobotContainer {
     // Commands.defer(
     // () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
     // Set.of(driveSub))));
+
+    operatorController.rightBumper()
+        .toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true,
+            () -> LauncherAndIntakeConstants.kUnloadRPMSetpoint)
+            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed)));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,

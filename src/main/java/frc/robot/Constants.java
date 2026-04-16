@@ -295,6 +295,7 @@ public final class Constants {
     public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3020);
     public static final AngularVelocity kTowerRPMSetpoint = RPM.of(2910);
     public static final AngularVelocity kCornerRPMSetpoint = kDistanceToRPMCurve.apply(Meters.of(5.4539));
+    public static final AngularVelocity kUnloadRPMSetpoint = RPM.of(1500);
     // RPM increment per second when doing manual offset
     public static final AngularVelocity kManualRPMOffsetPerSecond = RPM.of(50);
 
