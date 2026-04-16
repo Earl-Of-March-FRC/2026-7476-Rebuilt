@@ -161,4 +161,9 @@ public class MAXSwerveModule implements SwerveModule {
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, turningFactor.in(Radians));
   }
+
+  // public void setCoastMode() {
+  // drivingConfig.idleMode(IdleMode.kCoast);
+  // turningConfig.idleMode(IdleMode.kCoast);
+  // }
 }

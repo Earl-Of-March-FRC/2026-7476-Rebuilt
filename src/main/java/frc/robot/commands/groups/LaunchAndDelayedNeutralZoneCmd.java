@@ -32,14 +32,26 @@ import frc.robot.util.swerve.PathGenerator;
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
-  /** Creates a new LaunchAndNeutralZone. */
+  /**
+   * Create a command that launches and drives to the neutral zone after a
+   * specific amount of time has passed in auto
+   * ({@link AutoConstants#kDefaultAutoDelay})
+   * 
+   * @param driveSub             Drivetrain subsystem
+   * @param indexerSub           Indexer subsystem
+   * @param launcherAndIntakeSub Launcher and intake subsystem
+   * @param climberSub           Climber subsystem
+   * 
+   * @see AutoConstants#kDefaultAutoDelay Can be modified in Elastic
+   */
   public LaunchAndDelayedNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub,
       ClimberSubsystem climberSub) {
 
     final Command launchWaitCmd = Commands.waitUntil(
-        () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)", 5) >= DriverStation
-            .getMatchTime());
+        () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)",
+            AutoConstants.kDefaultAutoDelay.in(Seconds)) >= DriverStation
+                .getMatchTime());
 
     final Command launchCmd = new ParallelCommandGroup(
         new XLockAndLaunchCmd(

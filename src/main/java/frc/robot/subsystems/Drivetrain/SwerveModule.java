@@ -30,4 +30,6 @@ public interface SwerveModule {
    */
   public default void resetEncoders() {
   }
+
+  // public void setCoastMode();
 }
