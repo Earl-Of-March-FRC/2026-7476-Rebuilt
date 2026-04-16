@@ -295,6 +295,7 @@ public final class Constants {
     public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3020);
     public static final AngularVelocity kTowerRPMSetpoint = RPM.of(2910);
     public static final AngularVelocity kCornerRPMSetpoint = kDistanceToRPMCurve.apply(Meters.of(5.4539));
+    public static final AngularVelocity kUnloadRPMSetpoint = RPM.of(1500);
     // RPM increment per second when doing manual offset
     public static final AngularVelocity kManualRPMOffsetPerSecond = RPM.of(50);
 
@@ -305,6 +306,8 @@ public final class Constants {
     public static final SparkMaxConfig kFollowerConfig = new SparkMaxConfig();
 
     public static final AngularVelocity kRPMTolerance = RPM.of(100);
+
+    public static final Time kAutoAimIndexDebounce = Seconds.of(0.05);
 
     static {
       kLeaderConfig
@@ -567,12 +570,17 @@ public final class Constants {
     public static PathConstraints kPathfindingConstraints;
 
     // TODO requires testing
+    public static Distance kAutoNeutralZoneX = Meters.of(7.715);
     public static Pose2d outpostPose = new Pose2d(Meters.of(0.455), Meters.of(0.651), Rotation2d.kZero);
     public static Time kAutoOutpostIntakeTime = Seconds.of(2); // TODO to be updated
     public static Distance kAutoLaunchDistanceFromHubX = Meters.of(2.5);
     // TODO: Test this value
     public static final Time kAutoLaunch8Time = Seconds.of(6);
-    public static final Time kAutoLaunch32Time = Seconds.of(12);
+    public static final Time kAutoLaunch32Time = Seconds.of(8);
+    public static final Time kDefaultAutoDelay = Seconds.of(15);
+
+    public static Pose2d depotCorner = new Pose2d(Meters.of(0.5), Meters.of(7.5), Rotation2d.kZero);
+    public static Pose2d outpostCorner = new Pose2d(Meters.of(0.5), Meters.of(0.5), Rotation2d.kZero);
 
     static {
       try {
@@ -630,10 +638,8 @@ public final class Constants {
     // TODO: Verify values for these reductions
     public static final double kRollerReduction = 1.0 / 10.0;
 
-    public static LoggedNetworkNumber kIntakeSpeed = new LoggedNetworkNumber("/Tuning/RollerIntakeSpeed",
-        1);
-    public static LoggedNetworkNumber kOuttakeSpeed = new LoggedNetworkNumber("/Tuning/RollerOuttakeSpeed",
-        -1);
+    public static double kOuttakeSpeed = 1;
+    public static double kIntakeSpeed = -1;
 
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
 
@@ -954,7 +960,7 @@ public final class Constants {
     };
 
     public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
-    public static final double kAmbiguityDiscardThreshold = 0.8; // ignore targets above this value
+    public static final double kAmbiguityDiscardThreshold = 0.2; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
     public static final TargetModel kTargetModel = TargetModel.kAprilTag36h11;
@@ -970,8 +976,11 @@ public final class Constants {
     public static final double kVisionDistanceScaleFactor = 0.5;
 
     public static final double kVisionHighAmbiguityThreshold = 0.2;
+    public static final Distance kVisionJumpDistanceThreshold = Meters.of(1.0);
 
     public static final double kVisionHighAmbiguityMultiplier = 1.5;
+
+    public static final int kRejectedPosesQueueSize = 10;
   }
 
   public static class FieldConstants {

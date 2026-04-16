@@ -77,6 +77,8 @@ import frc.robot.commands.drivetrain.DriveXLockCmd;
 import frc.robot.commands.groups.AutoDeployIntakeCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
+import frc.robot.commands.groups.DriveToCornerDepotCmd;
+import frc.robot.commands.groups.DriveToCornerOutpostCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.DepotAndClimbCmd;
@@ -336,7 +338,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     outakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get());
+    Command outakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed);
     Command intakeBackTreadmillCmd = new TreadmillOnCmd(
         indexerSub,
         () -> 0.0,
@@ -344,7 +346,7 @@ public class RobotContainer {
     // Use the name to differentiate the purpose of the treadmill command (launch vs
     // intake)
     intakeBackTreadmillCmd.setName("OTBTreadmill");
-    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed.get());
+    Command intakeBackCmd = new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed);
 
     Command zonePassCmd = new ZonePassCmd(
         driveSub,
@@ -531,7 +533,7 @@ public class RobotContainer {
     // .toggleOnTrue(new XLockAndLaunchCmd(driveSub, indexerSub,
     // launcherAndIntakeSub));
 
-    operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
+    // operatorController.rightBumper().toggleOnTrue(outakeFrontCmd.alongWith(outakeFrontTreadmillCmd));
     // operatorController.leftBumper().toggleOnTrue(new SequentialCommandGroup(
     // new ParallelCommandGroup(
     // new XLockAndLaunchCmd(
@@ -544,7 +546,7 @@ public class RobotContainer {
     // Commands.defer(
     // () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
     // Set.of(driveSub))));
-    operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
+    // operatorController.leftBumper().toggleOnTrue(intakeFrontCmd.alongWith(intakeFrontTreadmillCmd));
     // operatorController.rightBumper().toggleOnTrue(
     // new SequentialCommandGroup(
     // new XLockAndLaunchCmd(
@@ -556,6 +558,11 @@ public class RobotContainer {
     // Commands.defer(
     // () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
     // Set.of(driveSub))));
+
+    operatorController.rightBumper()
+        .toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true,
+            () -> LauncherAndIntakeConstants.kUnloadRPMSetpoint)
+            .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kOuttakeSpeed)));
 
     // RPM setpoints for visionless backups
     operatorController.povUp().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
@@ -749,11 +756,20 @@ public class RobotContainer {
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new LaunchAndDelayedNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
+    autoChooser.addOption("Drive to Corner Depot", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerDepotCmd(driveSub)));
+
+    autoChooser.addOption("Drive to Corner Outpost", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerOutpostCmd(driveSub)));
+
     autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub, otbIntakeSub));
 
     autoChooser.addOption("Forward10Seconds",
         Commands.run(() -> driveSub.runVelocity(new ChassisSpeeds(0.4, 0, 0), false, false, false))
             .withTimeout(Seconds.of(15)).andThen(new DriveStopCmd(driveSub)));
+
     SmartDashboard.putData("Auto Routine", autoChooser.getSendableChooser());
   }
 

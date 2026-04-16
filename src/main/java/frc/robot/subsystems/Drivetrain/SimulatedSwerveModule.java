@@ -78,4 +78,7 @@ public class SimulatedSwerveModule implements SwerveModule {
         turnController.calculate(moduleSimulation.getSteerAbsoluteFacing().getRadians(),
             correctedDesiredState.angle.getRadians())));
   }
+
+  // public void setCoastMode() {
+  // };
 }

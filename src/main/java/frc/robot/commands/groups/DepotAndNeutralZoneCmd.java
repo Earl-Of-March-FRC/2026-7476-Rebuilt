@@ -61,9 +61,9 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
 
     final Command intakeCmd = new TreadmillOnCmd(
         indexerSub,
-        () -> -IndexerConstants.kWheelSpeed,
+        () -> 0,
         () -> -IndexerConstants.kTreadmillSpeed)
-        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed.get()));
+        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
 
     final Command driveThroughDepotAndIntakeCmd = new ParallelDeadlineGroup(
         driveThroughDepotCmd,
