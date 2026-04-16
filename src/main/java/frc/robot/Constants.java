@@ -6,7 +6,6 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -16,6 +15,7 @@ import org.ironmaple.simulation.drivesims.GyroSimulation;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
@@ -981,6 +981,12 @@ public final class Constants {
     public static final double kVisionHighAmbiguityMultiplier = 1.5;
 
     public static final int kRejectedPosesQueueSize = 10;
+
+    public static final PoseStrategy kPoseStrategy = PoseStrategy.LOWEST_AMBIGUITY; // AVERAGE_BEST_TARGETS averages
+                                                                                    // the best and alternate PnP
+                                                                                    // solutions per tag.
+    // With single tags, the alternate solution is often a mirror-image reflection
+    // that is completely wrong. Averaging them gives you a garbage pose.
   }
 
   public static class FieldConstants {

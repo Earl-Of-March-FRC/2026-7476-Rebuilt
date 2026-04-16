@@ -192,9 +192,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
       CameraProfile currentProfile = cameraProfiles[i];
       cameras[i] = new PhotonCamera(currentProfile.name());
       photonPoseEstimators[i] = new PhotonPoseEstimator(FieldConstants.kfieldLayout,
-          PoseStrategy.LOWEST_AMBIGUITY, // AVERAGE_BEST_TARGETS averages the best and alternate PnP solutions per tag.
-                                         // With single tags, the alternate solution is often a mirror-image reflection
-                                         // that is completely wrong. Averaging them gives you a garbage pose.
+          PhotonConstants.kPoseStrategy,
           currentProfile.getRobotToCameraTransform());
 
       if (Robot.isSimulation()) {
@@ -887,7 +885,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
         }
         results
             .add(new EstimatedRobotPose(averagePose, timestamp, targetsUsed,
-                PoseStrategy.CLOSEST_TO_REFERENCE_POSE));
+                PhotonConstants.kPoseStrategy));
       }
     }
     return results;
