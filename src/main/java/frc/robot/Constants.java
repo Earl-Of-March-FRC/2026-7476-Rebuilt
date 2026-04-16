@@ -982,16 +982,15 @@ public final class Constants {
 
     public static final int kRejectedPosesQueueSize = 10;
 
-    public static final PoseStrategy kPoseStrategy = PoseStrategy.LOWEST_AMBIGUITY; // AVERAGE_BEST_TARGETS averages
-                                                                                    // the best and alternate PnP
-                                                                                    // solutions per tag.
-    // With single tags, the alternate solution is often a mirror-image reflection
-    // that is completely wrong. Averaging them gives you a garbage pose.
+    public static final PoseStrategy kPoseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR; // Multi tag should work
+                                                                                                // now that the field
+                                                                                                // layouts are
+                                                                                                // consistent
   }
 
   public static class FieldConstants {
     public static final AprilTagFieldLayout kfieldLayout = AprilTagFieldLayout
-        .loadField(AprilTagFields.k2026RebuiltAndymark);
+        .loadField(AprilTagFields.k2026RebuiltWelded);
 
     // Mesured in blue alliance field coordinate system in units of meters, as
     // described here:
