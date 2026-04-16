@@ -93,7 +93,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
   List<Double> stdDevsY = new ArrayList<>();
   List<Double> stdDevsTheta = new ArrayList<>();
   Deque<Pose2d> rejectedPoses = new ArrayDeque<>();
-  LoggedNetworkBoolean useRejectedAverage = new LoggedNetworkBoolean("/Tuning/UseRejectedAverage", true);
+  // LoggedNetworkBoolean useRejectedAverage = new
+  // LoggedNetworkBoolean("/Tuning/UseRejectedAverage", true);
 
   private final SwerveModule[] modules = new SwerveModule[4]; // FL, FR, BL, BR
   private static final SwerveDriveKinematics kinematics = SwerveConfig.kDriveKinematics;
@@ -985,8 +986,8 @@ public class DrivetrainSubsystem extends SubsystemBase {
             }
           }
 
-          if (acceptJump && rejectedPoses.size() == PhotonConstants.kRejectedPosesQueueSize
-              && useRejectedAverage.get()) {
+          if (acceptJump && rejectedPoses.size() == PhotonConstants.kRejectedPosesQueueSize) {
+            // && useRejectedAverage.get()) {
             // estimatedPose = average;
             Logger.recordOutput("Vision/RejectedPoses/AcceptJump", acceptJump);
           } else {
