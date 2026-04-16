@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.ClimberConstants;
+import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbToHeightCmd;
 import frc.robot.commands.climber.StowClimberCmd;
 import frc.robot.commands.drivetrain.DriveStopCmd;
@@ -72,6 +73,6 @@ public class DriveAndClimbCmd extends SequentialCommandGroup {
         new DriveToTowerSideCmd(drivetrain, towerSide),
         new DriveStopCmd(drivetrain),
         Commands.runOnce(() -> Logger.recordOutput("Commands/DriveAndClimbCmd/Phase", "Climb")),
-        new ClimbToHeightCmd(climber, ClimberConstants.kRaisePosition, armSide));
+        new ClimbDownCmd(climber));
   }
 }
