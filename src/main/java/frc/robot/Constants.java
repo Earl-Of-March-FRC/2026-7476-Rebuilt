@@ -959,7 +959,9 @@ public final class Constants {
         kCamera3Profile.getRobotToCameraTransform() // Camera 3 Transform3d
     };
 
-    public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
+    public static final Distance kHeightTolerance = Inches.of(6.5).plus(Meters.of(0.5)); // meters above and below
+                                                                                         // ground (includes bump
+                                                                                         // height)
     public static final double kAmbiguityDiscardThreshold = 0.2; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
