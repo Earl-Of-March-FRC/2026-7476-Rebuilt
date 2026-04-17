@@ -6,7 +6,6 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -16,6 +15,7 @@ import org.ironmaple.simulation.drivesims.GyroSimulation;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.estimation.TargetModel;
 
 import com.pathplanner.lib.path.PathConstraints;
@@ -959,7 +959,9 @@ public final class Constants {
         kCamera3Profile.getRobotToCameraTransform() // Camera 3 Transform3d
     };
 
-    public static final Distance kHeightTolerance = Meters.of(0.5); // meters above and below ground
+    public static final Distance kHeightTolerance = Inches.of(6.5).plus(Meters.of(0.5)); // meters above and below
+                                                                                         // ground (includes bump
+                                                                                         // height)
     public static final double kAmbiguityDiscardThreshold = 0.2; // ignore targets above this value
     public static final double kAmbiguityThreshold = 0.3; // targets above this need to be checked
     public static final double kMinSingleTagArea = 0.2;
@@ -981,11 +983,16 @@ public final class Constants {
     public static final double kVisionHighAmbiguityMultiplier = 1.5;
 
     public static final int kRejectedPosesQueueSize = 10;
+
+    public static final PoseStrategy kPoseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR; // Multi tag should work
+                                                                                                // now that the field
+                                                                                                // layouts are
+                                                                                                // consistent
   }
 
   public static class FieldConstants {
     public static final AprilTagFieldLayout kfieldLayout = AprilTagFieldLayout
-        .loadField(AprilTagFields.k2026RebuiltAndymark);
+        .loadField(AprilTagFields.k2026RebuiltWelded);
 
     // Mesured in blue alliance field coordinate system in units of meters, as
     // described here:
