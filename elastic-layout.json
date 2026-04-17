@@ -26,7 +26,7 @@
           },
           {
             "title": "Phase",
-            "x": 256.0,
+            "x": 384.0,
             "y": 384.0,
             "width": 256.0,
             "height": 128.0,
@@ -56,7 +56,7 @@
           },
           {
             "title": "Phase Time",
-            "x": 768.0,
+            "x": 896.0,
             "y": 384.0,
             "width": 128.0,
             "height": 128.0,
@@ -72,7 +72,7 @@
           },
           {
             "title": "Match Time",
-            "x": 512.0,
+            "x": 640.0,
             "y": 384.0,
             "width": 256.0,
             "height": 128.0,
@@ -100,42 +100,11 @@
             }
           },
           {
-            "title": "Will Score Fuel",
-            "x": 0.0,
-            "y": 384.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Launcher/Prediction/WillHitHub",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "VelocityOffsetRPM",
+            "title": "Intake_Trench",
             "x": 0.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Launcher/VelocityOffsetRPM",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": false
-            }
-          },
-          {
-            "title": "Intake_Trench",
-            "x": 0.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 256.0,
+            "height": 384.0,
             "type": "Camera Stream",
             "properties": {
               "topic": "/CameraPublisher/photonvision_Port_1182_Output_MJPEG_Server",
@@ -170,43 +139,9 @@
             }
           },
           {
-            "title": "XLock",
-            "x": 896.0,
-            "y": 384.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Drivetrain/XLock",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "Field Relative",
-            "x": 128.0,
-            "y": 384.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Drivetrain/IsFieldRelativeReal",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
             "title": "32 Fuel Launch Time (Auto)",
             "x": 0.0,
-            "y": 512.0,
+            "y": 384.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
@@ -220,7 +155,7 @@
           {
             "title": "8 Fuel Launch Time (Auto)",
             "x": 128.0,
-            "y": 512.0,
+            "y": 384.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
@@ -255,7 +190,7 @@
           {
             "title": "Delayed Crossing Time (Auto)",
             "x": 256.0,
-            "y": 512.0,
+            "y": 384.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
