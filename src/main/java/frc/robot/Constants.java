@@ -594,7 +594,7 @@ public final class Constants {
         outpostPath = PathPlannerPath.fromPathFile("Outpost Intake");
         neutralZoneTrenchDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Trench)");
         neutralZoneBumpDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Bump)");
-        neutralZoneOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost)");
+        neutralZoneOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Trench)");
       } catch (Exception e) {
         e.printStackTrace();
       }
