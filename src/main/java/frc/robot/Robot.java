@@ -114,12 +114,19 @@ public class Robot extends LoggedRobot {
         m_robotContainer.driveSub.getPose().getX() + " " + m_robotContainer.driveSub.getPose().getY());
     Logger.recordOutput("Launcher/LaunchAngle/", LauncherAndIntakeConstants.kBallReleaseAngle().in(Degrees));
 
-    Logger.recordOutput("Memory/MaxMemoryMB", runtime.maxMemory() / 1e6);
-    Logger.recordOutput("Memory/AllocatedMemoryMB", runtime.totalMemory() / 1e6);
-    Logger.recordOutput("Memory/FreeMemoryMB", runtime.freeMemory() / 1e6);
-    Logger.recordOutput("Memory/UsedMemoryMB", (runtime.totalMemory() - runtime.freeMemory()) / 1e6);
-    Logger.recordOutput("Memory/UsedPercent",
-        (runtime.totalMemory() - runtime.freeMemory()) * 100.0 / runtime.maxMemory());
+    double maxMemoryMB = runtime.maxMemory() / 1e6;
+    double allocatedMemoryMB = runtime.totalMemory() / 1e6;
+    double freeMemoryMB = runtime.freeMemory() / 1e6;
+    double usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / 1e6;
+
+    Logger.recordOutput("Memory/MaxMemoryMB", maxMemoryMB);
+    Logger.recordOutput("Memory/AllocatedMemoryMB", allocatedMemoryMB);
+    Logger.recordOutput("Memory/FreeMemoryMB", freeMemoryMB);
+    Logger.recordOutput("Memory/UsedMemoryMB", usedMemoryMB);
+    Logger.recordOutput("Memory/UsedPercentMax",
+        (usedMemoryMB) / maxMemoryMB * 100);
+    Logger.recordOutput("Memory/UsedPercentAllocated",
+        (usedMemoryMB) / allocatedMemoryMB * 100);
   }
 
   @Override
