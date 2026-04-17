@@ -25,6 +25,7 @@ import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
+import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.indexer.TreadmillOnCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -57,7 +58,9 @@ public class DepotAndNeutralZoneBumpCmd extends SequentialCommandGroup {
     final Command moveToDepotCmd = PathGenerator.driveToDepotAuto();
 
     final PathPlannerPath depotPath = AutoConstants.depotPath;
-    final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
+    // final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
+    final Command driveThroughDepotCmd = new DriveCmd(driveSub, () -> -0.5, () -> 0.0, () -> 0.0)
+        .withTimeout(AutoConstants.kDepotIntakeTime);
 
     final Command intakeCmd = new TreadmillOnCmd(
         indexerSub,
