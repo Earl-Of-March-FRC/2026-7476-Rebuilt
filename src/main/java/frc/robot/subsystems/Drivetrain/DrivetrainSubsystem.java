@@ -12,22 +12,17 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import edu.wpi.first.math.Vector;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
@@ -62,12 +57,8 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Robot;
@@ -81,16 +72,14 @@ import frc.robot.util.vision.CameraProfile;
 import frc.robot.util.vision.ClimbAlignmentIndicator;
 import frc.robot.util.vision.VisionStdDevCalculator;
 import frc.robot.util.swerve.FieldZones;
-import frc.robot.util.swerve.PathGenerator;
 
 public class DrivetrainSubsystem extends SubsystemBase {
-  private static final int MAX_TARGETS = 10;
-  private final int[] fiducialIdsArr = new int[MAX_TARGETS];
-  private final double[] tagAreasArr = new double[MAX_TARGETS];
-  private final double[] tagAmbiguitiesArr = new double[MAX_TARGETS];
-  private final double[] stdDevsXArr = new double[MAX_TARGETS];
-  private final double[] stdDevsYArr = new double[MAX_TARGETS];
-  private final double[] stdDevsThetaArr = new double[MAX_TARGETS];
+  private final int[] fiducialIdsArr = new int[Constants.PhotonConstants.kMaxTargets];
+  private final double[] tagAreasArr = new double[Constants.PhotonConstants.kMaxTargets];
+  private final double[] tagAmbiguitiesArr = new double[Constants.PhotonConstants.kMaxTargets];
+  private final double[] stdDevsXArr = new double[Constants.PhotonConstants.kMaxTargets];
+  private final double[] stdDevsYArr = new double[Constants.PhotonConstants.kMaxTargets];
+  private final double[] stdDevsThetaArr = new double[Constants.PhotonConstants.kMaxTargets];
   private int targetCount = 0;
   private int loopCount = 0;
 
@@ -98,8 +87,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
   private final List<EstimatedRobotPose> visionResults = new ArrayList<>(5);
 
   // Replaced Deque with fixed circular buffer
-  private static final int REJECTED_QUEUE_SIZE = PhotonConstants.kRejectedPosesQueueSize;
-  private final Pose2d[] rejectedPosesArr = new Pose2d[REJECTED_QUEUE_SIZE];
+  private final Pose2d[] rejectedPosesArr = new Pose2d[Constants.PhotonConstants.kRejectedPosesQueueSize];
   private int rejectedPosesHead = 0;
   private int rejectedPosesCount = 0;
   // LoggedNetworkBoolean useRejectedAverage = new
@@ -926,7 +914,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
 
         // Fill pre-allocated arrays instead of Lists
         List<PhotonTrackedTarget> used = visionPose.targetsUsed;
-        for (int ti = 0; ti < used.size() && targetCount < MAX_TARGETS; ti++) {
+        for (int ti = 0; ti < used.size() && targetCount < Constants.PhotonConstants.kMaxTargets; ti++) {
           PhotonTrackedTarget target = used.get(ti);
           fiducialIdsArr[targetCount] = target.fiducialId;
           tagAreasArr[targetCount] = target.area;
@@ -940,11 +928,11 @@ public class DrivetrainSubsystem extends SubsystemBase {
         if (jumpDistance > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
           // Add to rejection buffer
           rejectedPosesArr[rejectedPosesHead] = estimatedPose;
-          rejectedPosesHead = (rejectedPosesHead + 1) % REJECTED_QUEUE_SIZE;
-          if (rejectedPosesCount < REJECTED_QUEUE_SIZE)
+          rejectedPosesHead = (rejectedPosesHead + 1) % Constants.PhotonConstants.kRejectedPosesQueueSize;
+          if (rejectedPosesCount < Constants.PhotonConstants.kRejectedPosesQueueSize)
             rejectedPosesCount++;
 
-          if (rejectedPosesCount == REJECTED_QUEUE_SIZE) {
+          if (rejectedPosesCount == Constants.PhotonConstants.kRejectedPosesQueueSize) {
             // Compute average of rejected poses
             double avgX = 0, avgY = 0, avgSin = 0, avgCos = 0;
             for (Pose2d p : rejectedPosesArr) {
@@ -953,13 +941,14 @@ public class DrivetrainSubsystem extends SubsystemBase {
               avgSin += Math.sin(p.getRotation().getRadians());
               avgCos += Math.cos(p.getRotation().getRadians());
             }
-            avgX /= REJECTED_QUEUE_SIZE;
-            avgY /= REJECTED_QUEUE_SIZE;
+            avgX /= Constants.PhotonConstants.kRejectedPosesQueueSize;
+            avgY /= Constants.PhotonConstants.kRejectedPosesQueueSize;
 
             Pose2d average = new Pose2d(
                 avgX,
                 avgY,
-                Rotation2d.fromRadians(Math.atan2(avgSin / REJECTED_QUEUE_SIZE, avgCos / REJECTED_QUEUE_SIZE)));
+                Rotation2d.fromRadians(Math.atan2(avgSin / Constants.PhotonConstants.kRejectedPosesQueueSize,
+                    avgCos / Constants.PhotonConstants.kRejectedPosesQueueSize)));
 
             // Check consistency
             boolean acceptJump = true;

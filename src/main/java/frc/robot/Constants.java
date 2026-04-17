@@ -1006,6 +1006,8 @@ public final class Constants {
                                                                                                 // now that the field
                                                                                                 // layouts are
                                                                                                 // consistent
+
+    public static final int kMaxTargets = 10;
   }
 
   public static class FieldConstants {
