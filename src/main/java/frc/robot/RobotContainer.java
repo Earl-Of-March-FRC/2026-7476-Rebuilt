@@ -83,6 +83,7 @@ import frc.robot.commands.groups.DriveToCornerOutpostBumpCmd;
 import frc.robot.commands.groups.DriveToCornerOutpostTrenchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
+import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneBumpCmd;
 import frc.robot.commands.groups.DepotAndClimbCmd;
 import frc.robot.commands.groups.DepotAndNeutralZoneBumpCmd;
 import frc.robot.commands.groups.DepotAndNeutralZoneTrenchCmd;
@@ -767,6 +768,10 @@ public class RobotContainer {
     autoChooser.addOption("Launch and Delayed Neutral Zone Trench", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new LaunchAndDelayedNeutralZoneTrenchCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Launch and Delayed Neutral Zone Bump", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new LaunchAndDelayedNeutralZoneBumpCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Drive to Corner Depot and Trench", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
