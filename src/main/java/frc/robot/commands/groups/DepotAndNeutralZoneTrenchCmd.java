@@ -40,7 +40,7 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
+public class DepotAndNeutralZoneTrenchCmd extends SequentialCommandGroup {
   /**
    * Creates a command that launches, intakes from the depot, and launches again
    * 
@@ -48,7 +48,7 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
    * @param indexerSub           Indexer subsystem
    * @param launcherAndIntakeSub Launcher/Intake subsystem
    */
-  public DepotAndNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public DepotAndNeutralZoneTrenchCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       OTBIntakeSubsystem otbIntakeSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, ClimberSubsystem climberSub) {
     // Add your commands in the addCommands() call, e.g.
@@ -85,7 +85,7 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
-    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
+    final Command driveToNeutralZoneTrenchCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneTrenchAuto(),
         Set.of(driveSub));
 
     addCommands(
@@ -93,6 +93,6 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
         driveThroughDepotAndIntakeCmd,
         driveToLaunchCmd,
         launchCmd,
-        driveToNeutralZoneCmd);
+        driveToNeutralZoneTrenchCmd);
   }
 }

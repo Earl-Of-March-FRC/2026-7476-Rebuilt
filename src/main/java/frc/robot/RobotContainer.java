@@ -82,7 +82,8 @@ import frc.robot.commands.groups.DriveToCornerOutpostCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.DepotAndClimbCmd;
-import frc.robot.commands.groups.DepotAndNeutralZoneCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneBumpCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneTrenchCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
 import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneCmd;
 import frc.robot.commands.groups.OutpostAndClimbCmd;
@@ -740,9 +741,13 @@ public class RobotContainer {
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new DepotAndClimbCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Depot Launch and Neutral Zone", new SequentialCommandGroup(
+    autoChooser.addOption("Depot Launch and Neutral Zone Trench", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
-        new DepotAndNeutralZoneCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
+        new DepotAndNeutralZoneTrenchCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Depot Launch and Neutral Zone Bump", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DepotAndNeutralZoneBumpCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Outpost Launch and Climb", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),

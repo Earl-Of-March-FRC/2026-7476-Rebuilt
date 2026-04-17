@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Seconds;
 import java.util.Set;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -16,18 +17,21 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.ClimberConstants;
+import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LauncherAndIntakeConstants;
+import frc.robot.Constants.OTBIntakeConstants;
+import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
-import frc.robot.commands.climber.ClimbToHeightCmd;
-import frc.robot.commands.climber.StowClimberCmd;
+import frc.robot.commands.indexer.PulsingTreadmillCmd;
+import frc.robot.commands.indexer.TreadmillOnCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
 import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.ClimberArmSide;
 import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
 import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
 import frc.robot.subsystems.indexer.IndexerSubsystem;
 import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 import frc.robot.util.launcher.LaunchHelpers;
@@ -36,24 +40,34 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
+public class DepotAndNeutralZoneBumpCmd extends SequentialCommandGroup {
   /**
-   * Creates a command that launches, intakes at the outpost for a set amount of
-   * time ({@link AutoConstants#kAutoOutpostIntakeTime}), and launches again.
+   * Creates a command that launches, intakes from the depot, and launches again
    * 
    * @param driveSub             Drivetrain subsystem
    * @param indexerSub           Indexer subsystem
    * @param launcherAndIntakeSub Launcher/Intake subsystem
-   * 
-   * @see AutoConstants#kAutoOutpostIntakeTime
    */
-  public OutpostAndNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public DepotAndNeutralZoneBumpCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+      OTBIntakeSubsystem otbIntakeSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, ClimberSubsystem climberSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
 
-    final Command moveToOutpostCmd = AutoBuilder.pathfindToPoseFlipped(AutoConstants.outpostPose,
-        AutoConstants.L1ClimbConstraints);
+    final Command moveToDepotCmd = PathGenerator.driveToDepotAuto();
+
+    final PathPlannerPath depotPath = AutoConstants.depotPath;
+    final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
+
+    final Command intakeCmd = new TreadmillOnCmd(
+        indexerSub,
+        () -> 0,
+        () -> -IndexerConstants.kTreadmillSpeed)
+        .alongWith(new IntakeCmd(otbIntakeSub, () -> OTBIntakeConstants.kIntakeSpeed));
+
+    final Command driveThroughDepotAndIntakeCmd = new ParallelDeadlineGroup(
+        driveThroughDepotCmd,
+        intakeCmd);
 
     final Command driveToLaunchCmd = new DeferredCommand(() -> PathGenerator.driveToLaunchPoseAuto(), Set.of(driveSub));
 
@@ -71,14 +85,14 @@ public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
-    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneTrenchAuto(),
+    final Command driveToNeutralZoneBumpCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneBumpAuto(),
         Set.of(driveSub));
 
     addCommands(
-        moveToOutpostCmd,
-        Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
+        moveToDepotCmd,
+        driveThroughDepotAndIntakeCmd,
         driveToLaunchCmd,
         launchCmd,
-        driveToNeutralZoneCmd);
+        driveToNeutralZoneBumpCmd);
   }
 }

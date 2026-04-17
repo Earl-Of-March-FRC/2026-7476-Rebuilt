@@ -44,7 +44,7 @@ public class DriveToCornerDepotCmd extends SequentialCommandGroup {
             AutoConstants.kDefaultAutoDelay.in(Seconds)) >= DriverStation
                 .getMatchTime());
 
-    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
+    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneTrenchAuto(),
         Set.of(driveSub));
 
     addCommands(

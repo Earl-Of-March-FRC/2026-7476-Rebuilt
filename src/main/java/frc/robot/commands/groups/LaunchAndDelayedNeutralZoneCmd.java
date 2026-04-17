@@ -62,7 +62,7 @@ public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
-    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
+    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneTrenchAuto(),
         Set.of(driveSub));
 
     // Add your commands in the addCommands() call, e.g.

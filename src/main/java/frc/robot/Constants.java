@@ -565,7 +565,8 @@ public final class Constants {
     public static PathPlannerPath outpostClimbVeryCurvedPath;
     public static PathPlannerPath outpostPath;
     public static PathPlannerPath depotPath;
-    public static PathPlannerPath neutralZoneDepot;
+    public static PathPlannerPath neutralZoneTrenchDepot;
+    public static PathPlannerPath neutralZoneBumpDepot;
     public static PathPlannerPath neutralZoneOutpost;
     public static PathConstraints kPathfindingConstraints;
 
@@ -591,7 +592,8 @@ public final class Constants {
         outpostClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb) Extra Curve");
         depotPath = PathPlannerPath.fromPathFile("Depot Intake");
         outpostPath = PathPlannerPath.fromPathFile("Outpost Intake");
-        neutralZoneDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot)");
+        neutralZoneTrenchDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Trench)");
+        neutralZoneBumpDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Bump)");
         neutralZoneOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost)");
       } catch (Exception e) {
         e.printStackTrace();
