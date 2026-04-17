@@ -11,6 +11,7 @@ import java.util.Set;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -25,6 +26,7 @@ import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
+import frc.robot.commands.drivetrain.DriveCmd;
 import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.indexer.TreadmillOnCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
@@ -40,7 +42,7 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
+public class DepotAndNeutralZoneTrenchCmd extends SequentialCommandGroup {
   /**
    * Creates a command that launches, intakes from the depot, and launches again
    * 
@@ -48,7 +50,7 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
    * @param indexerSub           Indexer subsystem
    * @param launcherAndIntakeSub Launcher/Intake subsystem
    */
-  public DepotAndNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public DepotAndNeutralZoneTrenchCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       OTBIntakeSubsystem otbIntakeSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, ClimberSubsystem climberSub) {
     // Add your commands in the addCommands() call, e.g.
@@ -57,7 +59,10 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
     final Command moveToDepotCmd = PathGenerator.driveToDepotAuto();
 
     final PathPlannerPath depotPath = AutoConstants.depotPath;
-    final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
+    // final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
+    final Command driveThroughDepotCmd = new DriveCmd(driveSub, () -> AutoConstants.kDepotIntakeDriveSpeed, () -> 0.0,
+        () -> 0.0)
+        .withTimeout(AutoConstants.kDepotIntakeTime);
 
     final Command intakeCmd = new TreadmillOnCmd(
         indexerSub,
@@ -85,14 +90,19 @@ public class DepotAndNeutralZoneCmd extends SequentialCommandGroup {
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
-    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
+    final Command driveToNeutralZoneTrenchCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneTrenchAuto(),
         Set.of(driveSub));
 
     addCommands(
-        moveToDepotCmd,
-        driveThroughDepotAndIntakeCmd,
-        driveToLaunchCmd,
-        launchCmd,
-        driveToNeutralZoneCmd);
+        Commands.sequence(moveToDepotCmd,
+            driveThroughDepotAndIntakeCmd,
+            driveToLaunchCmd,
+            launchCmd,
+            // only start going when the correct timestamp is reached
+            Commands.waitUntil(() -> false)).until(
+                () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)",
+                    AutoConstants.kDefaultAutoDelay.in(Seconds)) >= DriverStation
+                        .getMatchTime()),
+        driveToNeutralZoneTrenchCmd);
   }
 }

@@ -565,8 +565,10 @@ public final class Constants {
     public static PathPlannerPath outpostClimbVeryCurvedPath;
     public static PathPlannerPath outpostPath;
     public static PathPlannerPath depotPath;
-    public static PathPlannerPath neutralZoneDepot;
-    public static PathPlannerPath neutralZoneOutpost;
+    public static PathPlannerPath neutralZoneTrenchDepot;
+    public static PathPlannerPath neutralZoneBumpDepot;
+    public static PathPlannerPath neutralZoneTrenchOutpost;
+    public static PathPlannerPath neutralZoneBumpOutpost;
     public static PathConstraints kPathfindingConstraints;
 
     // TODO requires testing
@@ -591,8 +593,10 @@ public final class Constants {
         outpostClimbVeryCurvedPath = PathPlannerPath.fromPathFile("Outpost(L1 Climb) Extra Curve");
         depotPath = PathPlannerPath.fromPathFile("Depot Intake");
         outpostPath = PathPlannerPath.fromPathFile("Outpost Intake");
-        neutralZoneDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot)");
-        neutralZoneOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost)");
+        neutralZoneTrenchDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Trench)");
+        neutralZoneBumpDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Bump)");
+        neutralZoneTrenchOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Trench)");
+        neutralZoneBumpOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Bump)");
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -628,6 +632,8 @@ public final class Constants {
     // public static final double kIntakeDeploySpeedX = 1.0;
     // public static final double kIntakeDeploySpeedY = 0.0;
     // public static final double kIntakeDeploySpeedTheta = 0.0;
+    public static final Time kDepotIntakeTime = Seconds.of(2);
+    public static final double kDepotIntakeDriveSpeed = -0.4;
 
   }
 

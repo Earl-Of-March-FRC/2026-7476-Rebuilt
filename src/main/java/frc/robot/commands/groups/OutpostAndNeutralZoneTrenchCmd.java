@@ -10,6 +10,7 @@ import java.util.Set;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -36,7 +37,7 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
+public class OutpostAndNeutralZoneTrenchCmd extends SequentialCommandGroup {
   /**
    * Creates a command that launches, intakes at the outpost for a set amount of
    * time ({@link AutoConstants#kAutoOutpostIntakeTime}), and launches again.
@@ -47,7 +48,7 @@ public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
    * 
    * @see AutoConstants#kAutoOutpostIntakeTime
    */
-  public OutpostAndNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public OutpostAndNeutralZoneTrenchCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, ClimberSubsystem climberSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
@@ -71,14 +72,19 @@ public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
-    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
+    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneTrenchAuto(),
         Set.of(driveSub));
 
     addCommands(
-        moveToOutpostCmd,
-        Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
-        driveToLaunchCmd,
-        launchCmd,
+        Commands.sequence(moveToOutpostCmd,
+            Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
+            driveToLaunchCmd,
+            launchCmd,
+            // only start going when the correct timestamp is reached
+            Commands.waitUntil(() -> false)).until(
+                () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)",
+                    AutoConstants.kDefaultAutoDelay.in(Seconds)) >= DriverStation
+                        .getMatchTime()),
         driveToNeutralZoneCmd);
   }
 }
