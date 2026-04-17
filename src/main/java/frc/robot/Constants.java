@@ -17,9 +17,9 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.estimation.TargetModel;
-
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.PathPoint;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
@@ -50,6 +50,7 @@ import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -261,7 +262,8 @@ public final class Constants {
       // These calculations are not accurate enough, stick with a predetermined
       // constant
       // kMinLaunchDistance = Meters.of(Math.max(0, minDist));
-      Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance", kMinLaunchDistance);
+      // Logger.recordOutput("Commands/LauncherCmd/MinLaunchDistance",
+      // kMinLaunchDistance);
     }
 
     public static AngularVelocity linearVelocityToAngularVelocity(LinearVelocity ballSpeed) {
@@ -598,24 +600,34 @@ public final class Constants {
         neutralZoneTrenchOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Trench)");
         neutralZoneBumpOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Bump)");
       } catch (Exception e) {
+        DriverStation.reportError("AutoConstants: Failed to load path file: " + e.getMessage(), true);
         e.printStackTrace();
       }
     }
 
+    // Defensive helper; avoids InInitializerError from IndexOutOfBounds
+    private static Translation2d safeFirstPoint(PathPlannerPath path) {
+      if (path == null)
+        return new Translation2d();
+      List<?> points = path.getAllPathPoints();
+      if (points.isEmpty())
+        return new Translation2d();
+      return ((PathPoint) points.get(0)).position;
+    }
+
+    public static final Translation2d depotStartPoint = safeFirstPoint(depotClimbPath);
+    public static final Translation2d outpostStartPoint = safeFirstPoint(outpostClimbPath);
+    public static final Translation2d intakeLeftStartPoint = safeFirstPoint(intakeLeftPath);
+
     public static final PathPlannerPath[] climbPaths = { depotClimbPath, outpostClimbPath };
 
-    public static final Translation2d depotStartPoint = depotClimbPath.getAllPathPoints().get(0).position;
-    public static final Translation2d outpostStartPoint = outpostClimbPath.getAllPathPoints().get(0).position;
-
-    public static final Translation2d intakeLeftStartPoint = intakeLeftPath.getAllPathPoints().get(0).position;
-
     public static final Translation2d[] climbPathWaypoints = new Translation2d[] {
-        new Translation2d(Meters.of(depotStartPoint.getX()).in(Meters), // Blue Alliance
+        new Translation2d(Meters.of(depotStartPoint.getX()).in(Meters),
             Meters.of(depotStartPoint.getY()).in(Meters)),
         new Translation2d(Meters.of(outpostStartPoint.getX()).in(Meters),
             Meters.of(outpostStartPoint.getY()).in(Meters)),
         new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(depotStartPoint.getX())).in(Meters),
-            FieldConstants.kFieldWidthY.minus(Meters.of(depotStartPoint.getY())).in(Meters)), // Red Alliance
+            FieldConstants.kFieldWidthY.minus(Meters.of(depotStartPoint.getY())).in(Meters)),
         new Translation2d(FieldConstants.kFieldLengthX.minus(Meters.of(outpostStartPoint.getX())).in(Meters),
             FieldConstants.kFieldWidthY.minus(Meters.of(outpostStartPoint.getY())).in(Meters)),
     };

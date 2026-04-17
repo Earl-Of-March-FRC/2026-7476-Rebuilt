@@ -563,7 +563,6 @@ public class RobotContainer {
     // Commands.defer(
     // () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
     // Set.of(driveSub))));
-
     operatorController.rightBumper()
         .toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true,
             () -> LauncherAndIntakeConstants.kUnloadRPMSetpoint)
