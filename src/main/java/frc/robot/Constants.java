@@ -567,7 +567,8 @@ public final class Constants {
     public static PathPlannerPath depotPath;
     public static PathPlannerPath neutralZoneTrenchDepot;
     public static PathPlannerPath neutralZoneBumpDepot;
-    public static PathPlannerPath neutralZoneOutpost;
+    public static PathPlannerPath neutralZoneTrenchOutpost;
+    public static PathPlannerPath neutralZoneBumpOutpost;
     public static PathConstraints kPathfindingConstraints;
 
     // TODO requires testing
@@ -594,7 +595,8 @@ public final class Constants {
         outpostPath = PathPlannerPath.fromPathFile("Outpost Intake");
         neutralZoneTrenchDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Trench)");
         neutralZoneBumpDepot = PathPlannerPath.fromPathFile("Path to Neutral Zone (Depot, Bump)");
-        neutralZoneOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Trench)");
+        neutralZoneTrenchOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Trench)");
+        neutralZoneBumpOutpost = PathPlannerPath.fromPathFile("Path to Neutral Zone (Outpost, Bump)");
       } catch (Exception e) {
         e.printStackTrace();
       }

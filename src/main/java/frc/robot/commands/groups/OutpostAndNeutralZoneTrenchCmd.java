@@ -36,7 +36,7 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
+public class OutpostAndNeutralZoneTrenchCmd extends SequentialCommandGroup {
   /**
    * Creates a command that launches, intakes at the outpost for a set amount of
    * time ({@link AutoConstants#kAutoOutpostIntakeTime}), and launches again.
@@ -47,7 +47,7 @@ public class OutpostAndNeutralZoneCmd extends SequentialCommandGroup {
    * 
    * @see AutoConstants#kAutoOutpostIntakeTime
    */
-  public OutpostAndNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public OutpostAndNeutralZoneTrenchCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub, ClimberSubsystem climberSub) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());

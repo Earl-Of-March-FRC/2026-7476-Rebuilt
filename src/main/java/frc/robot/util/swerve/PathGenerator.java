@@ -503,9 +503,9 @@ public class PathGenerator {
     boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
 
     if (drive().getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneOutpost : AutoConstants.neutralZoneTrenchDepot;
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneTrenchOutpost : AutoConstants.neutralZoneTrenchDepot;
     } else {
-      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneTrenchDepot : AutoConstants.neutralZoneOutpost;
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneTrenchDepot : AutoConstants.neutralZoneTrenchOutpost;
     }
 
     if (neutralZonePath == null) {
@@ -528,9 +528,9 @@ public class PathGenerator {
     boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
 
     if (drive().getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneOutpost : AutoConstants.neutralZoneBumpDepot;
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneBumpOutpost : AutoConstants.neutralZoneBumpDepot;
     } else {
-      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneTrenchDepot : AutoConstants.neutralZoneOutpost;
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneBumpDepot : AutoConstants.neutralZoneBumpOutpost;
     }
 
     if (neutralZonePath == null) {
