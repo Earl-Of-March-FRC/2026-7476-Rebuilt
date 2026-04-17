@@ -492,23 +492,49 @@ public class PathGenerator {
   }
 
   /**
-   * Creates a command that drives to the neutral zone during auto
+   * Creates a command that drives to the neutral zone through the trench during
+   * auto
    * 
    * @return Command
    */
-  public static Command driveToNeutralZoneAuto() {
+  public static Command driveToNeutralZoneTrenchAuto() {
     PathPlannerPath neutralZonePath;
 
     boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
 
     if (drive().getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
-      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneOutpost : AutoConstants.neutralZoneDepot;
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneTrenchOutpost : AutoConstants.neutralZoneTrenchDepot;
     } else {
-      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneDepot : AutoConstants.neutralZoneOutpost;
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneTrenchDepot : AutoConstants.neutralZoneTrenchOutpost;
     }
 
     if (neutralZonePath == null) {
-      return new PrintCommand("Path for driveToNeutralZoneAuto was null.");
+      return new PrintCommand("Path for driveToNeutralZoneTrenchAuto was null.");
+    }
+
+    return AutoBuilder.pathfindThenFollowPath(neutralZonePath, AutoConstants.L1ClimbConstraints)
+        .andThen(new DriveStopCmd(drive()));
+  }
+
+  /**
+   * Creates a command that drives to the neutral zone through the bump during
+   * auto
+   * 
+   * @return Command
+   */
+  public static Command driveToNeutralZoneBumpAuto() {
+    PathPlannerPath neutralZonePath;
+
+    boolean isBlueAlliance = PoseHelpers.getAlliance() == Alliance.Blue;
+
+    if (drive().getPose().getY() <= FieldConstants.kFieldWidthY.div(2).in(Meters)) {
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneBumpOutpost : AutoConstants.neutralZoneBumpDepot;
+    } else {
+      neutralZonePath = isBlueAlliance ? AutoConstants.neutralZoneBumpDepot : AutoConstants.neutralZoneBumpOutpost;
+    }
+
+    if (neutralZonePath == null) {
+      return new PrintCommand("Path for driveToNeutralZoneBumpAuto was null.");
     }
 
     return AutoBuilder.pathfindThenFollowPath(neutralZonePath, AutoConstants.L1ClimbConstraints)
