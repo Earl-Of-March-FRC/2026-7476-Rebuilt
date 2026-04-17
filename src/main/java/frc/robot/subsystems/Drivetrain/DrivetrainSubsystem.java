@@ -84,15 +84,24 @@ import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
 
 public class DrivetrainSubsystem extends SubsystemBase {
+  private static final int MAX_TARGETS = 10;
+  private final int[] fiducialIdsArr = new int[MAX_TARGETS];
+  private final double[] tagAreasArr = new double[MAX_TARGETS];
+  private final double[] tagAmbiguitiesArr = new double[MAX_TARGETS];
+  private final double[] stdDevsXArr = new double[MAX_TARGETS];
+  private final double[] stdDevsYArr = new double[MAX_TARGETS];
+  private final double[] stdDevsThetaArr = new double[MAX_TARGETS];
+  private int targetCount = 0;
+  private int loopCount = 0;
 
-  List<Integer> fiducialIds = new ArrayList<>();
-  List<Pose3d> fiducialIdPoses = new ArrayList<>();
-  List<Double> tagAreas = new ArrayList<>();
-  List<Double> tagAmbiguities = new ArrayList<>();
-  List<Double> stdDevsX = new ArrayList<>();
-  List<Double> stdDevsY = new ArrayList<>();
-  List<Double> stdDevsTheta = new ArrayList<>();
-  Deque<Pose2d> rejectedPoses = new ArrayDeque<>();
+  // Pre-allocate result list with known capacity
+  private final List<EstimatedRobotPose> visionResults = new ArrayList<>(5);
+
+  // Replaced Deque with fixed circular buffer
+  private static final int REJECTED_QUEUE_SIZE = PhotonConstants.kRejectedPosesQueueSize;
+  private final Pose2d[] rejectedPosesArr = new Pose2d[REJECTED_QUEUE_SIZE];
+  private int rejectedPosesHead = 0;
+  private int rejectedPosesCount = 0;
   // LoggedNetworkBoolean useRejectedAverage = new
   // LoggedNetworkBoolean("/Tuning/UseRejectedAverage", true);
 
@@ -747,148 +756,121 @@ public class DrivetrainSubsystem extends SubsystemBase {
    *                               from the robot to the camera
    * @param prevEstimatedRobotPose The previous estimated pose object
    */
-  public List<EstimatedRobotPose> getEstimatedGlobalPose(PhotonPoseEstimator poseEstimator, PhotonCamera camera,
+  public void getEstimatedGlobalPose(
+      PhotonPoseEstimator poseEstimator,
+      PhotonCamera camera,
       Transform3d robotToCam,
-      Pose2d prevEstimatedRobotPose) {
+      Pose2d prevEstimatedRobotPose,
+      List<EstimatedRobotPose> resultsOut) {
+
     poseEstimator.setReferencePose(prevEstimatedRobotPose);
 
-    List<EstimatedRobotPose> results = new ArrayList<>();
     List<PhotonPipelineResult> camResults = camera.getAllUnreadResults();
+    if (camResults.isEmpty())
+      return;
 
-    for (PhotonPipelineResult camResult : camResults) {
-      if (!camResult.hasTargets()) {
+    for (int ri = 0; ri < camResults.size(); ri++) {
+      PhotonPipelineResult camResult = camResults.get(ri);
+      if (!camResult.hasTargets())
         continue;
-      }
 
-      // check if the built in pose estimator pose is reasonable
       Optional<EstimatedRobotPose> optionalEstimation = poseEstimator.update(camResult);
       if (optionalEstimation.isPresent()) {
         EstimatedRobotPose estimation = optionalEstimation.get();
 
-        Logger.recordOutput("Vision/" + camera.getName() + "/RawEstimatedPose", estimation.estimatedPose);
-
         if (PoseHelpers.isInField(estimation.estimatedPose)
             && PoseHelpers.isOnGround(estimation.estimatedPose, PhotonConstants.kHeightTolerance)) {
 
-          // ignore the result if it only has one tag and the tag is too small
-          if (camResult.getTargets().size() == 1
-              && camResult.getTargets().get(0).area <= PhotonConstants.kMinSingleTagArea) {
+          List<PhotonTrackedTarget> targets = camResult.getTargets();
+          if (targets.size() == 1 && targets.get(0).area <= PhotonConstants.kMinSingleTagArea) {
             continue;
           }
-
-          results.add(estimation);
+          resultsOut.add(estimation);
           continue;
         }
       }
+
+      // Fallback manual pose computation
+      List<PhotonTrackedTarget> targets = camResult.getTargets();
+      if (targets.isEmpty())
+        continue;
 
       double timestamp = camResult.getTimestampSeconds();
-      List<PhotonTrackedTarget> targetsUsed = new ArrayList<>();
+      double totalX = 0, totalY = 0, sumSin = 0, sumCos = 0;
+      int validCount = 0;
+      List<PhotonTrackedTarget> targetsUsed = new ArrayList<>(targets.size());
 
-      // if the built in pose estimator is not reasonable, compute it ourselves
-      if (camResult.hasTargets()) {
-        List<PhotonTrackedTarget> targets = camResult.getTargets();
-        List<Pose3d> validPoses = new ArrayList<>();
-        for (PhotonTrackedTarget target : targets) {
+      for (int ti = 0; ti < targets.size(); ti++) {
+        PhotonTrackedTarget target = targets.get(ti);
 
-          // ignore targets with high pose ambiguity
-          if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityDiscardThreshold) {
-            continue;
+        if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityDiscardThreshold)
+          continue;
+
+        int targetId = target.fiducialId;
+        Optional<Pose3d> optionalTagPose = FieldConstants.kfieldLayout.getTagPose(targetId);
+        if (optionalTagPose.isEmpty())
+          continue;
+
+        Pose3d tagPose = optionalTagPose.get();
+
+        if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityThreshold) {
+          Transform3d bestCamToTarget = target.getBestCameraToTarget();
+          Transform3d altCamToTarget = target.getAlternateCameraToTarget();
+
+          Pose3d bestRobotPose = tagPose.transformBy(bestCamToTarget.inverse()).transformBy(robotToCam.inverse());
+          Pose3d altRobotPose = tagPose.transformBy(altCamToTarget.inverse()).transformBy(robotToCam.inverse());
+
+          boolean isBestValid = PoseHelpers.isInField(bestRobotPose)
+              && PoseHelpers.isOnGround(bestRobotPose, PhotonConstants.kHeightTolerance);
+          boolean isAltValid = PoseHelpers.isInField(altRobotPose)
+              && PoseHelpers.isOnGround(altRobotPose, PhotonConstants.kHeightTolerance);
+
+          Pose3d chosen = null;
+          if (isBestValid && isAltValid) {
+            double bestDist = PoseHelpers.distanceBetween(bestRobotPose, new Pose3d(prevEstimatedRobotPose));
+            double altDist = PoseHelpers.distanceBetween(altRobotPose, new Pose3d(prevEstimatedRobotPose));
+            chosen = bestDist < altDist ? bestRobotPose : altRobotPose;
+          } else if (isBestValid) {
+            chosen = bestRobotPose;
+          } else if (isAltValid) {
+            chosen = altRobotPose;
           }
 
-          int targetId = target.fiducialId;
-          Optional<Pose3d> optionalTagPose = FieldConstants.kfieldLayout.getTagPose(targetId);
-          // it should never be empty, but just in case
-          if (optionalTagPose.isEmpty()) {
-            continue;
-          }
-          Pose3d tagPose = optionalTagPose.get();
-
-          // if the ambiguity is high, only use the pose that is reasonable
-          if (target.getPoseAmbiguity() > PhotonConstants.kAmbiguityThreshold) {
-            Transform3d bestCamToTarget = target.getBestCameraToTarget();
-            Transform3d altCamToTarget = target.getAlternateCameraToTarget();
-
-            // robotTransform = tagTransform - camToTarget - robotToCam
-            Pose3d bestRobotPose = tagPose.transformBy(bestCamToTarget.inverse())
-                .transformBy(robotToCam.inverse());
-            Pose3d altRobotPose = tagPose.transformBy(altCamToTarget.inverse()).transformBy(robotToCam.inverse());
-
-            Logger.recordOutput("Vision/" + camera.getName() + "/FallbackBestPose", bestRobotPose);
-            Logger.recordOutput("Vision/" + camera.getName() + "/FallbackAltPose", altRobotPose);
-
-            // check if they are reasonable
-            boolean isBestPoseValid = PoseHelpers.isInField(bestRobotPose) &&
-                PoseHelpers.isOnGround(bestRobotPose, PhotonConstants.kHeightTolerance);
-            boolean isAltPoseValid = PoseHelpers.isInField(altRobotPose)
-                && PoseHelpers.isOnGround(altRobotPose, PhotonConstants.kHeightTolerance);
-            if (isBestPoseValid && isAltPoseValid) {
-              targetsUsed.add(target);
-              // if both are valid, use the one that is closer to the previous estimation
-              double bestDistance = PoseHelpers.distanceBetween(bestRobotPose, new Pose3d(prevEstimatedRobotPose));
-              double altDistance = PoseHelpers.distanceBetween(altRobotPose, new Pose3d(prevEstimatedRobotPose));
-              if (bestDistance < altDistance) {
-                validPoses.add(bestRobotPose);
-              } else {
-                validPoses.add(altRobotPose);
-              }
-            } else if (isBestPoseValid) {
-              targetsUsed.add(target);
-              validPoses.add(bestRobotPose);
-            } else if (isAltPoseValid) {
-              targetsUsed.add(target);
-              validPoses.add(altRobotPose);
-            }
-            continue;
-          }
-
-          // if the ambiguity is low, use the pose directly
-          Transform3d camToTarget = target.getBestCameraToTarget();
-          // robotTransform = tagTransform - camToTarget - robotToCam
-          Pose3d robotPose = tagPose.transformBy(camToTarget.inverse()).transformBy(robotToCam.inverse());
-          // check if the pose is reasonable
-          if (PoseHelpers.isInField(robotPose) && PoseHelpers.isOnGround(robotPose, PhotonConstants.kHeightTolerance)) {
-            validPoses.add(robotPose);
+          if (chosen != null) {
+            totalX += chosen.getX();
+            totalY += chosen.getY();
+            sumSin += Math.sin(chosen.getRotation().getZ());
+            sumCos += Math.cos(chosen.getRotation().getZ());
             targetsUsed.add(target);
+            validCount++;
           }
-        }
-
-        // if there are no valid poses, ignore this frame
-        if (validPoses.isEmpty()) {
           continue;
         }
 
-        double totalX = 0;
-        double totalY = 0;
-        double sumSin = 0;
-        double sumCos = 0;
+        Transform3d camToTarget = target.getBestCameraToTarget();
+        Pose3d robotPose = tagPose.transformBy(camToTarget.inverse()).transformBy(robotToCam.inverse());
 
-        for (Pose3d pose : validPoses) {
-          totalX += pose.getX();
-          totalY += pose.getY();
-          sumSin += Math.sin(pose.getRotation().getZ());
-          sumCos += Math.cos(pose.getRotation().getZ());
+        if (PoseHelpers.isInField(robotPose) && PoseHelpers.isOnGround(robotPose, PhotonConstants.kHeightTolerance)) {
+          totalX += robotPose.getX();
+          totalY += robotPose.getY();
+          sumSin += Math.sin(robotPose.getRotation().getZ());
+          sumCos += Math.cos(robotPose.getRotation().getZ());
+          targetsUsed.add(target);
+          validCount++;
         }
-
-        final int count = validPoses.size();
-        Pose3d averagePose = new Pose3d(
-            totalX / count,
-            totalY / count,
-            0,
-            new Rotation3d(0, 0, Math.atan2(sumSin / count, sumCos / count)));
-
-        Logger.recordOutput("Vision/" + camera.getName() + "/FallbackPose", averagePose);
-
-        // ignore the result if it only has one tag and the tag is too small
-        if (camResult.getTargets().size() == 1
-            && camResult.getTargets().get(0).area <= PhotonConstants.kMinSingleTagArea) {
-          continue;
-        }
-        results
-            .add(new EstimatedRobotPose(averagePose, timestamp, targetsUsed,
-                PhotonConstants.kPoseStrategy));
       }
+
+      if (validCount == 0)
+        continue;
+      if (targets.size() == 1 && targets.get(0).area <= PhotonConstants.kMinSingleTagArea)
+        continue;
+
+      Pose3d averagePose = new Pose3d(
+          totalX / validCount, totalY / validCount, 0,
+          new Rotation3d(0, 0, Math.atan2(sumSin / validCount, sumCos / validCount)));
+
+      resultsOut.add(new EstimatedRobotPose(averagePose, timestamp, targetsUsed, PhotonConstants.kPoseStrategy));
     }
-    return results;
   }
 
   /**
@@ -934,113 +916,110 @@ public class DrivetrainSubsystem extends SubsystemBase {
       final CameraProfile currentCameraProfile = SwerveConfig.kCameraProfiles[i];
       final Transform3d robotToCamera = currentCameraProfile.getRobotToCameraTransform();
 
-      // Get all poses from camera
-      List<EstimatedRobotPose> visionPoses = getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i],
-          robotToCamera,
-          robotPose);
+      visionResults.clear(); // reuse the same list, no allocation
+      getEstimatedGlobalPose(photonPoseEstimators[i], cameras[i], robotToCamera, robotPose, visionResults);
 
-      fiducialIds.clear();
-      fiducialIdPoses.clear();
-      tagAreas.clear();
-      tagAmbiguities.clear();
-      stdDevsX.clear();
-      stdDevsY.clear();
-      stdDevsTheta.clear();
+      targetCount = 0;
 
-      // Iterate through each pose to check for ambiguity
-      for (EstimatedRobotPose visionPose : visionPoses) {
-        // Iterate through the targets used to estimate the pose
-        for (PhotonTrackedTarget target : visionPose.targetsUsed) {
-          fiducialIds.add(target.fiducialId);
-          if (FieldConstants.kfieldLayout.getTagPose(target.fiducialId).isPresent()) {
-            fiducialIdPoses.add(FieldConstants.kfieldLayout.getTagPose(target.fiducialId).get());
-          }
-          tagAreas.add(target.area);
-          tagAmbiguities.add(target.poseAmbiguity);
+      for (int vi = 0; vi < visionResults.size(); vi++) {
+        EstimatedRobotPose visionPose = visionResults.get(vi);
+
+        // Fill pre-allocated arrays instead of Lists
+        List<PhotonTrackedTarget> used = visionPose.targetsUsed;
+        for (int ti = 0; ti < used.size() && targetCount < MAX_TARGETS; ti++) {
+          PhotonTrackedTarget target = used.get(ti);
+          fiducialIdsArr[targetCount] = target.fiducialId;
+          tagAreasArr[targetCount] = target.area;
+          tagAmbiguitiesArr[targetCount] = target.poseAmbiguity;
+          targetCount++;
         }
 
         Pose2d estimatedPose = PoseHelpers.toPose2d(visionPose.estimatedPose);
 
-        double jumpDistance = estimatedPose.getTranslation()
-            .getDistance(robotPose.getTranslation());
+        double jumpDistance = estimatedPose.getTranslation().getDistance(robotPose.getTranslation());
         if (jumpDistance > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
-          // If all of the 5 past mesurements are within the jump tolerance of
-          // the average, we use that average, otherwise discard it
-          if (rejectedPoses.size() >= PhotonConstants.kRejectedPosesQueueSize) {
-            rejectedPoses.remove();
-          }
-          rejectedPoses.addLast(estimatedPose);
+          // Add to rejection buffer
+          rejectedPosesArr[rejectedPosesHead] = estimatedPose;
+          rejectedPosesHead = (rejectedPosesHead + 1) % REJECTED_QUEUE_SIZE;
+          if (rejectedPosesCount < REJECTED_QUEUE_SIZE)
+            rejectedPosesCount++;
 
-          Pose2d[] poses = rejectedPoses.toArray(new Pose2d[rejectedPoses.size()]);
-          Pose2d average = PoseHelpers.average(poses);
-          Logger.recordOutput("Vision/RejectedPoses/Poses", poses);
-          Logger.recordOutput("Vision/RejectedPoses/Average", average);
+          if (rejectedPosesCount == REJECTED_QUEUE_SIZE) {
+            // Compute average of rejected poses
+            double avgX = 0, avgY = 0, avgSin = 0, avgCos = 0;
+            for (Pose2d p : rejectedPosesArr) {
+              avgX += p.getX();
+              avgY += p.getY();
+              avgSin += Math.sin(p.getRotation().getRadians());
+              avgCos += Math.cos(p.getRotation().getRadians());
+            }
+            avgX /= REJECTED_QUEUE_SIZE;
+            avgY /= REJECTED_QUEUE_SIZE;
 
-          boolean acceptJump = true;
-          for (Pose2d pose : rejectedPoses) {
-            if (PoseHelpers.distanceBetween(average, pose) > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
-              acceptJump = false;
-              break;
+            Pose2d average = new Pose2d(
+                avgX,
+                avgY,
+                Rotation2d.fromRadians(Math.atan2(avgSin / REJECTED_QUEUE_SIZE, avgCos / REJECTED_QUEUE_SIZE)));
+
+            // Check consistency
+            boolean acceptJump = true;
+            for (Pose2d p : rejectedPosesArr) {
+              if (PoseHelpers.distanceBetween(average, p) > PhotonConstants.kVisionJumpDistanceThreshold.in(Meters)) {
+                acceptJump = false;
+                break;
+              }
+            }
+            Logger.recordOutput("Drivetrain/Vision/AcceptedJumpPose", average);
+            if (acceptJump) {
+              // Hard reset to vision
+              poseEstimator.resetPosition(
+                  gyro.getRotation2d(),
+                  getModulePositions(),
+                  average);
+
+              // Clear buffer after accepting
+              rejectedPosesCount = 0;
+              rejectedPosesHead = 0;
+
+              continue; // skip normal processing this loop
             }
           }
 
-          if (acceptJump && rejectedPoses.size() == PhotonConstants.kRejectedPosesQueueSize) {
-            // && useRejectedAverage.get()) {
-            // estimatedPose = average;
-            Logger.recordOutput("Vision/RejectedPoses/AcceptJump", acceptJump);
-          } else {
-            Logger.recordOutput("Vision/" + cameras[i].getName() + "/RejectedJump", jumpDistance);
-            continue;
-          }
+          continue; // still reject for now
         }
 
-        // Calculate dynamic standard deviations based on measurement quality
         final Vector<N3> stdDevs;
         if (SwerveConfig.kUseDynamicStandardDeviations) {
-          stdDevs = VisionStdDevCalculator.calculateStdDevs(
-              visionPose,
-              currentCameraProfile.standardDeviation());
+          stdDevs = VisionStdDevCalculator.calculateStdDevs(visionPose, currentCameraProfile.standardDeviation());
         } else {
           stdDevs = currentCameraProfile.standardDeviation();
         }
 
-        // Add vision measurement with dynamic standard deviations
-        poseEstimator.addVisionMeasurement(
-            estimatedPose,
-            visionPose.timestampSeconds,
-            stdDevs);
+        poseEstimator.addVisionMeasurement(estimatedPose, visionPose.timestampSeconds, stdDevs);
 
-        // Store std devs for logging
-        stdDevsX.add(stdDevs.get(0));
-        stdDevsY.add(stdDevs.get(1));
-        stdDevsTheta.add(stdDevs.get(2));
-
-        // Log vision poses and standard deviations
-        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/StandardDeviation",
-            new double[] { stdDevs.get(0), stdDevs.get(1), stdDevs.get(2) });
-        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/EstimatedPose", visionPose.estimatedPose);
-        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/LatencyTimestamp",
-            visionPose.timestampSeconds);
+        if (targetCount > 0) {
+          stdDevsXArr[0] = stdDevs.get(0);
+          stdDevsYArr[0] = stdDevs.get(1);
+          stdDevsThetaArr[0] = stdDevs.get(2);
+        }
       }
 
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/FieldRelative;",
+      // Log only a subset of fields every loop, skip heavy array logs
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/NumTargets", targetCount);
+      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/FieldRelative",
           new Pose3d(getPose()).transformBy(robotToCamera));
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/CameraPose/RobotRelative",
-          robotToCamera);
 
-      // Log targets estimated from robot
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetIds",
-          fiducialIds.stream().mapToInt(n -> n).toArray());
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetPoses",
-          fiducialIdPoses.toArray(new Pose3d[fiducialIdPoses.size()]));
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAreas",
-          tagAreas.stream().mapToDouble(n -> n).toArray());
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAmbiguities",
-          tagAmbiguities.stream().mapToDouble(n -> n).toArray());
-      Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/NumTargets",
-          visionPoses.stream().mapToInt(p -> p.targetsUsed.size()).toArray());
-
+      // Only log detailed target info every 3 loops to cut GC pressure
+      if (loopCount % 3 == 0 && targetCount > 0) {
+        int[] idSlice = Arrays.copyOf(fiducialIdsArr, targetCount);
+        double[] areaSlice = Arrays.copyOf(tagAreasArr, targetCount);
+        double[] ambSlice = Arrays.copyOf(tagAmbiguitiesArr, targetCount);
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetIds", idSlice);
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAreas", areaSlice);
+        Logger.recordOutput("Drivetrain/Vision/" + cameras[i].getName() + "/TargetAmbiguities", ambSlice);
+      }
     }
+
     Logger.recordOutput("Drivetrain/Vision/UsingDynamicStds",
         SwerveConfig.kUseDynamicStandardDeviations);
 
@@ -1129,6 +1108,7 @@ public class DrivetrainSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Translation from hub Y", getHubTranslation3dBotRelative().getY());
 
     climbAlignmentIndicator.update(getPose(), cameras);
+    loopCount++;
   }
 
   @Override
