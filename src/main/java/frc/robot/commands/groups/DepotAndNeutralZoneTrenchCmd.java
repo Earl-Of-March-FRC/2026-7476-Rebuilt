@@ -11,6 +11,7 @@ import java.util.Set;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -93,10 +94,13 @@ public class DepotAndNeutralZoneTrenchCmd extends SequentialCommandGroup {
         Set.of(driveSub));
 
     addCommands(
-        moveToDepotCmd,
-        driveThroughDepotAndIntakeCmd,
-        driveToLaunchCmd,
-        launchCmd,
+        Commands.sequence(moveToDepotCmd,
+            driveThroughDepotAndIntakeCmd,
+            driveToLaunchCmd,
+            launchCmd).until(
+                () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)",
+                    AutoConstants.kDefaultAutoDelay.in(Seconds)) >= DriverStation
+                        .getMatchTime()),
         driveToNeutralZoneTrenchCmd);
   }
 }

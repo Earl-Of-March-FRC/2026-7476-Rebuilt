@@ -633,7 +633,7 @@ public final class Constants {
     // public static final double kIntakeDeploySpeedY = 0.0;
     // public static final double kIntakeDeploySpeedTheta = 0.0;
     public static final Time kDepotIntakeTime = Seconds.of(2);
-    public static final double kDepotIntakeDriveSpeed = 0.4;
+    public static final double kDepotIntakeDriveSpeed = -0.4;
 
   }
 
