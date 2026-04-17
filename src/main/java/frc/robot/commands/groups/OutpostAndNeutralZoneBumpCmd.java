@@ -79,7 +79,9 @@ public class OutpostAndNeutralZoneBumpCmd extends SequentialCommandGroup {
         Commands.sequence(moveToOutpostCmd,
             Commands.waitTime(AutoConstants.kAutoOutpostIntakeTime),
             driveToLaunchCmd,
-            launchCmd).until(
+            launchCmd,
+            // only start going when the correct timestamp is reached
+            Commands.waitUntil(() -> false)).until(
                 () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)",
                     AutoConstants.kDefaultAutoDelay.in(Seconds)) >= DriverStation
                         .getMatchTime()),
