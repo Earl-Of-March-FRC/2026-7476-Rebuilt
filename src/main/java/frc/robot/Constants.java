@@ -574,7 +574,7 @@ public final class Constants {
     public static PathConstraints kPathfindingConstraints;
 
     // TODO requires testing
-    public static Distance kAutoNeutralZoneX = Meters.of(7.715);
+    public static Distance kAutoNeutralZoneX = Meters.of(7.0);
     public static Pose2d outpostPose = new Pose2d(Meters.of(0.455), Meters.of(0.651), Rotation2d.kZero);
     public static Time kAutoOutpostIntakeTime = Seconds.of(2); // TODO to be updated
     public static Distance kAutoLaunchDistanceFromHubX = Meters.of(2.5);
