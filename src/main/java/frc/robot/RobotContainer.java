@@ -77,16 +77,21 @@ import frc.robot.commands.drivetrain.DriveXLockCmd;
 import frc.robot.commands.groups.AutoDeployIntakeCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
-import frc.robot.commands.groups.DriveToCornerDepotCmd;
-import frc.robot.commands.groups.DriveToCornerOutpostCmd;
+import frc.robot.commands.groups.DriveToCornerDepotBumpCmd;
+import frc.robot.commands.groups.DriveToCornerDepotTrenchCmd;
+import frc.robot.commands.groups.DriveToCornerOutpostBumpCmd;
+import frc.robot.commands.groups.DriveToCornerOutpostTrenchCmd;
 import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
+import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneBumpCmd;
 import frc.robot.commands.groups.DepotAndClimbCmd;
-import frc.robot.commands.groups.DepotAndNeutralZoneCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneBumpCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneTrenchCmd;
 import frc.robot.commands.groups.LaunchAndIndexCmd;
-import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneCmd;
+import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneTrenchCmd;
 import frc.robot.commands.groups.OutpostAndClimbCmd;
-import frc.robot.commands.groups.OutpostAndNeutralZoneCmd;
+import frc.robot.commands.groups.OutpostAndNeutralZoneBumpCmd;
+import frc.robot.commands.groups.OutpostAndNeutralZoneTrenchCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.groups.ZonePassCmd;
 import frc.robot.commands.indexer.IndexerCmd;
@@ -739,29 +744,49 @@ public class RobotContainer {
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new DepotAndClimbCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Depot Launch and Neutral Zone", new SequentialCommandGroup(
+    autoChooser.addOption("Depot Launch and Neutral Zone Trench", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
-        new DepotAndNeutralZoneCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
+        new DepotAndNeutralZoneTrenchCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Depot Launch and Neutral Zone Bump", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DepotAndNeutralZoneBumpCmd(driveSub, indexerSub, otbIntakeSub, launcherAndIntakeSub, climberSub)));
 
     autoChooser.addOption("Outpost Launch and Climb", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
         new OutpostAndClimbCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Outpost Launch and Neutral Zone", new SequentialCommandGroup(
+    autoChooser.addOption("Outpost Launch and Neutral Zone Trench", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
-        new OutpostAndNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+        new OutpostAndNeutralZoneTrenchCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Launch and Delayed Neutral Zone", new SequentialCommandGroup(
+    autoChooser.addOption("Outpost Launch and Neutral Zone Bump", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
-        new LaunchAndDelayedNeutralZoneCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+        new OutpostAndNeutralZoneBumpCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Drive to Corner Depot", new SequentialCommandGroup(
+    autoChooser.addOption("Launch and Delayed Neutral Zone Trench", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
-        new DriveToCornerDepotCmd(driveSub)));
+        new LaunchAndDelayedNeutralZoneTrenchCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
 
-    autoChooser.addOption("Drive to Corner Outpost", new SequentialCommandGroup(
+    autoChooser.addOption("Launch and Delayed Neutral Zone Bump", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
-        new DriveToCornerOutpostCmd(driveSub)));
+        new LaunchAndDelayedNeutralZoneBumpCmd(driveSub, indexerSub, launcherAndIntakeSub, climberSub)));
+
+    autoChooser.addOption("Drive to Corner Depot and Trench", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerDepotTrenchCmd(driveSub)));
+
+    autoChooser.addOption("Drive to Corner Outpost and Trench", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerOutpostTrenchCmd(driveSub)));
+
+    autoChooser.addOption("Drive to Corner Depot and Bump", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerDepotBumpCmd(driveSub)));
+
+    autoChooser.addOption("Drive to Corner Outpost and Bump", new SequentialCommandGroup(
+        new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
+        new DriveToCornerOutpostBumpCmd(driveSub)));
 
     autoChooser.addOption("Deploy intake", new AutoDeployIntakeCmd(driveSub, otbIntakeSub));
 

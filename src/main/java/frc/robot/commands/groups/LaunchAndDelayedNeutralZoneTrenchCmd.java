@@ -31,7 +31,7 @@ import frc.robot.util.swerve.PathGenerator;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
+public class LaunchAndDelayedNeutralZoneTrenchCmd extends SequentialCommandGroup {
   /**
    * Create a command that launches and drives to the neutral zone after a
    * specific amount of time has passed in auto
@@ -44,7 +44,7 @@ public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
    * 
    * @see AutoConstants#kDefaultAutoDelay Can be modified in Elastic
    */
-  public LaunchAndDelayedNeutralZoneCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
+  public LaunchAndDelayedNeutralZoneTrenchCmd(DrivetrainSubsystem driveSub, IndexerSubsystem indexerSub,
       LauncherAndIntakeSubsystem launcherAndIntakeSub,
       ClimberSubsystem climberSub) {
 
@@ -62,7 +62,7 @@ public class LaunchAndDelayedNeutralZoneCmd extends SequentialCommandGroup {
                     .andThen(launchWaitCmd)),
         new ClimbDownCmd(climberSub));
 
-    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneAuto(),
+    final Command driveToNeutralZoneCmd = new DeferredCommand(() -> PathGenerator.driveToNeutralZoneTrenchAuto(),
         Set.of(driveSub));
 
     // Add your commands in the addCommands() call, e.g.
