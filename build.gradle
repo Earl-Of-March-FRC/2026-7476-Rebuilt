@@ -27,6 +27,7 @@ deploy {
                 // getTargetTypeClass is a shortcut to get the class type using a string
 
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
+                    jvmArgs.add("-Xms25m")
                 }
 
                 // Static files artifact
@@ -46,6 +47,9 @@ def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 // Set to true to use debug for all targets including JNI, which will drastically impact
 // performance.
 wpi.java.debugJni = false
+
+// Allocate more heap space to Java on startup
+
 
 // Set this to true to enable desktop support.
 def includeDesktopSupport = true
