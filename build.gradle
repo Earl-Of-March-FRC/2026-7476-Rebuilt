@@ -28,6 +28,8 @@ deploy {
 
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
                     jvmArgs.add("-Xms25m")
+                    jvmArgs.add("-XX:+HeapDumpOnOutOfMemoryError")
+                    jvmArgs.add("-XX:HeapDumpPath=/u/frc-usercode.hprof")
                 }
 
                 // Static files artifact
