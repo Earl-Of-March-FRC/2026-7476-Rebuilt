@@ -41,6 +41,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -677,6 +678,10 @@ public class RobotContainer {
                                 SmartDashboard.getNumber("8 Fuel Launch Time (Auto)",
                                     AutoConstants.kAutoLaunch8Time.in(Seconds)))),
                             Set.of()))),
+            Commands.waitUntil(() -> false).until(
+                () -> 20 - SmartDashboard.getNumber("Delayed Crossing Time (Auto)",
+                    AutoConstants.kDefaultAutoDelay.in(Seconds)) >= DriverStation
+                        .getMatchTime()),
             Commands.defer(
                 () -> PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),
                 Set.of(driveSub))));
@@ -699,6 +704,9 @@ public class RobotContainer {
             Commands.defer(
                 () -> PathGenerator.crossTrenchAuto(FieldConstants.kTrenchPathWaypoints),
                 Set.of(driveSub))));
+
+    // autoChooser.addOption("Cross Bump Auto", Commands.defer(() ->
+    // PathGenerator.crossBumpAuto(FieldConstants.kBumpPathWaypoints),Set.of(driveSub)));
 
     autoChooser.addOption("Launch", new SequentialCommandGroup(
         new AutoDeployIntakeCmd(driveSub, otbIntakeSub),
