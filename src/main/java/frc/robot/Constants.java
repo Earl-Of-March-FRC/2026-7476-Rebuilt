@@ -639,6 +639,7 @@ public final class Constants {
 
   public static final class OTBIntakeConstants {
     public static final int kRollerCanId = 15;
+    public static final int kWinchCanId = 20;
     public static final MotorType kMotorType = MotorType.kBrushless;
 
     // TODO: Verify values for these reductions
@@ -648,6 +649,7 @@ public final class Constants {
     public static double kIntakeSpeed = -1;
 
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
+    public static final SparkMaxConfig kWinchConfig = new SparkMaxConfig();
 
     static {
       kRollerConfig
@@ -656,6 +658,13 @@ public final class Constants {
           // for a neo
           .smartCurrentLimit(20)
           // TODO: invert so + is intaking, - is outaking
+          .inverted(false);
+    }
+
+    static {
+      kWinchConfig
+          .idleMode(IdleMode.kBrake)
+          .smartCurrentLimit(20)
           .inverted(false);
     }
   }

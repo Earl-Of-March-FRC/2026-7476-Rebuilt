@@ -138,7 +138,8 @@ public class RobotContainer {
             new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
                 Constants.LauncherAndIntakeConstants.kMotorType)));
     otbIntakeSub = new OTBIntakeSubsystem(
-        new SparkMax(Constants.OTBIntakeConstants.kRollerCanId, Constants.OTBIntakeConstants.kMotorType));
+        new SparkMax(Constants.OTBIntakeConstants.kRollerCanId, Constants.OTBIntakeConstants.kMotorType),
+        new SparkMax(Constants.OTBIntakeConstants.kWinchCanId, Constants.OTBIntakeConstants.kMotorType));
     climberSub = new ClimberSubsystem(
         new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
         Constants.ClimberConstants.kConfigLeft,
