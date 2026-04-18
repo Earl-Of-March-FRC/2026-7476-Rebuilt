@@ -648,6 +648,9 @@ public final class Constants {
     public static double kOuttakeSpeed = 1;
     public static double kIntakeSpeed = -1;
 
+    public static double kDeploySpeed = 0.25
+    public static double kRetractSpeed = -0.25
+
     public static final SparkMaxConfig kRollerConfig = new SparkMaxConfig();
     public static final SparkMaxConfig kWinchConfig = new SparkMaxConfig();
 

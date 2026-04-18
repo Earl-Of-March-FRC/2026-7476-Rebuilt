@@ -610,6 +610,9 @@ public class RobotContainer {
 
     testController.a()
         .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
+
+    testController.x().whileTrue(new WinchCmd(otbIntakeSub, Constants.OTBIntakeConstants.kRetractSpeed));
+    testController.b().whileTrue(new WinchCmd(otbIntakeSub, Constants.OTBIntakeConstants.kDeploySpeed));
   }
 
   // Helper methods to reduce repetition
