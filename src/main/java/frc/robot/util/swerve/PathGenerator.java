@@ -391,7 +391,10 @@ public class PathGenerator {
 
     // Load the path we want to pathfind to and follow
     PathPlannerPath nearestClimbPath = AutoConstants.climbPaths[nearestPathIndex];
-
+    if (nearestClimbPath == null) {
+      DriverStation.reportError("loadL1ClimbCommand: climb path is null, skipping", false);
+      return Commands.none();
+    }
     // Since AutoBuilder is configured, we can use it to build pathfinding commands
     return AutoBuilder.pathfindThenFollowPath(nearestClimbPath, AutoConstants.L1ClimbConstraints);
   }

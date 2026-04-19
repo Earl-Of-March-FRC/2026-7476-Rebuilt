@@ -25,6 +25,8 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -33,6 +35,8 @@ import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.ProfileSelector;
+
+import java.lang.runtime.*;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -45,6 +49,7 @@ public class Robot extends LoggedRobot {
   private boolean gyroCalibrated = false;
   private final RobotContainer m_robotContainer;
   private final GameModel gameModel = new GameModel();
+  Runtime runtime = Runtime.getRuntime();
 
   private Command autonomousCommand;
   private boolean simulateFuel = false;
@@ -62,15 +67,17 @@ public class Robot extends LoggedRobot {
 
     // Start logger
     Logger.recordMetadata("ProjectName", "2026-7576-Rebuilt");
-    Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+    if (!DriverStation.isFMSAttached()) {
+      // Publish data to NetworkTables unless we are in a match
+      Logger.addDataReceiver(new NT4Publisher());
+    }
     // Only write log files if real & USB stick is plugged in
-    // if (isReal() && new File("/u/").exists()) {
-    Logger.addDataReceiver(new WPILOGWriter("/u/logs"));
-    // } else {
-    // System.err
-    // .println("No USB flashdrive was found in the RoboRIO's directory.
-    // WPILOGWriter and URCL not initiated.");
-    // }
+    if (isReal() && new File("/u/").exists()) {
+      Logger.addDataReceiver(new WPILOGWriter("/u/logs"));
+    } else {
+      System.err
+          .println("No USB flashdrive was found in the RoboRIO's directory. WPILOGWriter and URCL not initiated.");
+    }
     Logger.start();
     Logger.registerURCL(URCL.startExternal());
 
@@ -107,6 +114,22 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putString("Auto Pose",
         m_robotContainer.driveSub.getPose().getX() + " " + m_robotContainer.driveSub.getPose().getY());
     Logger.recordOutput("Launcher/LaunchAngle/", LauncherAndIntakeConstants.kBallReleaseAngle().in(Degrees));
+
+    SmartDashboard.putNumber("Cortisol", 12.0 - RobotController.getBatteryVoltage());
+
+    double maxMemoryMB = runtime.maxMemory() / 1e6;
+    double allocatedMemoryMB = runtime.totalMemory() / 1e6;
+    double freeMemoryMB = runtime.freeMemory() / 1e6;
+    double usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / 1e6;
+
+    Logger.recordOutput("Memory/MaxMemoryMB", maxMemoryMB);
+    Logger.recordOutput("Memory/AllocatedMemoryMB", allocatedMemoryMB);
+    Logger.recordOutput("Memory/FreeMemoryMB", freeMemoryMB);
+    Logger.recordOutput("Memory/UsedMemoryMB", usedMemoryMB);
+    Logger.recordOutput("Memory/UsedPercentMax",
+        (usedMemoryMB) / maxMemoryMB * 100);
+    Logger.recordOutput("Memory/UsedPercentAllocated",
+        (usedMemoryMB) / allocatedMemoryMB * 100);
   }
 
   @Override

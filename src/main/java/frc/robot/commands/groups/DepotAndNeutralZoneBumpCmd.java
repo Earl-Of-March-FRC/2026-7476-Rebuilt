@@ -60,7 +60,8 @@ public class DepotAndNeutralZoneBumpCmd extends SequentialCommandGroup {
 
     final PathPlannerPath depotPath = AutoConstants.depotPath;
     // final Command driveThroughDepotCmd = AutoBuilder.followPath(depotPath);
-    final Command driveThroughDepotCmd = new DriveCmd(driveSub, () -> -0.5, () -> 0.0, () -> 0.0)
+    final Command driveThroughDepotCmd = new DriveCmd(driveSub, () -> AutoConstants.kDepotIntakeDriveSpeed, () -> 0.0,
+        () -> 0.0)
         .withTimeout(AutoConstants.kDepotIntakeTime);
 
     final Command intakeCmd = new TreadmillOnCmd(
