@@ -26,6 +26,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -113,6 +114,8 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putString("Auto Pose",
         m_robotContainer.driveSub.getPose().getX() + " " + m_robotContainer.driveSub.getPose().getY());
     Logger.recordOutput("Launcher/LaunchAngle/", LauncherAndIntakeConstants.kBallReleaseAngle().in(Degrees));
+
+    SmartDashboard.putNumber("Cortisol", 12.0 - RobotController.getBatteryVoltage());
 
     double maxMemoryMB = runtime.maxMemory() / 1e6;
     double allocatedMemoryMB = runtime.totalMemory() / 1e6;

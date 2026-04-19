@@ -9,9 +9,9 @@
         "containers": [
           {
             "title": "Next Hub State",
-            "x": 1152.0,
-            "y": 384.0,
-            "width": 128.0,
+            "x": 1024.0,
+            "y": 0.0,
+            "width": 256.0,
             "height": 128.0,
             "type": "Boolean Box",
             "properties": {
@@ -26,7 +26,7 @@
           },
           {
             "title": "Phase",
-            "x": 384.0,
+            "x": 512.0,
             "y": 384.0,
             "width": 256.0,
             "height": 128.0,
@@ -39,9 +39,9 @@
           },
           {
             "title": "Can Score",
-            "x": 1024.0,
-            "y": 384.0,
-            "width": 128.0,
+            "x": 768.0,
+            "y": 0.0,
+            "width": 256.0,
             "height": 128.0,
             "type": "Boolean Box",
             "properties": {
@@ -56,9 +56,9 @@
           },
           {
             "title": "Phase Time",
-            "x": 896.0,
+            "x": 1024.0,
             "y": 384.0,
-            "width": 128.0,
+            "width": 256.0,
             "height": 128.0,
             "type": "Match Time",
             "properties": {
@@ -72,7 +72,7 @@
           },
           {
             "title": "Match Time",
-            "x": 640.0,
+            "x": 768.0,
             "y": 384.0,
             "width": 256.0,
             "height": 128.0,
@@ -89,7 +89,7 @@
           {
             "title": "Auto Routine",
             "x": 1280.0,
-            "y": 384.0,
+            "y": 0.0,
             "width": 256.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
@@ -100,11 +100,28 @@
             }
           },
           {
-            "title": "Intake_Trench",
+            "title": "Will Score Fuel",
             "x": 0.0,
-            "y": 0.0,
+            "y": 384.0,
             "width": 256.0,
-            "height": 384.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Launcher/Prediction/WillHitHub",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Camera 1",
+            "x": 0.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 256.0,
             "type": "Camera Stream",
             "properties": {
               "topic": "/CameraPublisher/photonvision_Port_1182_Output_MJPEG_Server",
@@ -113,11 +130,11 @@
             }
           },
           {
-            "title": "Launcher Cam",
+            "title": "Camera 2",
             "x": 768.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 384.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 256.0,
             "type": "Camera Stream",
             "properties": {
               "topic": "/CameraPublisher/photonvision_Port_1184_Output_MJPEG_Server",
@@ -126,11 +143,11 @@
             }
           },
           {
-            "title": "Intake_Ground",
-            "x": 1152.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 384.0,
+            "title": "Camera 3",
+            "x": 1024.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 256.0,
             "type": "Camera Stream",
             "properties": {
               "topic": "/CameraPublisher/photonvision_Port_1186_Output_MJPEG_Server",
@@ -139,9 +156,43 @@
             }
           },
           {
+            "title": "XLock",
+            "x": 1280.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drivetrain/XLock",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Field Relative",
+            "x": 256.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drivetrain/IsFieldRelativeReal",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
             "title": "32 Fuel Launch Time (Auto)",
             "x": 0.0,
-            "y": 384.0,
+            "y": 512.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
@@ -155,7 +206,7 @@
           {
             "title": "8 Fuel Launch Time (Auto)",
             "x": 128.0,
-            "y": 384.0,
+            "y": 512.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
@@ -190,12 +241,47 @@
           {
             "title": "Delayed Crossing Time (Auto)",
             "x": 256.0,
-            "y": 384.0,
+            "y": 512.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
               "topic": "/SmartDashboard/Delayed Crossing Time (Auto)",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Cortisol",
+            "x": 1280.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Radial Gauge",
+            "properties": {
+              "topic": "/SmartDashboard/Cortisol",
+              "period": 0.06,
+              "data_type": "double",
+              "start_angle": -90.0,
+              "end_angle": 90.0,
+              "min_value": -1.0,
+              "max_value": 3.5,
+              "number_of_labels": 0,
+              "wrap_value": false,
+              "show_pointer": true,
+              "show_ticks": false
+            }
+          },
+          {
+            "title": "VelocityOffsetRPM",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Launcher/VelocityOffsetRPM",
               "period": 0.06,
               "data_type": "double",
               "show_submit_button": false
