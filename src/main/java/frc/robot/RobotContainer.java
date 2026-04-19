@@ -65,6 +65,7 @@ import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.SimulationConstants;
 import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
+import frc.robot.commands.OTBIntake.WinchCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
 import frc.robot.commands.climber.ClimbToHeightCmd;
@@ -139,7 +140,8 @@ public class RobotContainer {
             new SparkMax(Constants.LauncherAndIntakeConstants.kFollowerCanSparkId,
                 Constants.LauncherAndIntakeConstants.kMotorType)));
     otbIntakeSub = new OTBIntakeSubsystem(
-        new SparkMax(Constants.OTBIntakeConstants.kRollerCanId, Constants.OTBIntakeConstants.kMotorType));
+        new SparkMax(Constants.OTBIntakeConstants.kRollerCanId, Constants.OTBIntakeConstants.kMotorType),
+        new SparkMax(Constants.OTBIntakeConstants.kWinchCanId, Constants.OTBIntakeConstants.kMotorType));
     climberSub = new ClimberSubsystem(
         new SparkMax(Constants.ClimberConstants.kLeftId, Constants.ClimberConstants.kMotorType),
         Constants.ClimberConstants.kConfigLeft,
@@ -609,6 +611,9 @@ public class RobotContainer {
 
     testController.a()
         .whileTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, () -> true, () -> RPM.of(testRPM.get())));
+
+    testController.x().whileTrue(new WinchCmd(otbIntakeSub, () -> Constants.OTBIntakeConstants.kRetractSpeed));
+    testController.b().whileTrue(new WinchCmd(otbIntakeSub, () -> Constants.OTBIntakeConstants.kDeploySpeed));
   }
 
   // Helper methods to reduce repetition
