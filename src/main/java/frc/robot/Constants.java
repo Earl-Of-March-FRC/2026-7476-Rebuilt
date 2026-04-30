@@ -292,6 +292,10 @@ public final class Constants {
     // Setpoints
     public static final AngularVelocity kIntakeRPMSetpoint = RPM.of(1000);
     public static final AngularVelocity kPassRPMSetpoint = RPM.of(4500);
+
+    // Juggling launcher setpoint
+    public static final AngularVelocity kJuggleRPMSetpoint = RPM.of(1000);
+
     // Visionless backup setpoints
     public static final AngularVelocity kBumpRPMSetpoint = RPM.of(2500);
     public static final AngularVelocity kTrenchRPMSetpoint = RPM.of(3020);

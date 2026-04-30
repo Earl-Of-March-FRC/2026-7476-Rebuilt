@@ -4,23 +4,10 @@
 
 package frc.robot;
 
-import frc.robot.subsystems.Climber.ClimberSubsystem;
-import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
-import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
-import frc.robot.subsystems.Drivetrain.Gyro;
-import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
-import frc.robot.subsystems.Drivetrain.SimulatedGyro;
-import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
-import frc.robot.subsystems.Drivetrain.SwerveModule;
-import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
-import frc.robot.subsystems.indexer.IndexerSubsystem;
-import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
-
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Seconds;
 
-import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -32,8 +19,8 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -42,7 +29,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -50,7 +36,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -63,52 +48,56 @@ import frc.robot.Constants.LauncherAndIntakeConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.OTBIntakeConstants;
 import frc.robot.Constants.SimulationConstants;
-import frc.robot.util.swerve.SwerveDriveProfile;
 import frc.robot.commands.OTBIntake.IntakeCmd;
 import frc.robot.commands.climber.ClimbDownCmd;
 import frc.robot.commands.climber.ClimbPercentCmd;
 import frc.robot.commands.climber.ClimbToHeightCmd;
-import frc.robot.commands.climber.ClimbUpCmd;
 import frc.robot.commands.drivetrain.ActiveXLockCmd;
 import frc.robot.commands.drivetrain.CalibrateGyroCmd;
 import frc.robot.commands.drivetrain.DriveAtLaunchingRangeCmd;
+import frc.robot.commands.drivetrain.DriveCmd;
+import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
 import frc.robot.commands.drivetrain.DriveLockedHeadingCmd;
 import frc.robot.commands.drivetrain.DriveStopCmd;
-import frc.robot.commands.drivetrain.DriveXLockCmd;
 import frc.robot.commands.groups.AutoDeployIntakeCmd;
+import frc.robot.commands.groups.DepotAndClimbCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneBumpCmd;
+import frc.robot.commands.groups.DepotAndNeutralZoneTrenchCmd;
 import frc.robot.commands.groups.DriveAndClimbCmd;
 import frc.robot.commands.groups.DriveAndLaunchCmd;
 import frc.robot.commands.groups.DriveToCornerDepotBumpCmd;
 import frc.robot.commands.groups.DriveToCornerDepotTrenchCmd;
 import frc.robot.commands.groups.DriveToCornerOutpostBumpCmd;
 import frc.robot.commands.groups.DriveToCornerOutpostTrenchCmd;
-import frc.robot.commands.groups.DriveToTowerSideCmd;
 import frc.robot.commands.groups.LaunchAndClimbCmd;
 import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneBumpCmd;
-import frc.robot.commands.groups.DepotAndClimbCmd;
-import frc.robot.commands.groups.DepotAndNeutralZoneBumpCmd;
-import frc.robot.commands.groups.DepotAndNeutralZoneTrenchCmd;
-import frc.robot.commands.groups.LaunchAndIndexCmd;
 import frc.robot.commands.groups.LaunchAndDelayedNeutralZoneTrenchCmd;
+import frc.robot.commands.groups.LaunchAndIndexCmd;
 import frc.robot.commands.groups.OutpostAndClimbCmd;
 import frc.robot.commands.groups.OutpostAndNeutralZoneBumpCmd;
 import frc.robot.commands.groups.OutpostAndNeutralZoneTrenchCmd;
 import frc.robot.commands.groups.XLockAndLaunchCmd;
 import frc.robot.commands.groups.ZonePassCmd;
-import frc.robot.commands.indexer.IndexerCmd;
-import frc.robot.commands.indexer.PulsingTreadmillCmd;
 import frc.robot.commands.indexer.TreadmillOnCmd;
 import frc.robot.commands.launcherAndIntake.LauncherCmd;
+import frc.robot.subsystems.Climber.ClimberSubsystem;
+import frc.robot.subsystems.Climber.ClimberSubsystem.TowerSide;
+import frc.robot.subsystems.Drivetrain.DrivetrainSubsystem;
+import frc.robot.subsystems.Drivetrain.Gyro;
+import frc.robot.subsystems.Drivetrain.MAXSwerveModule;
+import frc.robot.subsystems.Drivetrain.SimulatedGyro;
+import frc.robot.subsystems.Drivetrain.SimulatedSwerveModule;
+import frc.robot.subsystems.Drivetrain.SwerveModule;
+import frc.robot.subsystems.OTBIntake.OTBIntakeSubsystem;
+import frc.robot.subsystems.indexer.IndexerSubsystem;
+import frc.robot.subsystems.launcherAndIntake.LauncherAndIntakeSubsystem;
 import frc.robot.util.PoseHelpers;
 import frc.robot.util.launcher.LaunchHelpers;
 import frc.robot.util.swerve.FieldZones;
 import frc.robot.util.swerve.PathGenerator;
-import frc.robot.commands.drivetrain.DriveCmd;
-import frc.robot.commands.drivetrain.DriveLockedHeadingAndYCmd;
 import frc.robot.util.swerve.ProfileSelector;
 import frc.robot.util.swerve.SwerveConfig;
-
-import com.revrobotics.spark.SparkMax;
+import frc.robot.util.swerve.SwerveDriveProfile;
 
 public class RobotContainer {
   public final DrivetrainSubsystem driveSub;
@@ -578,6 +567,8 @@ public class RobotContainer {
         () -> LauncherAndIntakeConstants.kCornerRPMSetpoint));
     operatorController.povRight().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
         () -> LauncherAndIntakeConstants.kBumpRPMSetpoint));
+    operatorController.leftBumper().toggleOnTrue(new LaunchAndIndexCmd(indexerSub, launcherAndIntakeSub, launchSupplier,
+        () -> LauncherAndIntakeConstants.kJuggleRPMSetpoint));
 
     operatorController.button(7).onTrue(Commands.runOnce(launcherAndIntakeSub::stop, launcherAndIntakeSub));
 
